@@ -3,7 +3,7 @@ package discover
 import "path/filepath"
 
 // Directory helpers honor the same environment variables the scanners use.
-// AI9S_CACHE_DIR is handled by the index, not here.
+// AIR9S_CACHE_DIR is handled by the index, not here.
 
 func ClaudeProjects() string {
 	return filepath.Join(envOr("CLAUDE_CONFIG_DIR", homeJoin(".claude")), "projects")

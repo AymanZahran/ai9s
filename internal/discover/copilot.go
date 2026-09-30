@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AymanZahran/ai9s/internal/model"
+	"github.com/AymanZahran/air9s/internal/model"
 )
 
 func scanCopilotCLI(fresh func(string, int64) bool) Batch {
@@ -56,11 +56,13 @@ func readCopilotDir(dir, agent string) (model.Session, bool) {
 	var buf snippetBuf
 	var updated time.Time
 	var modelName string
+	var usage model.Usage
 	_ = walkJSONL(filepath.Join(dir, "events.jsonl"), func(obj map[string]any) error {
 		if ts := parseTime(asString(obj["timestamp"])); ts.After(updated) {
 			updated = ts
 		}
 		data, _ := obj["data"].(map[string]any)
+		noteCopilotData(&usage, data)
 		switch asString(obj["type"]) {
 		case "session.start":
 			if m := asString(data["selectedModel"]); m != "" {
@@ -95,7 +97,8 @@ func readCopilotDir(dir, agent string) (model.Session, bool) {
 	return model.Session{
 		ID: model.ID(agent, native), NativeID: native, Agent: agent,
 		Title: title, CWD: meta["cwd"], Model: modelName, Updated: updated, Messages: buf.n,
-		SourcePath: dir, SourceMtime: fileMtime(dir), CanDelete: true, DeleteMode: "dir", Snippets: buf.snippets(),
+		SourcePath: dir, SourceMtime: fileMtime(dir), CanDelete: true, DeleteMode: "dir",
+		Usage: usage, Snippets: buf.snippets(),
 	}, true
 }
 

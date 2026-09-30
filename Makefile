@@ -1,14 +1,14 @@
 PREFIX ?= $(HOME)/.local
-BIN    := $(PREFIX)/bin/ai9s
+BIN    := $(PREFIX)/bin/air9s
 
 .PHONY: build install test
 
 build:
-	go build -o ai9s ./cmd/ai9s
+	go build -o air9s ./cmd/air9s
 
 install: build
 	mkdir -p $(PREFIX)/bin
-	install -m 755 ai9s $(BIN)
+	install -m 755 air9s $(BIN)
 
 test:
 	go test ./...

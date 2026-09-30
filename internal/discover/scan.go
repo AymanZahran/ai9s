@@ -3,7 +3,7 @@ package discover
 import (
 	"fmt"
 
-	"github.com/AymanZahran/ai9s/internal/model"
+	"github.com/AymanZahran/air9s/internal/model"
 )
 
 // File is one source the indexer uses for incremental updates.

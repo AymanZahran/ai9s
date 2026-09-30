@@ -1,6 +1,6 @@
 package discover
 
-import "github.com/AymanZahran/ai9s/internal/model"
+import "github.com/AymanZahran/air9s/internal/model"
 
 // snippetBuf keeps the first and last user/assistant lines so search still
 // sees the start of a long session and the latest turn.

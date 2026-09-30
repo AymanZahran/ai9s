@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AymanZahran/ai9s/internal/model"
+	"github.com/AymanZahran/air9s/internal/model"
 )
 
 func scanCursor(fresh func(string, int64) bool) Batch {

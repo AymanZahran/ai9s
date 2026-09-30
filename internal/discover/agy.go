@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/AymanZahran/ai9s/internal/model"
+	"github.com/AymanZahran/air9s/internal/model"
 )
 
 func agyHistoryPath() string {

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AymanZahran/ai9s/internal/model"
+	"github.com/AymanZahran/air9s/internal/model"
 )
 
 func TestPlan(t *testing.T) {

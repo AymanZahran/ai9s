@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/AymanZahran/ai9s/internal/model"
+	"github.com/AymanZahran/air9s/internal/model"
 )
 
 func scanGrok(fresh func(string, int64) bool) Batch {
@@ -92,6 +92,7 @@ func readGrok(summaryPath string) (model.Session, bool) {
 		ID: model.ID("grok", native), NativeID: native, Agent: "grok",
 		Title: title, Summary: asString(doc["session_summary"]), CWD: cwd, Branch: branch,
 		Model: modelName, Updated: updated, Messages: msgs,
+		Usage:      model.Usage{Effort: asString(doc["reasoning_effort"])},
 		SourcePath: summaryPath, SourceMtime: fileMtime(summaryPath),
 		CanDelete:    false,
 		DeleteReason: "Grok keeps a search index and active-session state beside the transcript. Delete it from Grok's own session list.",

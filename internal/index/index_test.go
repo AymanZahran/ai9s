@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AymanZahran/ai9s/internal/query"
-	"github.com/AymanZahran/ai9s/internal/store"
+	"github.com/AymanZahran/air9s/internal/query"
+	"github.com/AymanZahran/air9s/internal/store"
 )
 
 func TestRebuildClaude(t *testing.T) {

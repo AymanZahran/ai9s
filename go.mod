@@ -1,4 +1,4 @@
-module github.com/AymanZahran/ai9s
+module github.com/AymanZahran/air9s
 
 go 1.23
 

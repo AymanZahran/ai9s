@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AymanZahran/ai9s/internal/model"
+	"github.com/AymanZahran/air9s/internal/model"
 )
 
 func scanCodex(fresh func(string, int64) bool) Batch {
@@ -40,6 +40,7 @@ func readCodex(path string) (model.Session, bool) {
 	var buf snippetBuf
 	var native, cwd, modelName string
 	var updated time.Time
+	var usage model.Usage
 	err := walkJSONL(path, func(obj map[string]any) error {
 		if ts := parseTime(asString(obj["timestamp"])); ts.After(updated) {
 			updated = ts
@@ -58,6 +59,12 @@ func readCodex(path string) (model.Session, bool) {
 		case "turn_context":
 			if m := asString(pl["model"]); m != "" {
 				modelName = m
+			}
+		case "event_msg":
+			if asString(pl["type"]) == "token_count" {
+				if info, ok := pl["info"].(map[string]any); ok {
+					noteCodexTokens(&usage, info)
+				}
 			}
 		case "response_item":
 			if asString(pl["type"]) != "message" {
@@ -90,6 +97,7 @@ func readCodex(path string) (model.Session, bool) {
 	return model.Session{
 		ID: model.ID("codex", native), NativeID: native, Agent: "codex",
 		Title: title, CWD: cwd, Model: modelName, Updated: updated, Messages: buf.n,
-		SourcePath: path, SourceMtime: fileMtime(path), CanDelete: true, DeleteMode: "file", Snippets: buf.snippets(),
+		SourcePath: path, SourceMtime: fileMtime(path), CanDelete: true, DeleteMode: "file",
+		Usage: usage, Snippets: buf.snippets(),
 	}, true
 }

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AymanZahran/ai9s/internal/model"
+	"github.com/AymanZahran/air9s/internal/model"
 )
 
 func scanClaude(fresh func(string, int64) bool) Batch {
@@ -50,6 +50,7 @@ func readClaude(path string) (model.Session, bool) {
 	var buf snippetBuf
 	var cwd, branch, modelName string
 	var updated time.Time
+	var usage model.Usage
 	err := walkJSONL(path, func(obj map[string]any) error {
 		if ts := parseTime(asString(obj["timestamp"])); ts.After(updated) {
 			updated = ts
@@ -61,6 +62,10 @@ func readClaude(path string) (model.Session, bool) {
 			branch = asString(obj["gitBranch"])
 		}
 		role := asString(obj["type"])
+		if role == "cost-state" {
+			noteClaudeCost(&usage, obj)
+			return nil
+		}
 		if role != "user" && role != "assistant" {
 			return nil
 		}
@@ -68,6 +73,7 @@ func readClaude(path string) (model.Session, bool) {
 			if modelName == "" {
 				modelName = asString(m["model"])
 			}
+			noteClaudeUsage(&usage, m)
 		}
 		buf.add(role, messageText(obj), asString(obj["timestamp"]))
 		return nil
@@ -89,6 +95,6 @@ func readClaude(path string) (model.Session, bool) {
 		ID: model.ID("claude", native), NativeID: native, Agent: "claude",
 		Title: title, CWD: cwd, Branch: branch, Model: modelName,
 		Updated: updated, Messages: buf.n, SourcePath: path, SourceMtime: fileMtime(path),
-		CanDelete: true, DeleteMode: "file", Snippets: buf.snippets(),
+		CanDelete: true, DeleteMode: "file", Usage: usage, Snippets: buf.snippets(),
 	}, true
 }

@@ -1,36 +1,36 @@
-# ai9s
+# air9s
 
-ai9s is a keyboard-first finder for local AI coding sessions. It indexes the session files already on your machine, then lets you search, preview, filter, resume, and — where it is safe — delete them.
+air9s is a keyboard-first finder for local AI coding sessions. It indexes the session files already on your machine, then lets you search, preview, filter, resume, and — where it is safe — delete them.
 
-The interface is a terminal list: a header with counts, a filter line, a session table, a preview pane, and a footer of key hints.
+The interface is a terminal list: a header with counts, a filter line, a session table, a preview pane, and a footer of key hints. Each agent has its own icon in the header, the table, and the preview. Tab moves into the preview so the excerpt can be scrolled; Tab or Esc returns to the list. The CTX column, the preview, and `air9s show` include context size and token counts when the agent recorded them.
 
 ## Install
 
 Requires Go 1.23 or newer.
 
 ```sh
-git clone https://github.com/AymanZahran/ai9s.git
-cd ai9s
+git clone https://github.com/AymanZahran/air9s.git
+cd air9s
 make install
 ```
 
 `make install` puts the binary in `~/.local/bin`. Override that with `make install PREFIX=/usr/local`.
 
 ```sh
-go install github.com/AymanZahran/ai9s/cmd/ai9s@latest
+go install github.com/AymanZahran/air9s/cmd/air9s@latest
 ```
 
 ## Usage
 
 ```sh
-ai9s                 # open the list
-ai9s index           # refresh the local index
-ai9s stats
-ai9s search 'agent:claude dir:my-repo date:<7d auth'
-ai9s show claude:<session-id>
-ai9s resume claude:<session-id>
-ai9s resume codex:<session-id> --print   # show the command, do not run it
-ai9s delete claude:<session-id>          # asks you to type the id
+air9s                 # open the list
+air9s index           # refresh the local index
+air9s stats
+air9s search 'agent:claude dir:my-repo date:<7d auth'
+air9s show claude:<session-id>
+air9s resume claude:<session-id>
+air9s resume codex:<session-id> --print   # show the command, do not run it
+air9s delete claude:<session-id>          # asks you to type the id
 ```
 
 `--json` works on `index`, `stats`, `search`, and `show`. `resume --yolo` adds an auto-approve flag only for agents that document one. `delete --yes` skips the prompt.
@@ -42,6 +42,7 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 | Key | Action |
 | --- | --- |
 | Enter | Resume the selected session |
+| Tab | Focus the preview. `j`/`k` or the arrows scroll a line, Page Up/Down or Ctrl-B/Ctrl-F scroll a page, `g`/`G` jump to the top or the end. Tab or Esc returns to the list. The mouse wheel scrolls the preview when the pointer is over it. |
 | `d`, Ctrl-D | Delete, after confirmation |
 | `/` | Edit the filter |
 | `a` | Cycle the `agent:` filter |
@@ -71,9 +72,15 @@ Free text is matched against the title and a capped excerpt of the transcript. T
 
 Quote a phrase to keep it together: `"auth bug"`.
 
+## Metadata
+
+The preview and `air9s show` print a context line and a token line when the session file has them: latest prompt size, context window, input, output, cache read, cache write, reasoning tokens, cost, premium requests, and reasoning effort. The CTX column is the latest context size, or `used/window` when both are known.
+
+Claude records per-turn usage and cost. Codex records token totals and, when present, the context window. Copilot CLI records the latest prompt size, cache, reasoning effort, and premium requests. OpenCode records session token totals and the latest prompt size. Grok records reasoning effort. Gemini, Cursor, and Antigravity transcripts do not carry token totals, so those lines stay empty.
+
 ## Agents
 
-Paths below are the defaults. Each one can be pointed somewhere else with the environment variable in the last column. ai9s only reads session stores that exist; a missing directory is skipped.
+Paths below are the defaults. Each one can be pointed somewhere else with the environment variable in the last column. air9s only reads session stores that exist; a missing directory is skipped.
 
 | Agent | What is read | Resume | Delete | Override |
 | --- | --- | --- | --- | --- |
@@ -96,15 +103,15 @@ These need a stable file layout and a real resume command before an adapter shou
 
 ### Why some deletes are refused
 
-Grok and Gemini keep indexes, active-session records, or project side files next to the transcript. Removing the file ai9s can see would leave those tools inconsistent, so delete is disabled and the preview says so.
+Grok and Gemini keep indexes, active-session records, or project side files next to the transcript. Removing the file air9s can see would leave those tools inconsistent, so delete is disabled and the preview says so.
 
 Antigravity stores every conversation in one `history.jsonl`. Delete rewrites that file without the chosen conversation id. OpenCode delete goes through `opencode session delete` rather than editing the database. Other enabled deletes remove a single transcript file, or one Copilot `session-state` directory, and only when the path is still inside that agent's session root.
 
 ## Index
 
-The index lives at `$AI9S_CACHE_DIR/index.db`, or `$XDG_CACHE_HOME/ai9s/index.db`, or `~/.cache/ai9s/index.db`. It stores titles, metadata, and short excerpts (the first and last part of each transcript), not a second full copy of every log.
+The index lives at `$AIR9S_CACHE_DIR/index.db`, or `$XDG_CACHE_HOME/air9s/index.db`, or `~/.cache/air9s/index.db`. It stores titles, metadata, and short excerpts (the first and last part of each transcript), not a second full copy of every log.
 
-`ai9s index`, and opening the UI, scan again and skip files whose modification time has not changed. One agent failing to scan does not drop the others. Delete the index directory any time; the next run rebuilds it from the agent files.
+`air9s index`, and opening the UI, scan again and skip files whose modification time has not changed. One agent failing to scan does not drop the others. Delete the index directory any time; the next run rebuilds it from the agent files.
 
 ## Development
 

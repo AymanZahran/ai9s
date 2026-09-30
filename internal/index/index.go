@@ -3,8 +3,8 @@ package index
 import (
 	"fmt"
 
-	"github.com/AymanZahran/ai9s/internal/discover"
-	"github.com/AymanZahran/ai9s/internal/store"
+	"github.com/AymanZahran/air9s/internal/discover"
+	"github.com/AymanZahran/air9s/internal/store"
 )
 
 // Rebuild scans every agent and updates the index.

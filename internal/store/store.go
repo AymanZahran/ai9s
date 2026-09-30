@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -10,12 +11,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AymanZahran/ai9s/internal/model"
-	"github.com/AymanZahran/ai9s/internal/query"
+	"github.com/AymanZahran/air9s/internal/model"
+	"github.com/AymanZahran/air9s/internal/query"
 	_ "modernc.org/sqlite"
 )
 
-const cols = `s.id, s.native_id, s.agent, s.title, s.summary, s.cwd, s.branch, s.model, s.updated, s.messages, s.source_path, s.source_mtime, s.can_delete, s.delete_mode, s.delete_reason`
+const cols = `s.id, s.native_id, s.agent, s.title, s.summary, s.cwd, s.branch, s.model, s.updated, s.messages, s.source_path, s.source_mtime, s.can_delete, s.delete_mode, s.delete_reason, s.usage`
 
 // Source is one on-disk file or directory the indexer visited.
 type Source struct {
@@ -24,7 +25,7 @@ type Source struct {
 	Fresh bool
 }
 
-// AgentStat is one row of ai9s stats.
+// AgentStat is one row of air9s stats.
 type AgentStat struct {
 	Agent    string    `json:"agent"`
 	Sessions int       `json:"sessions"`
@@ -47,10 +48,10 @@ type Store struct {
 	fts bool
 }
 
-// DefaultPath is $AI9S_CACHE_DIR/index.db, or $XDG_CACHE_HOME/ai9s/index.db,
-// or ~/.cache/ai9s/index.db.
+// DefaultPath is $AIR9S_CACHE_DIR/index.db, or $XDG_CACHE_HOME/air9s/index.db,
+// or ~/.cache/air9s/index.db.
 func DefaultPath() (string, error) {
-	if v := strings.TrimSpace(os.Getenv("AI9S_CACHE_DIR")); v != "" {
+	if v := strings.TrimSpace(os.Getenv("AIR9S_CACHE_DIR")); v != "" {
 		return filepath.Join(v, "index.db"), nil
 	}
 	base := strings.TrimSpace(os.Getenv("XDG_CACHE_HOME"))
@@ -61,7 +62,7 @@ func DefaultPath() (string, error) {
 		}
 		base = filepath.Join(home, ".cache")
 	}
-	return filepath.Join(base, "ai9s", "index.db"), nil
+	return filepath.Join(base, "air9s", "index.db"), nil
 }
 
 // Open creates the index database if needed.
@@ -102,7 +103,8 @@ CREATE TABLE IF NOT EXISTS sessions (
   source_mtime INTEGER NOT NULL DEFAULT 0,
   can_delete INTEGER NOT NULL DEFAULT 0,
   delete_mode TEXT NOT NULL DEFAULT '',
-  delete_reason TEXT NOT NULL DEFAULT ''
+  delete_reason TEXT NOT NULL DEFAULT '',
+  usage TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS snippets (
   session_id TEXT NOT NULL,
@@ -122,6 +124,16 @@ CREATE INDEX IF NOT EXISTS sessions_updated ON sessions(updated);
 `)
 	if err != nil {
 		return err
+	}
+	added, err := ensureColumn(s.db, "sessions", "usage", `TEXT NOT NULL DEFAULT ''`)
+	if err != nil {
+		return err
+	}
+	if added {
+		// Older indexes have no accounting. Force the next scan to re-read sources.
+		if _, err := s.db.Exec(`UPDATE files SET mtime = 0`); err != nil {
+			return err
+		}
 	}
 	if _, err := s.db.Exec(`CREATE VIRTUAL TABLE IF NOT EXISTS fts USING fts5(title, summary, body, session_id UNINDEXED)`); err != nil {
 		s.fts = false
@@ -154,15 +166,15 @@ func (s *Store) Apply(agent string, sessions []model.Session, files []Source) er
 		return err
 	}
 	defer tx.Rollback()
-	if _, err := tx.Exec(`CREATE TEMP TABLE IF NOT EXISTS ai9s_seen (path TEXT PRIMARY KEY)`); err != nil {
+	if _, err := tx.Exec(`CREATE TEMP TABLE IF NOT EXISTS air9s_seen (path TEXT PRIMARY KEY)`); err != nil {
 		return err
 	}
-	if _, err := tx.Exec(`DELETE FROM ai9s_seen`); err != nil {
+	if _, err := tx.Exec(`DELETE FROM air9s_seen`); err != nil {
 		return err
 	}
 	changed := map[string]int64{}
 	for _, f := range files {
-		if _, err := tx.Exec(`INSERT OR IGNORE INTO ai9s_seen(path) VALUES (?)`, f.Path); err != nil {
+		if _, err := tx.Exec(`INSERT OR IGNORE INTO air9s_seen(path) VALUES (?)`, f.Path); err != nil {
 			return err
 		}
 		if !f.Fresh {
@@ -191,7 +203,7 @@ func (s *Store) Apply(agent string, sessions []model.Session, files []Source) er
 			return err
 		}
 	}
-	gone, err := tx.Query(`SELECT id FROM sessions WHERE agent = ? AND source_path NOT IN (SELECT path FROM ai9s_seen)`, agent)
+	gone, err := tx.Query(`SELECT id FROM sessions WHERE agent = ? AND source_path NOT IN (SELECT path FROM air9s_seen)`, agent)
 	if err != nil {
 		return err
 	}
@@ -213,7 +225,7 @@ func (s *Store) Apply(agent string, sessions []model.Session, files []Source) er
 			return err
 		}
 	}
-	if _, err := tx.Exec(`DELETE FROM files WHERE agent = ? AND path NOT IN (SELECT path FROM ai9s_seen)`, agent); err != nil {
+	if _, err := tx.Exec(`DELETE FROM files WHERE agent = ? AND path NOT IN (SELECT path FROM air9s_seen)`, agent); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -297,10 +309,11 @@ func insertSession(tx *sql.Tx, fts bool, sess model.Session) error {
 	}
 	_, err := tx.Exec(`INSERT INTO sessions(
 		id, native_id, agent, title, summary, cwd, branch, model, updated, messages,
-		source_path, source_mtime, can_delete, delete_mode, delete_reason)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		source_path, source_mtime, can_delete, delete_mode, delete_reason, usage)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		sess.ID, sess.NativeID, sess.Agent, sess.Title, sess.Summary, sess.CWD, sess.Branch, sess.Model,
-		updated, sess.Messages, sess.SourcePath, sess.SourceMtime, can, sess.DeleteMode, sess.DeleteReason)
+		updated, sess.Messages, sess.SourcePath, sess.SourceMtime, can, sess.DeleteMode, sess.DeleteReason,
+		encodeUsage(sess.Usage))
 	if err != nil {
 		return err
 	}
@@ -551,15 +564,63 @@ func scanSession(sc scanner) (model.Session, error) {
 	var sess model.Session
 	var updated int64
 	var can int
-	err := sc.Scan(&sess.ID, &sess.NativeID, &sess.Agent, &sess.Title, &sess.Summary, &sess.CWD, &sess.Branch, &sess.Model, &updated, &sess.Messages, &sess.SourcePath, &sess.SourceMtime, &can, &sess.DeleteMode, &sess.DeleteReason)
+	var usage string
+	err := sc.Scan(&sess.ID, &sess.NativeID, &sess.Agent, &sess.Title, &sess.Summary, &sess.CWD, &sess.Branch, &sess.Model, &updated, &sess.Messages, &sess.SourcePath, &sess.SourceMtime, &can, &sess.DeleteMode, &sess.DeleteReason, &usage)
 	if err != nil {
 		return model.Session{}, err
 	}
+	sess.Usage = decodeUsage(usage)
 	sess.CanDelete = can != 0
 	if updated > 0 {
 		sess.Updated = time.Unix(updated, 0)
 	}
 	return sess, nil
+}
+
+func ensureColumn(db *sql.DB, table, column, decl string) (bool, error) {
+	rows, err := db.Query(`PRAGMA table_info(` + table + `)`)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid int
+		var name, typ string
+		var notNull int
+		var dflt sql.NullString
+		var pk int
+		if err := rows.Scan(&cid, &name, &typ, &notNull, &dflt, &pk); err != nil {
+			return false, err
+		}
+		if name == column {
+			return false, nil
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return false, err
+	}
+	_, err = db.Exec(`ALTER TABLE ` + table + ` ADD COLUMN ` + column + ` ` + decl)
+	return err == nil, err
+}
+
+func encodeUsage(u model.Usage) string {
+	if u.Empty() {
+		return ""
+	}
+	b, err := json.Marshal(u)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
+func decodeUsage(s string) model.Usage {
+	var u model.Usage
+	if s == "" {
+		return u
+	}
+	_ = json.Unmarshal([]byte(s), &u)
+	return u
 }
 
 func escapeLike(s string) string {

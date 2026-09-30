@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AymanZahran/ai9s/internal/act"
-	"github.com/AymanZahran/ai9s/internal/index"
-	"github.com/AymanZahran/ai9s/internal/model"
-	"github.com/AymanZahran/ai9s/internal/query"
-	"github.com/AymanZahran/ai9s/internal/store"
-	"github.com/AymanZahran/ai9s/internal/tui"
+	"github.com/AymanZahran/air9s/internal/act"
+	"github.com/AymanZahran/air9s/internal/index"
+	"github.com/AymanZahran/air9s/internal/model"
+	"github.com/AymanZahran/air9s/internal/query"
+	"github.com/AymanZahran/air9s/internal/store"
+	"github.com/AymanZahran/air9s/internal/tui"
 )
 
 const version = "0.1.0"
@@ -36,7 +36,7 @@ func main() {
 	case "delete":
 		os.Exit(cmdDelete(os.Args[2:]))
 	case "version", "--version", "-v":
-		fmt.Println("ai9s", version)
+		fmt.Println("air9s", version)
 	case "help", "--help", "-h":
 		usage()
 	default:
@@ -46,21 +46,21 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintf(os.Stderr, `ai9s %s — find and resume local AI coding sessions
+	fmt.Fprintf(os.Stderr, `air9s %s — find and resume local AI coding sessions
 
 Usage:
-  ai9s                         open the session list
-  ai9s index                   scan agent session stores
-  ai9s stats [--json]          counts by agent
-  ai9s search [query] [--json] [--limit N]
-  ai9s show <id> [--json]
-  ai9s resume <id> [--yolo] [--print]
-  ai9s delete <id> [--yes]
+  air9s                         open the session list
+  air9s index                   scan agent session stores
+  air9s stats [--json]          counts by agent
+  air9s search [query] [--json] [--limit N]
+  air9s show <id> [--json]
+  air9s resume <id> [--yolo] [--print]
+  air9s delete <id> [--yes]
 
 Queries can mix free text with agent:, dir:, branch:, model:,
 date:<7d, date:>30d, date:YYYY-MM-DD, and sort:recent|oldest|messages|title.
 
-The index is cached under $AI9S_CACHE_DIR, $XDG_CACHE_HOME/ai9s, or ~/.cache/ai9s.
+The index is cached under $AIR9S_CACHE_DIR, $XDG_CACHE_HOME/air9s, or ~/.cache/air9s.
 `, version)
 }
 
@@ -74,34 +74,34 @@ func openStore() (*store.Store, error) {
 
 func runTUI() int {
 	if !isTerm(os.Stdin) {
-		fmt.Fprintln(os.Stderr, "ai9s: no terminal; try 'ai9s search' or 'ai9s stats'")
+		fmt.Fprintln(os.Stderr, "air9s: no terminal; try 'air9s search' or 'air9s stats'")
 		return 1
 	}
 	st, err := openStore()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "ai9s:", err)
+		fmt.Fprintln(os.Stderr, "air9s:", err)
 		return 1
 	}
 	defer st.Close()
-	fmt.Fprintln(os.Stderr, "ai9s: indexing sessions")
+	fmt.Fprintln(os.Stderr, "air9s: indexing sessions")
 	_, warnings, err := index.Rebuild(st)
 	for _, w := range warnings {
-		fmt.Fprintln(os.Stderr, "ai9s:", w)
+		fmt.Fprintln(os.Stderr, "air9s:", w)
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "ai9s:", err)
+		fmt.Fprintln(os.Stderr, "air9s:", err)
 		return 1
 	}
 	cmd, err := tui.Run(st)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "ai9s:", err)
+		fmt.Fprintln(os.Stderr, "air9s:", err)
 		return 1
 	}
 	if cmd == nil {
 		return 0
 	}
 	if err := cmd.Run(); err != nil {
-		fmt.Fprintln(os.Stderr, "ai9s:", err)
+		fmt.Fprintln(os.Stderr, "air9s:", err)
 		return 1
 	}
 	return 0
@@ -162,7 +162,7 @@ func cmdStats(args []string) int {
 func printStats(st store.Stats) {
 	fmt.Printf("%d sessions, %d messages\n", st.Sessions, st.Messages)
 	for _, a := range st.Agents {
-		fmt.Printf("  %-10s %5d sessions  %7d messages\n", a.Agent, a.Sessions, a.Messages)
+		fmt.Printf("  %s %-10s %5d sessions  %7d messages\n", tui.Icon(a.Agent), a.Agent, a.Sessions, a.Messages)
 	}
 }
 
@@ -198,7 +198,7 @@ func cmdSearch(args []string) int {
 		if branch == "" {
 			branch = "-"
 		}
-		fmt.Printf("%-11s %-8s %-18s %-10s %5d  %s\n", s.ID, s.Agent, clip(shortHome(s.CWD), 18), branch, s.Messages, clip(s.Title, 80))
+		fmt.Printf("%s %-8s %-18s %-10s %5d  %-48s  %s\n", tui.Icon(s.Agent), s.Agent, clip(shortHome(s.CWD), 18), branch, s.Messages, clip(s.Title, 48), s.ID)
 	}
 	return 0
 }
@@ -211,7 +211,7 @@ func cmdShow(args []string) int {
 		return 2
 	}
 	if len(rest) != 1 {
-		fmt.Fprintln(os.Stderr, "usage: ai9s show <id>")
+		fmt.Fprintln(os.Stderr, "usage: air9s show <id>")
 		return 2
 	}
 	st, err := openStore()
@@ -228,12 +228,15 @@ func cmdShow(args []string) int {
 	if *asJSON {
 		return printJSON(sess)
 	}
-	fmt.Printf("%s\n%s  %s\n", sess.Title, sess.Agent, sess.ID)
+	fmt.Printf("%s\n%s %s  %s\n", sess.Title, tui.Icon(sess.Agent), sess.Agent, sess.ID)
 	fmt.Printf("directory  %s\n", emptyDash(sess.CWD))
 	fmt.Printf("branch     %s\n", emptyDash(sess.Branch))
 	fmt.Printf("model      %s\n", emptyDash(sess.Model))
 	fmt.Printf("updated    %s\n", formatTime(sess.Updated))
 	fmt.Printf("messages   %d\n", sess.Messages)
+	for _, line := range tui.UsageLines(sess.Usage) {
+		fmt.Println(line)
+	}
 	if sess.CanDelete {
 		fmt.Printf("delete     yes (%s)\n", sess.DeleteMode)
 	} else {
@@ -257,7 +260,7 @@ func cmdResume(args []string) int {
 		return 2
 	}
 	if len(rest) != 1 {
-		fmt.Fprintln(os.Stderr, "usage: ai9s resume <id>")
+		fmt.Fprintln(os.Stderr, "usage: air9s resume <id>")
 		return 2
 	}
 	st, err := openStore()
@@ -295,7 +298,7 @@ func cmdDelete(args []string) int {
 		return 2
 	}
 	if len(rest) != 1 {
-		fmt.Fprintln(os.Stderr, "usage: ai9s delete <id> [--yes]")
+		fmt.Fprintln(os.Stderr, "usage: air9s delete <id> [--yes]")
 		return 2
 	}
 	st, err := openStore()

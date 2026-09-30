@@ -75,6 +75,32 @@ func asString(v any) string {
 	return s
 }
 
+func asInt(v any) int {
+	switch n := v.(type) {
+	case int:
+		return n
+	case int64:
+		return int(n)
+	case float64:
+		return int(n)
+	default:
+		return 0
+	}
+}
+
+func asFloat(v any) float64 {
+	switch n := v.(type) {
+	case float64:
+		return n
+	case int:
+		return float64(n)
+	case int64:
+		return float64(n)
+	default:
+		return 0
+	}
+}
+
 func homeJoin(elem ...string) string {
 	h, err := os.UserHomeDir()
 	if err != nil || h == "" {

@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/AymanZahran/ai9s/internal/discover"
-	"github.com/AymanZahran/ai9s/internal/model"
+	"github.com/AymanZahran/air9s/internal/discover"
+	"github.com/AymanZahran/air9s/internal/model"
 )
 
 // LookPath resolves a resume or delete binary. Tests replace it.
@@ -231,7 +231,7 @@ func rewriteAgy(s model.Session) error {
 	if st, err := in.Stat(); err == nil {
 		mode = st.Mode().Perm()
 	}
-	tmp := path + ".ai9s.tmp"
+	tmp := path + ".air9s.tmp"
 	out, err := os.OpenFile(tmp, os.O_CREATE|os.O_EXCL|os.O_WRONLY, mode)
 	if err != nil {
 		return err

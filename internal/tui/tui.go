@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/AymanZahran/ai9s/internal/act"
-	"github.com/AymanZahran/ai9s/internal/index"
-	"github.com/AymanZahran/ai9s/internal/model"
-	"github.com/AymanZahran/ai9s/internal/query"
-	"github.com/AymanZahran/ai9s/internal/store"
+	"github.com/AymanZahran/air9s/internal/act"
+	"github.com/AymanZahran/air9s/internal/index"
+	"github.com/AymanZahran/air9s/internal/model"
+	"github.com/AymanZahran/air9s/internal/query"
+	"github.com/AymanZahran/air9s/internal/store"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -40,6 +40,7 @@ type ui struct {
 	yolo     bool
 	pending  *act.Command
 	busy     bool
+	focused  string
 }
 
 func newUI(app *tview.Application, st *store.Store) *ui {
@@ -48,15 +49,21 @@ func newUI(app *tview.Application, st *store.Store) *ui {
 	ui.header.SetBackgroundColor(tcell.ColorDarkBlue)
 	ui.footer = tview.NewTextView().SetDynamicColors(true)
 	ui.footer.SetBackgroundColor(tcell.ColorDarkSlateGray)
-	ui.footer.SetText(`[yellow]enter[-] resume   [yellow]d[-] delete   [yellow]/[-] filter   [yellow]a[-] agent   [yellow]p[-] directory   [yellow]o[-] sort   [yellow]y[-] yolo   [yellow]r[-] reindex   [yellow]s[-] stats   [yellow]?[-] help   [yellow]q[-] quit`)
 
 	ui.filter = tview.NewInputField().SetLabel(" filter ").SetFieldWidth(0)
 	ui.filter.SetLabelColor(tcell.ColorYellow)
 	ui.filter.SetChangedFunc(func(string) { ui.reload() })
 	ui.filter.SetDoneFunc(func(key tcell.Key) {
-		if key == tcell.KeyEnter || key == tcell.KeyEscape {
-			ui.app.SetFocus(ui.table)
+		switch key {
+		case tcell.KeyTab:
+			ui.focusPreview()
+		case tcell.KeyEnter, tcell.KeyEscape, tcell.KeyBacktab:
+			ui.focusSessions()
 		}
+	})
+	ui.filter.SetFocusFunc(func() {
+		ui.focused = "filter"
+		ui.paintChrome()
 	})
 
 	ui.table = tview.NewTable().SetSelectable(true, false).SetFixed(1, 0)
@@ -64,19 +71,69 @@ func newUI(app *tview.Application, st *store.Store) *ui {
 	ui.table.SetSelectedStyle(tcell.StyleDefault.Reverse(true))
 	ui.table.SetSelectionChangedFunc(func(row, _ int) { ui.showRow(row) })
 	ui.table.SetInputCapture(ui.tableKeys)
+	ui.table.SetFocusFunc(func() {
+		ui.focused = "table"
+		ui.paintChrome()
+	})
 
 	ui.preview = tview.NewTextView().SetDynamicColors(true).SetWrap(true).SetScrollable(true)
 	ui.preview.SetBorder(true).SetTitle(" preview ")
+	ui.preview.SetInputCapture(ui.previewKeys)
+	ui.preview.SetDoneFunc(ui.previewDone)
+	ui.preview.SetFocusFunc(func() {
+		ui.focused = "preview"
+		ui.paintChrome()
+	})
 
 	body := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(ui.table, 0, 3, true).
 		AddItem(ui.preview, 0, 2, false)
 	ui.layout = tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(ui.header, 2, 0, false).
+		AddItem(ui.header, 3, 0, false).
 		AddItem(ui.filter, 1, 0, false).
 		AddItem(body, 0, 1, true).
 		AddItem(ui.footer, 1, 0, false)
+	ui.focused = "table"
+	ui.paintChrome()
 	return ui
+}
+
+const (
+	footerSessions = `[yellow]tab[-] preview   [yellow]enter[-] resume   [yellow]d[-] delete   [yellow]/[-] filter   [yellow]a[-] agent   [yellow]p[-] directory   [yellow]o[-] sort   [yellow]y[-] yolo   [yellow]r[-] reindex   [yellow]s[-] stats   [yellow]?[-] help   [yellow]q[-] quit`
+	footerPreview  = `[yellow]j/k[-] ↑↓ scroll   [yellow]ctrl-b/f[-] page   [yellow]g/G[-] top/end   [yellow]tab[-] [yellow]esc[-] sessions   [yellow]enter[-] resume   [yellow]q[-] quit`
+)
+
+func (ui *ui) paintChrome() {
+	// Do not call HasFocus here. TextView.Focus holds its lock while this runs.
+	ui.table.SetBorderColor(tcell.ColorWhite)
+	ui.preview.SetBorderColor(tcell.ColorWhite)
+	ui.table.SetTitle(" sessions ")
+	ui.preview.SetTitle(" preview ")
+	ui.footer.SetText(footerSessions)
+	switch ui.focused {
+	case "preview":
+		ui.preview.SetBorderColor(tcell.ColorYellow)
+		ui.preview.SetTitle(" preview · scroll ")
+		ui.footer.SetText(footerPreview)
+	case "table":
+		ui.table.SetBorderColor(tcell.ColorYellow)
+	}
+}
+
+func (ui *ui) focusSessions() {
+	ui.app.SetFocus(ui.table)
+}
+
+func (ui *ui) focusPreview() {
+	ui.app.SetFocus(ui.preview)
+}
+
+func (ui *ui) previewDone(key tcell.Key) {
+	if key == tcell.KeyEnter {
+		ui.resumeSelected()
+		return
+	}
+	ui.focusSessions()
 }
 
 func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
@@ -86,12 +143,15 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 		}
 		return nil
 	}
-	if ev.Key() == tcell.KeyEnter {
+	switch ev.Key() {
+	case tcell.KeyEnter:
 		ui.resumeSelected()
 		return nil
-	}
-	if ev.Key() == tcell.KeyCtrlD {
+	case tcell.KeyCtrlD:
 		ui.confirmDelete()
+		return nil
+	case tcell.KeyTab, tcell.KeyBacktab:
+		ui.focusPreview()
 		return nil
 	}
 	if ev.Key() != tcell.KeyRune {
@@ -129,6 +189,36 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
+	if ui.busy {
+		if ev.Key() == tcell.KeyRune && ev.Rune() == 'q' {
+			ui.app.Stop()
+		}
+		return nil
+	}
+	if ev.Key() == tcell.KeyCtrlD {
+		ui.confirmDelete()
+		return nil
+	}
+	if ev.Key() == tcell.KeyRune {
+		switch ev.Rune() {
+		case 'q':
+			ui.app.Stop()
+			return nil
+		case 'd':
+			ui.confirmDelete()
+			return nil
+		case '/':
+			ui.app.SetFocus(ui.filter)
+			return nil
+		case '?':
+			ui.showHelp()
+			return nil
+		}
+	}
+	return ev
+}
+
 func (ui *ui) reload() {
 	f := query.Parse(ui.filter.GetText())
 	rows, err := ui.store.Search(f, 400)
@@ -148,8 +238,8 @@ func (ui *ui) reload() {
 	}
 	ui.paintHeader()
 	ui.table.Clear()
-	headers := []string{"AGE", "AGENT", "DIR", "BRANCH", "MSGS", "TITLE"}
-	exp := []int{0, 0, 1, 0, 0, 3}
+	headers := []string{"AGE", "", "AGENT", "DIR", "BRANCH", "CTX", "MSGS", "TITLE"}
+	exp := []int{0, 0, 0, 1, 0, 0, 0, 3}
 	for i, h := range headers {
 		cell := tview.NewTableCell(h).SetSelectable(false).SetTextColor(tcell.ColorYellow).SetExpansion(exp[i])
 		ui.table.SetCell(0, i, cell)
@@ -165,11 +255,13 @@ func (ui *ui) reload() {
 			branch = "-"
 		}
 		ui.table.SetCell(i+1, 0, tview.NewTableCell(relAge(s.Updated)))
-		ui.table.SetCell(i+1, 1, tview.NewTableCell(s.Agent).SetTextColor(colorOf(s.Agent)))
-		ui.table.SetCell(i+1, 2, tview.NewTableCell(dir).SetMaxWidth(36).SetExpansion(1))
-		ui.table.SetCell(i+1, 3, tview.NewTableCell(branch).SetMaxWidth(18))
-		ui.table.SetCell(i+1, 4, tview.NewTableCell(fmt.Sprintf("%d", s.Messages)).SetAlign(tview.AlignRight))
-		ui.table.SetCell(i+1, 5, tview.NewTableCell(s.Title).SetExpansion(3))
+		ui.table.SetCell(i+1, 1, tview.NewTableCell(Icon(s.Agent)).SetAlign(tview.AlignCenter))
+		ui.table.SetCell(i+1, 2, tview.NewTableCell(s.Agent).SetTextColor(colorOf(s.Agent)))
+		ui.table.SetCell(i+1, 3, tview.NewTableCell(dir).SetMaxWidth(36).SetExpansion(1))
+		ui.table.SetCell(i+1, 4, tview.NewTableCell(branch).SetMaxWidth(18))
+		ui.table.SetCell(i+1, 5, tview.NewTableCell(contextLabel(s.Usage)).SetAlign(tview.AlignRight))
+		ui.table.SetCell(i+1, 6, tview.NewTableCell(fmt.Sprintf("%d", s.Messages)).SetAlign(tview.AlignRight))
+		ui.table.SetCell(i+1, 7, tview.NewTableCell(s.Title).SetExpansion(3))
 	}
 	if len(rows) == 0 {
 		ui.preview.SetText("\n[gray]No sessions match this filter.[-]")
@@ -208,15 +300,19 @@ func colorOf(agent string) tcell.Color {
 func (ui *ui) paintHeader() {
 	stats, _ := ui.store.Stats()
 	var b strings.Builder
-	fmt.Fprintf(&b, "[::b] ai9s [-]  %d sessions   %d messages", stats.Sessions, stats.Messages)
-	for _, a := range stats.Agents {
-		fmt.Fprintf(&b, "   [%s]%s %d[-]", agentColor(a.Agent), a.Agent, a.Sessions)
-	}
+	fmt.Fprintf(&b, "[::b] air9s [-]  %d sessions   %d messages", stats.Sessions, stats.Messages)
 	if ui.yolo {
 		b.WriteString("   [yellow]yolo[-]")
 	}
 	if ui.busy {
 		b.WriteString("   indexing…")
+	}
+	b.WriteByte('\n')
+	for i, a := range stats.Agents {
+		if i > 0 {
+			b.WriteString("   ")
+		}
+		fmt.Fprintf(&b, "%s [%s]%s %d[-]", Icon(a.Agent), agentColor(a.Agent), a.Agent, a.Sessions)
 	}
 	if len(ui.warnings) > 0 {
 		fmt.Fprintf(&b, "\n[red]%s[-]", ui.warnings[0])
@@ -275,15 +371,15 @@ func (ui *ui) confirmDelete() {
 	if !s.CanDelete {
 		reason := s.DeleteReason
 		if reason == "" {
-			reason = "Deletion is disabled for " + s.Agent + "."
+			reason = "Deletion is disabled for " + Label(s.Agent) + "."
 		}
 		ui.alert(reason)
 		return
 	}
-	text := fmt.Sprintf("Delete this %s session?\n\n%s\n%s", s.Agent, s.Title, shortPath(s.SourcePath))
+	text := fmt.Sprintf("Delete this %s session?\n\n%s\n%s", Label(s.Agent), s.Title, shortPath(s.SourcePath))
 	modal := tview.NewModal().SetText(text).AddButtons([]string{"Delete", "Cancel"}).SetDoneFunc(func(_ int, label string) {
 		ui.app.SetRoot(ui.layout, true)
-		ui.app.SetFocus(ui.table)
+		ui.focusSessions()
 		if label != "Delete" {
 			return
 		}
@@ -307,13 +403,17 @@ func (ui *ui) confirmDelete() {
 func (ui *ui) alert(msg string) {
 	modal := tview.NewModal().SetText(msg).AddButtons([]string{"OK"}).SetDoneFunc(func(int, string) {
 		ui.app.SetRoot(ui.layout, true)
-		ui.app.SetFocus(ui.table)
+		ui.focusSessions()
 	})
 	ui.app.SetRoot(modal, false).SetFocus(modal)
 }
 
 func (ui *ui) showHelp() {
 	text := `enter     resume in the session directory
+tab       open the preview and scroll it
+          j/k or arrows move a line, ctrl-b/f or page keys move a page
+          g jumps to the top, G to the end
+          tab or esc returns to the session list
 d, ctrl-d delete, after confirmation
 /         edit the filter
 a         cycle the agent filter
@@ -324,6 +424,7 @@ r         reindex
 s         stats
 q         quit
 
+The mouse wheel scrolls the preview while the pointer is over it.
 Filter words are matched in the title and transcript.
 agent:  dir:  branch:  model:  date:<7d  date:>30d  date:YYYY-MM-DD  sort:recent`
 	ui.alert(text)
@@ -338,7 +439,7 @@ func (ui *ui) showStats() {
 	var b strings.Builder
 	fmt.Fprintf(&b, "%d sessions, %d messages\n\n", stats.Sessions, stats.Messages)
 	for _, a := range stats.Agents {
-		fmt.Fprintf(&b, "%-10s %5d sessions   %6d messages\n", a.Agent, a.Sessions, a.Messages)
+		fmt.Fprintf(&b, "%s %-10s %5d sessions   %6d messages\n", Icon(a.Agent), a.Agent, a.Sessions, a.Messages)
 	}
 	if len(ui.warnings) > 0 {
 		b.WriteString("\n")

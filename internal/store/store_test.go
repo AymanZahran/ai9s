@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/AymanZahran/ai9s/internal/model"
-	"github.com/AymanZahran/ai9s/internal/query"
+	"github.com/AymanZahran/air9s/internal/model"
+	"github.com/AymanZahran/air9s/internal/query"
 )
 
 func TestSearchAndPrune(t *testing.T) {
@@ -21,6 +21,7 @@ func TestSearchAndPrune(t *testing.T) {
 		ID: "claude:abc", NativeID: "abc", Agent: "claude", Title: "ship the feature",
 		CWD: "/work/demo", Branch: "main", Model: "sonnet", Updated: when, Messages: 2,
 		SourcePath: path, SourceMtime: 10, CanDelete: true, DeleteMode: "file",
+		Usage:    model.Usage{Context: 1200, Output: 30, Effort: "low"},
 		Snippets: []model.Snippet{{Role: "user", Body: "please fix the auth bug"}},
 	}
 	if err := st.Apply("claude", []model.Session{sess}, []Source{{Path: path, Mtime: 10, Fresh: false}}); err != nil {
@@ -30,11 +31,11 @@ func TestSearchAndPrune(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 1 || got[0].ID != "claude:abc" {
+	if len(got) != 1 || got[0].ID != "claude:abc" || got[0].Usage.Context != 1200 {
 		t.Fatalf("search %+v", got)
 	}
 	full, err := st.Get("claude:abc")
-	if err != nil || len(full.Snippets) != 1 {
+	if err != nil || len(full.Snippets) != 1 || full.Usage.Output != 30 || full.Usage.Effort != "low" {
 		t.Fatalf("get %+v %v", full, err)
 	}
 	if !st.Fresh(path, 10) {

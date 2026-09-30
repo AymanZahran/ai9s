@@ -21,7 +21,7 @@ func TestDecodeDashedPath(t *testing.T) {
 	if got := decodeDashedPath(trimmed); got != want {
 		t.Fatalf("no leading dash: got %q want %q", got, want)
 	}
-	if got := decodeDashedPath("no-such-directory-ai9s"); got != "" {
+	if got := decodeDashedPath("no-such-directory-air9s"); got != "" {
 		t.Fatalf("missing path returned %q", got)
 	}
 }
