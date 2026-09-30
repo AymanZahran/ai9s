@@ -1,0 +1,5 @@
+/ai9s
+/dist
+*.db
+*.db-*
+.DS_Store
