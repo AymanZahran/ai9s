@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.10
+
 - Left and right pan by the same column width the table paints, so a cut-off title moves and the bottom scrollbar appears when a line is wider than the window.
 - The built-in skin is true black with k9s accent colors: blue text, an orange logo, a blue border, and an aqua selection bar. The crumbs line stays black.
 - OpenClaw, Goose, and Hermes use the mark published in that project's README. Gemini uses a sparkle, because its prompt glyph draws as a plus. The other agents publish a picture logo and no emoji, so those cells are a brand-colored mark.
