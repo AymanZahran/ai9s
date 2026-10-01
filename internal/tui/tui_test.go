@@ -2,6 +2,8 @@ package tui
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -601,6 +603,106 @@ func TestHorizontalScroll(t *testing.T) {
 	_, col = ui.preview.GetScrollOffset()
 	if col != hScrollStep {
 		t.Fatalf("preview wheel col %d", col)
+	}
+}
+
+func TestBranchesShowWorktrees(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git is not installed")
+	}
+	root := t.TempDir()
+	repo := filepath.Join(root, "repo")
+	wt := filepath.Join(root, "wt")
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	git := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(),
+			"GIT_AUTHOR_NAME=air9s",
+			"GIT_AUTHOR_EMAIL=air9s@example.com",
+			"GIT_COMMITTER_NAME=air9s",
+			"GIT_COMMITTER_EMAIL=air9s@example.com",
+		)
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	git(repo, "init")
+	git(repo, "commit", "--allow-empty", "-m", "init")
+	git(repo, "worktree", "add", "-b", "feature", wt)
+	loose := filepath.Join(root, "loose")
+	if err := os.MkdirAll(loose, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	st, err := store.Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	when := time.Date(2026, 3, 2, 15, 4, 5, 0, time.UTC)
+	sessions := []model.Session{
+		{
+			ID: "claude:mainrepo", NativeID: "mainrepo", Agent: "claude", Title: "in the main checkout",
+			CWD: repo, Branch: "main", Updated: when, Messages: 2,
+			SourcePath: filepath.Join(root, "main.jsonl"), CanDelete: true, DeleteMode: "file",
+		},
+		{
+			ID: "claude:linked", NativeID: "linked", Agent: "claude", Title: "in the linked worktree",
+			CWD: wt, Branch: "main", Updated: when.Add(time.Hour), Messages: 1,
+			SourcePath: filepath.Join(root, "linked.jsonl"), CanDelete: true, DeleteMode: "file",
+		},
+		{
+			ID: "claude:loose", NativeID: "loose", Agent: "claude", Title: "not a checkout",
+			CWD: loose, Branch: "other", Updated: when, Messages: 1,
+			SourcePath: filepath.Join(root, "loose.jsonl"), CanDelete: true, DeleteMode: "file",
+		},
+	}
+	sources := make([]store.Source, len(sessions))
+	for i, s := range sessions {
+		sources[i] = store.Source{Path: s.SourcePath, Mtime: 1}
+	}
+	if err := st.Apply("claude", sessions, sources); err != nil {
+		t.Fatal(err)
+	}
+
+	app := tview.NewApplication()
+	ui := newUI(app, st, config.Defaults())
+	ui.reload()
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, '4', tcell.ModNone))
+	if ui.view != viewBranches || ui.table.GetRowCount() != 4 {
+		t.Fatalf("view %s rows %d", ui.view, ui.table.GetRowCount())
+	}
+	var lines []string
+	for row := 0; row < ui.table.GetRowCount(); row++ {
+		cell := ui.table.GetCell(row, 0)
+		if cell == nil {
+			t.Fatalf("missing row %d", row)
+		}
+		lines = append(lines, cell.Text)
+	}
+	joined := strings.Join(lines, "\n")
+	if !strings.Contains(lines[0], "BRANCH") || !strings.Contains(lines[0], "WORKTREE") {
+		t.Fatalf("header %q", lines[0])
+	}
+	if !strings.Contains(joined, repo) || !strings.Contains(joined, wt) || !strings.Contains(joined, "-") {
+		t.Fatalf("rows\n%s", joined)
+	}
+	if !strings.Contains(ui.preview.GetText(true), "worktree") {
+		t.Fatalf("preview %q", ui.preview.GetText(true))
+	}
+
+	first := repo
+	if wt < repo {
+		first = wt
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
+	if ui.view != viewSessions || !strings.Contains(ui.filter.GetText(), "branch:main") || !strings.Contains(ui.filter.GetText(), first) {
+		t.Fatalf("filter %q view %s", ui.filter.GetText(), ui.view)
 	}
 }
 

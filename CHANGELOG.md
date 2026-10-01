@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.2.7
+
+- View 4 lists each git branch together with the worktree that contains the session. Enter filters by that branch and that checkout.
+
 ## 0.2.6
 
 - Left and right pan the list and the describe view. `h` and `l` do the same. A bottom scrollbar appears when a line is wider than the window, and the horizontal wheel moves it.

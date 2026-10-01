@@ -35,7 +35,7 @@
           <tr><th>Key</th><th>Action</th></tr>
         </thead>
         <tbody>
-          <tr><td><code>1</code>–<code>5</code></td><td>Sessions, providers, directories, branches, models.</td></tr>
+          <tr><td><code>1</code>–<code>5</code></td><td>Sessions, providers, directories, branches, models. Branches lists the git branch and the worktree that contains the session.</td></tr>
           <tr><td>Enter</td><td>Resume the selected session. Quitting that session returns to air9s. On a group view, apply that group as a filter and return to sessions.</td></tr>
           <tr><td><code>j</code> / <code>k</code></td><td>Move one line when the list or the preview is focused. In the manual, scroll a line. In the filter and command fields they are typed letters.</td></tr>
           <tr><td><code>h</code> / <code>l</code></td><td>Pan left and right when the list or the preview is focused. Left and right do the same. In the filter and command fields, left and right stay in the field and these letters are typed.</td></tr>
@@ -62,7 +62,7 @@
     <p>The list is the only window until you press <code>d</code>. Describe replaces it with the preview. <code>j</code> and <code>k</code> or up and down scroll a line. <code>h</code> and <code>l</code> or left and right pan a line that is wider than the window. Page Up, Page Down, Ctrl-B, and Ctrl-F scroll a page. <code>g</code> and <code>G</code> jump to the top or the end. Esc returns to the list. The wheel scrolls the view on screen. A horizontal wheel pans. Each view has a scrollbar on the right, and a bottom scrollbar when a line is wider than the window.</p>
 
     <h2>Group views</h2>
-    <p>Providers, directories, branches, and models group the current filtered list. Enter on a row sets the matching token and returns to sessions. A row labeled <code>(none)</code> has an empty value, so Enter leaves the filter alone. Resume and delete stay on the sessions view. From a group view, delete tells you to switch back first.</p>
+    <p>Providers, directories, branches, and models group the current filtered list. The branches view has a branch column and a worktree column. The worktree is the git checkout that contains the session directory, including the main checkout and a linked worktree. Enter on a branches row filters by that branch and that checkout. Enter on another group sets the matching token and returns to sessions. A row labeled <code>(none)</code> has an empty value, so Enter leaves the filter alone, unless that branches row still has a worktree. Resume and delete stay on the sessions view. From a group view, delete tells you to switch back first.</p>
 
     <h2>Example plugins</h2>
     <p>Copy a pair from <code>examples/plugins</code> into the config <code>plugins/</code> directory. After a restart, <code>e</code> opens the directory, <code>c</code> copies a reference, <code>b</code> shows git status and recent commits, and <code>t</code> opens a terminal there. Those keys appear on the menu. See <a href="config.html">Config</a>.</p>

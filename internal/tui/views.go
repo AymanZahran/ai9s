@@ -34,10 +34,15 @@ var viewSpecs = []viewSpec{
 
 type groupRow struct {
 	key      string
+	worktree string
 	sessions int
 	messages int
 	updated  time.Time
 	sampleID string
+}
+
+func (g groupRow) selectKey() string {
+	return g.key + "\x00" + g.worktree
 }
 
 type commandHint struct {
@@ -227,7 +232,7 @@ func allHints(agents []string) []commandHint {
 		{"sessions", "show the session list"},
 		{"providers", "group the current filter by agent"},
 		{"directories", "group the current filter by directory"},
-		{"branches", "group the current filter by git branch"},
+		{"branches", "group the current filter by git branch and worktree"},
 		{"models", "group the current filter by model"},
 		{"agent:", "filter by agent, then return to sessions"},
 		{"dir:", "filter by directory"},
@@ -329,13 +334,20 @@ func (ui *ui) paintSessions() {
 func groupSessions(rows []sessionSnap, kind string) []groupRow {
 	order := []string{}
 	by := map[string]*groupRow{}
+	seen := map[string]string{}
 	for _, s := range rows {
 		key := groupKey(s, kind)
-		g, ok := by[key]
+		worktree := ""
+		id := key
+		if kind == viewBranches {
+			worktree = cachedWorktree(seen, s.cwd)
+			id = key + "\x00" + worktree
+		}
+		g, ok := by[id]
 		if !ok {
-			g = &groupRow{key: key}
-			by[key] = g
-			order = append(order, key)
+			g = &groupRow{key: key, worktree: worktree}
+			by[id] = g
+			order = append(order, id)
 		}
 		g.sessions++
 		g.messages += s.messages
@@ -345,16 +357,28 @@ func groupSessions(rows []sessionSnap, kind string) []groupRow {
 		}
 	}
 	out := make([]groupRow, 0, len(order))
-	for _, key := range order {
-		out = append(out, *by[key])
+	for _, id := range order {
+		out = append(out, *by[id])
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].sessions != out[j].sessions {
 			return out[i].sessions > out[j].sessions
 		}
-		return out[i].key < out[j].key
+		if out[i].key != out[j].key {
+			return out[i].key < out[j].key
+		}
+		return out[i].worktree < out[j].worktree
 	})
 	return out
+}
+
+func cachedWorktree(seen map[string]string, cwd string) string {
+	if wt, ok := seen[cwd]; ok {
+		return wt
+	}
+	wt := worktreeRoot(cwd)
+	seen[cwd] = wt
+	return wt
 }
 
 type sessionSnap struct {
@@ -388,7 +412,7 @@ func groupKey(s sessionSnap, kind string) string {
 func (ui *ui) paintGroups() {
 	prev := ""
 	if row, _ := ui.table.GetSelection(); row > 0 && row-1 < len(ui.groups) {
-		prev = ui.groups[row-1].key
+		prev = ui.groups[row-1].selectKey()
 	}
 	snaps := make([]sessionSnap, len(ui.rows))
 	for i, s := range ui.rows {
@@ -402,17 +426,41 @@ func (ui *ui) paintGroups() {
 		return
 	}
 	rows := make([][]cellText, 0, len(ui.groups)+1)
-	rows = append(rows, []cellText{
-		{text: ""},
-		{text: "NAME"},
-		{text: "SESSIONS", right: true},
-		{text: "MSGS", right: true},
-		{text: "LATEST"},
-	})
+	if ui.view == viewBranches {
+		rows = append(rows, []cellText{
+			{text: "BRANCH"},
+			{text: "WORKTREE"},
+			{text: "SESSIONS", right: true},
+			{text: "MSGS", right: true},
+			{text: "LATEST"},
+		})
+	} else {
+		rows = append(rows, []cellText{
+			{text: ""},
+			{text: "NAME"},
+			{text: "SESSIONS", right: true},
+			{text: "MSGS", right: true},
+			{text: "LATEST"},
+		})
+	}
 	sel := 1
 	for i, g := range ui.groups {
-		if g.key == prev {
+		if g.selectKey() == prev {
 			sel = i + 1
+		}
+		if ui.view == viewBranches {
+			wt := "-"
+			if g.worktree != "" {
+				wt = shortPath(g.worktree)
+			}
+			rows = append(rows, []cellText{
+				{text: g.key},
+				{text: wt},
+				{text: fmt.Sprintf("%d", g.sessions), right: true},
+				{text: fmt.Sprintf("%d", g.messages), right: true},
+				{text: relAge(g.updated)},
+			})
+			continue
 		}
 		mark := "  "
 		name := g.key
@@ -455,11 +503,19 @@ func (ui *ui) showGroup(row int) {
 	}
 	g := ui.groups[row-1]
 	var b strings.Builder
-	fmt.Fprintf(&b, "[::b]%s[-]\n%d sessions   %d messages   %s\n", g.key, g.sessions, g.messages, relAge(g.updated))
-	if g.key == "(none)" {
+	fmt.Fprintf(&b, "[::b]%s[-]\n", g.key)
+	if ui.view == viewBranches {
+		wt := "-"
+		if g.worktree != "" {
+			wt = shortPath(g.worktree)
+		}
+		fmt.Fprintf(&b, "worktree  %s\n", wt)
+	}
+	fmt.Fprintf(&b, "%d sessions   %d messages   %s\n", g.sessions, g.messages, relAge(g.updated))
+	if g.key == "(none)" && g.worktree == "" {
 		b.WriteString("\n[gray]This group has an empty value, so enter will not add a filter.[-]\n")
 	} else if spec, ok := viewByName(ui.view); ok && spec.token != "" {
-		fmt.Fprintf(&b, "\nenter applies [yellow]%s:%s[-] and returns to sessions\n", spec.token, g.key)
+		fmt.Fprintf(&b, "\nenter applies %s and returns to sessions\n", groupFilterText(spec, g))
 	}
 	if g.sampleID != "" {
 		if full, err := ui.store.Get(g.sampleID); err == nil {
@@ -481,14 +537,32 @@ func (ui *ui) activateGroup() {
 	if !ok || spec.token == "" {
 		return
 	}
-	if g.key == "(none)" {
+	if g.key == "(none)" && g.worktree == "" {
 		ui.alert("That group has an empty value, so there is no filter to apply.")
 		return
 	}
+	text := ui.filter.GetText()
+	if g.key != "(none)" {
+		text = setToken(text, spec.token, quoteTok(g.key))
+	}
+	if spec.name == viewBranches && g.worktree != "" {
+		text = setToken(text, "dir", quoteTok(g.worktree))
+	}
 	ui.view = viewSessions
-	ui.filter.SetText(setToken(ui.filter.GetText(), spec.token, quoteTok(g.key)))
+	ui.filter.SetText(text)
 	ui.focusSessions()
 	ui.reload()
+}
+
+func groupFilterText(spec viewSpec, g groupRow) string {
+	var parts []string
+	if g.key != "(none)" && spec.token != "" {
+		parts = append(parts, "[yellow]"+spec.token+":"+g.key+"[-]")
+	}
+	if spec.name == viewBranches && g.worktree != "" {
+		parts = append(parts, "[yellow]dir:"+shortPath(g.worktree)+"[-]")
+	}
+	return strings.Join(parts, " and ")
 }
 
 func querySort(raw string) string {

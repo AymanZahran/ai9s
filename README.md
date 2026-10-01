@@ -77,7 +77,7 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 
 | Key | Action |
 | --- | --- |
-| `1`–`5` | Sessions, providers, directories, branches, models. The active view is bold in the top hotkey bar. |
+| `1`–`5` | Sessions, providers, directories, branches, models. Branches lists each git branch with the worktree that contains the session. The active view is bold in the top hotkey bar. |
 | Enter | Resume the selected session. Quitting that session returns to air9s. On a group view, apply that group as a filter and return to sessions. |
 | `d` | Describe the selected row. The list is replaced by the preview. `j`/`k` or up/down scroll a line. `h`/`l` or left/right pan. Page Up/Down or Ctrl-B/Ctrl-F scroll a page. `g`/`G` jump to the top or the end. Esc returns to the list. Tab opens and closes the same view. |
 | Ctrl-D | Delete, after confirmation. Sessions view only. |

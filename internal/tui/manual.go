@@ -50,10 +50,10 @@ const manualText = `[::b]air9s manual[-]
   [yellow]<1>[-] sessions      the conversation list. Enter resumes. d describes. ctrl-d deletes. h/l pans.
   [yellow]<2>[-] providers     group the current filter by agent
   [yellow]<3>[-] directories   group by working directory
-  [yellow]<4>[-] branches      group by git branch
+  [yellow]<4>[-] branches      group by git branch and worktree. The worktree is the checkout that holds the session directory. Enter filters by that branch and that checkout.
   [yellow]<5>[-] models        group by model
 
-Enter on a group applies that filter and returns to sessions. A group labeled (none) has an empty value, so enter leaves the filter alone.
+Enter on a group applies that filter and returns to sessions. A group labeled (none) has an empty value, so enter leaves the filter alone, unless that branches row still has a worktree.
 
 [::b]Command line[-]
   [yellow]/[-]   edits the filter. Each word is a substring of the title, summary, directory, branch, model, agent, or excerpt.
