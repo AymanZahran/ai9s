@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/AymanZahran/air9s/internal/act"
 	"github.com/AymanZahran/air9s/internal/config"
 	"github.com/AymanZahran/air9s/internal/model"
 	"github.com/AymanZahran/air9s/internal/store"
@@ -295,6 +296,34 @@ func TestArrowsSelectWhilePromptIsOpen(t *testing.T) {
 	send(ui.command, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
 	if ui.view != viewDirectories || app.GetFocus() != ui.table {
 		t.Fatalf("arrowed command view %s focus %T", ui.view, app.GetFocus())
+	}
+}
+
+func TestEnterPlansResumeWithoutAScreen(t *testing.T) {
+	st, err := store.Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	path := filepath.Join(t.TempDir(), "one.jsonl")
+	sess := model.Session{
+		ID: "claude:one", NativeID: "one", Agent: "claude", Title: "one",
+		CWD: t.TempDir(), Updated: time.Date(2026, 3, 2, 15, 4, 5, 0, time.UTC),
+		SourcePath: path, CanDelete: true, DeleteMode: "file",
+	}
+	if err := st.Apply("claude", []model.Session{sess}, []store.Source{{Path: path, Mtime: 1}}); err != nil {
+		t.Fatal(err)
+	}
+	orig := act.LookPath
+	act.LookPath = func(string) (string, error) { return "/bin/echo", nil }
+	t.Cleanup(func() { act.LookPath = orig })
+
+	app := tview.NewApplication()
+	ui := newUI(app, st, config.Defaults())
+	ui.reload()
+	send(ui.table, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
+	if ui.pending == nil || len(ui.pending.Args) < 2 || ui.pending.Args[0] != "--resume" || ui.pending.Args[1] != "one" {
+		t.Fatalf("pending %#v", ui.pending)
 	}
 }
 

@@ -5,12 +5,23 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/AymanZahran/air9s/internal/model"
 )
+
+func TestRunEcho(t *testing.T) {
+	bin, err := exec.LookPath("echo")
+	if err != nil {
+		t.Skip(err)
+	}
+	if err := (Command{Name: bin, Args: []string{"ok"}}).Run(); err != nil {
+		t.Fatal(err)
+	}
+}
 
 func TestPlan(t *testing.T) {
 	orig := LookPath

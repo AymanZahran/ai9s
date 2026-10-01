@@ -1,7 +1,9 @@
 package tui
 
 import (
+	"errors"
 	"fmt"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -619,6 +621,20 @@ func (ui *ui) resumeSelected() {
 		ui.alert(err.Error())
 		return
 	}
+	var runErr error
+	if ui.app.Suspend(func() {
+		runErr = cmd.Run()
+	}) {
+		if runErr != nil {
+			var exitErr *exec.ExitError
+			if !errors.As(runErr, &exitErr) {
+				ui.alert(runErr.Error())
+			}
+		}
+		ui.reindex()
+		return
+	}
+	// The screen is not up, so the caller runs the command after the TUI stops.
 	ui.pending = &cmd
 	ui.app.Stop()
 }

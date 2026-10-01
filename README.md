@@ -78,7 +78,7 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 | Key | Action |
 | --- | --- |
 | `1`–`5` | Sessions, providers, directories, branches, models. The active view is bold in the top hotkey bar. |
-| Enter | Resume the selected session. On a group view, apply that group as a filter and return to sessions. |
+| Enter | Resume the selected session. Quitting that session returns to air9s. On a group view, apply that group as a filter and return to sessions. |
 | Tab | Focus the preview. `j`/`k` or the arrows scroll a line, Page Up/Down or Ctrl-B/Ctrl-F scroll a page, `g`/`G` jump to the top or the end. Tab or Esc returns to the list. The mouse wheel scrolls the preview when the pointer is over it. |
 | `d`, Ctrl-D | Delete, after confirmation. Sessions view only. |
 | `/` | Edit the filter. Up and down move the list while the field is open. Page Up and Page Down do too. Left and right stay in the field. |

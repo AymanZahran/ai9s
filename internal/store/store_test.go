@@ -70,6 +70,43 @@ func TestSearchAndPrune(t *testing.T) {
 	}
 }
 
+func TestFreshRereadsDisabledDelete(t *testing.T) {
+	st, err := Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	path := filepath.Join(t.TempDir(), "summary.json")
+	sess := model.Session{
+		ID: "grok:old", NativeID: "old", Agent: "grok", Title: "kept",
+		Updated: time.Date(2026, 3, 2, 15, 4, 5, 0, time.UTC), Messages: 1,
+		SourcePath: path, SourceMtime: 10, CanDelete: false, DeleteReason: "disabled",
+	}
+	if err := st.Apply("grok", []model.Session{sess}, storeSource(path)); err != nil {
+		t.Fatal(err)
+	}
+	if st.Fresh(path, 10) {
+		t.Fatal("a session indexed with delete disabled should be read again")
+	}
+	sess.CanDelete = true
+	sess.DeleteMode = "grok"
+	sess.DeleteReason = ""
+	if err := st.Apply("grok", []model.Session{sess}, storeSource(path)); err != nil {
+		t.Fatal(err)
+	}
+	if !st.Fresh(path, 10) {
+		t.Fatal("a session with delete enabled should stay fresh")
+	}
+	got, err := st.Get("grok:old")
+	if err != nil || !got.CanDelete || got.DeleteMode != "grok" || got.DeleteReason != "" {
+		t.Fatalf("refreshed %+v %v", got, err)
+	}
+}
+
+func storeSource(path string) []Source {
+	return []Source{{Path: path, Mtime: 10}}
+}
+
 func TestSearchSubstrings(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)

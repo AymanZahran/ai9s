@@ -51,6 +51,8 @@ func quote(s string) string {
 }
 
 // Run executes the command attached to the current terminal.
+// On a terminal, the command gets the foreground so Ctrl-C reaches the
+// agent and air9s is still there when the agent exits.
 func (c Command) Run() error {
 	cmd := exec.Command(c.Name, c.Args...)
 	cmd.Stdin = os.Stdin
@@ -59,7 +61,7 @@ func (c Command) Run() error {
 	if c.Dir != "" {
 		cmd.Dir = c.Dir
 	}
-	return cmd.Run()
+	return runAttached(cmd)
 }
 
 // Plan builds the agent's own resume command.

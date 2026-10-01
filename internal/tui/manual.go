@@ -73,7 +73,7 @@ Quote a phrase to keep it together: "auth bug".
 Esc on the list or in the filter clears the filter. Esc in the preview, the manual, or command mode does not.
 
 [::b]Other keys[-]
-  enter       resume in the session directory, or apply a group filter
+  enter       resume in the session directory. Quitting the agent returns here. On a group, apply that filter
   tab         focus the preview. j/k scroll a line, ctrl-b/f or page keys scroll a page, g/G jump
   tab, esc    return from the preview to the list
   esc         on the list or in the filter, clear the filter
@@ -93,6 +93,7 @@ The mouse wheel scrolls the preview while the pointer is over it.
 
 [::b]Resume[-]
 Resume runs that agent's own CLI in the session directory when the directory still exists.
+Quitting the agent returns to this list. The index refreshes so the session you just left is current.
   claude --resume
   codex resume
   copilot --resume

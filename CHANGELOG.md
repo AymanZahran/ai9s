@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.2.2
+
+- Quitting a resumed session returns to air9s. Ctrl-C stays with the agent.
+- Sessions indexed while delete was turned off are read again. Grok and Gemini then offer delete, like every other indexed agent.
+
 ## 0.2.1
 
 - Up and down move the list while `/` or `:` is open. Page Up and Page Down do the same. Letters, including `j` and `k`, stay in the field. Enter applies the command row the arrows landed on. An empty command still cycles the view when the arrows were not used.
