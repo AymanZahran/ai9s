@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Quitting a resumed agent returns to the list. air9s takes the terminal back, so the shell does not stop it with "suspended (tty output)".
+- The mouse wheel scrolls. Mouse tracking is buttons and drags, so a terminal that keeps the wheel when all-motion tracking is on still delivers it. Shift with the wheel pans sideways.
+- Command-Left and Command-Right move a page of columns, the same way Command-Up and Command-Down move a page of rows. Control or Alt with those arrows do the same, including while the filter or command field is open.
+- AGE stays a relative age. DATE is the local date and time. Sort still follows AGE.
+- The hotkey bar shows `j`/`k` with the up and down arrows, and `h`/`l` with the left and right arrows.
+- Icons use a character that product prints: Claude Code's ✳, Gemini CLI's ✦, Hermes ☤, OpenClaw's lobster, and Goose's goose. A font without ✦ may draw it as a plus. Agents that publish a picture and no emoji use the first two letters of the name.
+
 ## 0.2.10
 
 - Left and right pan by the same column width the table paints, so a cut-off title moves and the bottom scrollbar appears when a line is wider than the window.

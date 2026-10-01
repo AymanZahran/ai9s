@@ -19,8 +19,27 @@ func TestSetTokenAndAge(t *testing.T) {
 	if setToken("sort:oldest ship", "sort", "") != "ship" {
 		t.Fatalf("clear %+v", setToken("sort:oldest ship", "sort", ""))
 	}
-	if relAge(time.Time{}) != "-" {
-		t.Fatal(relAge(time.Time{}))
+	if relAge(time.Time{}) != "-" || absDate(time.Time{}) != "-" {
+		t.Fatal(relAge(time.Time{}), absDate(time.Time{}))
+	}
+	old := time.Now().Add(-40 * 24 * time.Hour)
+	if relAge(old) != "5w" {
+		t.Fatalf("weeks %q", relAge(old))
+	}
+	year := time.Now().Add(-400 * 24 * time.Hour)
+	if relAge(year) != "1y" {
+		t.Fatalf("years %q", relAge(year))
+	}
+	ahead := time.Now().Add(3*24*time.Hour + 6*time.Hour)
+	if relAge(ahead) != "in 3d" {
+		t.Fatalf("future %q", relAge(ahead))
+	}
+	if ageUnit(13*24*time.Hour) != "13d" || ageUnit(14*24*time.Hour) != "2w" || ageUnit(60*24*time.Hour) != "2mo" || ageUnit(365*24*time.Hour) != "1y" {
+		t.Fatalf("units %s %s %s %s", ageUnit(13*24*time.Hour), ageUnit(14*24*time.Hour), ageUnit(60*24*time.Hour), ageUnit(365*24*time.Hour))
+	}
+	stamp := time.Date(2026, 3, 2, 15, 4, 0, 0, time.Local)
+	if absDate(stamp) != "2026-03-02 15:04" {
+		t.Fatalf("date %q", absDate(stamp))
 	}
 	text := preview(model.Session{Title: "hi", Agent: "claude", ID: "claude:1", CanDelete: true})
 	if !strings.Contains(text, "hi") || strings.Contains(text, "delete:") || !strings.Contains(text, "context    -") || !strings.Contains(text, "tokens     -") || !strings.Contains(text, Icon("claude")) {
@@ -64,22 +83,22 @@ func TestUsageLines(t *testing.T) {
 
 func TestIcons(t *testing.T) {
 	want := map[string]string{
-		"claude":      "🟠",
-		"codex":       "🟢",
-		"copilot":     "🟣",
-		"grok":        "⚫",
-		"antigravity": "🔵",
-		"gemini":      "✨",
-		"cursor":      "🔷",
-		"opencode":    "🟧",
+		"claude":      "✳ ",
+		"codex":       "Cx",
+		"copilot":     "Cp",
+		"grok":        "Gk",
+		"antigravity": "Ag",
+		"gemini":      "✦ ",
+		"cursor":      "Cu",
+		"opencode":    "Oc",
 		"hermes":      "☤ ",
 		"openclaw":    "🦞",
-		"junie":       "🟨",
-		"jules":       "🌙",
+		"junie":       "Jn",
+		"jules":       "Ju",
 		"goose":       "🪿",
-		"cline":       "🟩",
-		"aider":       "🔴",
-		"kiro":        "🔶",
+		"cline":       "Cl",
+		"aider":       "Ai",
+		"kiro":        "Ki",
 	}
 	seen := map[string]bool{}
 	for _, agent := range []string{"claude", "codex", "copilot", "grok", "antigravity", "gemini", "cursor", "opencode", "hermes", "openclaw", "junie", "jules", "goose", "cline", "aider", "kiro"} {
@@ -94,5 +113,9 @@ func TestIcons(t *testing.T) {
 		if !strings.HasPrefix(Label(agent), icon+" ") || !strings.HasSuffix(Label(agent), agent) {
 			t.Fatalf("label %q", Label(agent))
 		}
+	}
+	unknown := Icon("unknown")
+	if unknown != "??" || runewidth.StringWidth(unknown) != 2 || tview.TaggedStringWidth(unknown) != 2 {
+		t.Fatalf("unknown %q", unknown)
 	}
 }

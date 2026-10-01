@@ -13,36 +13,36 @@ import (
 
 // Icon is the two-column mark beside an agent.
 //
-// Published by that project, and wide enough for a terminal to draw:
-// OpenClaw's README heading is the lobster, Goose's README uses the goose,
-// and Hermes Agent's README heading is the caduceus (padded, because that
-// glyph is one column). Gemini's prompt glyph is ✦, which draws as a plus,
-// so the cell uses the sparkle emoji instead.
+// These are characters that project prints:
+// Claude Code's idle tab mark is ✳. Gemini CLI's prompt mark is ✦.
+// Hermes Agent's README heading is ☤. Each of those is one column, so the
+// cell pads it. OpenClaw's README heading is the lobster. Goose's README
+// uses the goose.
 //
-// Claude, Codex, Copilot, Grok, Antigravity, Cursor, OpenCode, Junie, Jules,
-// Cline, Aider, and Kiro publish a picture logo and no emoji. Those cells are
-// a brand-colored mark, not a character the vendor prints.
+// Codex, Copilot, Grok, Antigravity, Cursor, OpenCode, Junie, Jules, Cline,
+// Aider, and Kiro publish a picture logo and no emoji. Those cells are the
+// first two letters of the name.
 func Icon(agent string) string {
 	icon := map[string]string{
-		"claude":      "🟠",
-		"codex":       "🟢",
-		"copilot":     "🟣",
-		"grok":        "⚫",
-		"antigravity": "🔵",
-		"gemini":      "✨",
-		"cursor":      "🔷",
-		"opencode":    "🟧",
+		"claude":      "✳ ",
+		"codex":       "Cx",
+		"copilot":     "Cp",
+		"grok":        "Gk",
+		"antigravity": "Ag",
+		"gemini":      "✦ ",
+		"cursor":      "Cu",
+		"opencode":    "Oc",
 		"hermes":      "☤ ",
 		"openclaw":    "🦞",
-		"junie":       "🟨",
-		"jules":       "🌙",
+		"junie":       "Jn",
+		"jules":       "Ju",
 		"goose":       "🪿",
-		"cline":       "🟩",
-		"aider":       "🔴",
-		"kiro":        "🔶",
+		"cline":       "Cl",
+		"aider":       "Ai",
+		"kiro":        "Ki",
 	}[agent]
 	if icon == "" {
-		icon = "⚪"
+		icon = "??"
 	}
 	if textWidth(icon) < 2 {
 		icon += " "
@@ -74,9 +74,18 @@ func relAge(t time.Time) string {
 		return "-"
 	}
 	d := time.Since(t)
-	if d < 0 {
-		return t.Local().Format("2006-01-02")
+	future := d < 0
+	if future {
+		d = -d
 	}
+	label := ageUnit(d)
+	if future && label != "now" {
+		return "in " + label
+	}
+	return label
+}
+
+func ageUnit(d time.Duration) string {
 	switch {
 	case d < time.Minute:
 		return "now"
@@ -86,9 +95,21 @@ func relAge(t time.Time) string {
 		return fmt.Sprintf("%dh", int(d.Hours()))
 	case d < 14*24*time.Hour:
 		return fmt.Sprintf("%dd", int(d.Hours()/24))
+	case d < 60*24*time.Hour:
+		return fmt.Sprintf("%dw", int(d.Hours()/(24*7)))
+	case d < 365*24*time.Hour:
+		return fmt.Sprintf("%dmo", int(d.Hours()/(24*30)))
 	default:
-		return t.Local().Format("2006-01-02")
+		return fmt.Sprintf("%dy", int(d.Hours()/(24*365)))
 	}
+}
+
+// absDate is the local clock time, kept in its own column from the relative age.
+func absDate(t time.Time) string {
+	if t.IsZero() {
+		return "-"
+	}
+	return t.Local().Format("2006-01-02 15:04")
 }
 
 func agentColor(name string) string {
@@ -167,7 +188,7 @@ func preview(s model.Session) string {
 	if s.Model != "" {
 		fmt.Fprintf(&b, "  [gray]%s[-]", s.Model)
 	}
-	fmt.Fprintf(&b, "\n%s   %d messages   %s\n", relAge(s.Updated), s.Messages, s.ID)
+	fmt.Fprintf(&b, "\n%s   %s   %d messages   %s\n", relAge(s.Updated), absDate(s.Updated), s.Messages, s.ID)
 	for _, line := range UsageLines(s.Usage) {
 		fmt.Fprintf(&b, "%s\n", line)
 	}

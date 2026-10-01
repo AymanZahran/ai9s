@@ -467,34 +467,61 @@ func (ui *ui) onMouse(ev *tcell.EventMouse, action tview.MouseAction) (*tcell.Ev
 			ui.app.SetFocus(ui.preview)
 			return nil, action
 		}
-	case tview.MouseScrollUp, tview.MouseScrollDown:
+	case tview.MouseScrollUp, tview.MouseScrollDown, tview.MouseScrollLeft, tview.MouseScrollRight:
+		if !ui.wheelHits(x, y, describe) {
+			return ev, action
+		}
+		// A horizontal wheel pans. Shift with the vertical wheel is the same
+		// gesture on terminals that do not send a separate horizontal wheel.
+		horizontal := action == tview.MouseScrollLeft || action == tview.MouseScrollRight
+		if !horizontal && ev.Modifiers()&tcell.ModShift != 0 {
+			horizontal = true
+			if action == tview.MouseScrollUp {
+				action = tview.MouseScrollLeft
+			} else {
+				action = tview.MouseScrollRight
+			}
+		}
+		if horizontal {
+			step := hScrollStep
+			if action == tview.MouseScrollLeft {
+				step = -step
+			}
+			if describe {
+				ui.scrollPreviewX(step)
+			} else {
+				ui.scrollListX(step)
+			}
+			return nil, action
+		}
 		step := wheelRows
 		if action == tview.MouseScrollUp {
-			step = -wheelRows
+			step = -step
 		}
-		if !describe && ui.table.InRect(x, y) {
-			ui.moveSelection(step)
-			return nil, action
-		}
-		if describe && ui.preview.InRect(x, y) {
+		if describe {
 			ui.scrollPreview(step)
-			return nil, action
+		} else {
+			ui.moveSelection(step)
 		}
-	case tview.MouseScrollLeft, tview.MouseScrollRight:
-		step := hScrollStep
-		if action == tview.MouseScrollLeft {
-			step = -hScrollStep
-		}
-		if !describe && ui.table.InRect(x, y) {
-			ui.scrollListX(step)
-			return nil, action
-		}
-		if describe && ui.preview.InRect(x, y) {
-			ui.scrollPreviewX(step)
-			return nil, action
-		}
+		return nil, action
 	}
 	return ev, action
+}
+
+// wheelHits is true when the pointer is over the pane that should scroll.
+// The layout counts as well: a wheel on the menu, crumbs, or footer still
+// moves the list, which is what a full-screen pager does.
+func (ui *ui) wheelHits(x, y int, describe bool) bool {
+	if describe && ui.preview != nil && ui.preview.InRect(x, y) {
+		return true
+	}
+	if !describe && ui.table != nil && ui.table.InRect(x, y) {
+		return true
+	}
+	if ui.body != nil && ui.body.InRect(x, y) {
+		return true
+	}
+	return ui.layout != nil && ui.layout.InRect(x, y)
 }
 
 func (ui *ui) beginDrag(which string, bar scrollBar, at int) {
