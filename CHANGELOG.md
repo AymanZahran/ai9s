@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Delete stays inside air9s. Confirming Ctrl-D no longer takes over the terminal, so a delete cannot leave a blank screen that ignores Ctrl-C.
 - `make release` opens a pull request for the next version, merges it after checks pass, publishes the GitHub Release, and opens a pull request that points the Homebrew formula at that tag. Write the notes under Unreleased first.
 
 ## 0.2.8

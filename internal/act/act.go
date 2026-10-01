@@ -457,13 +457,25 @@ func deleteExec(s model.Session) error {
 	if st, err := os.Stat(s.CWD); err == nil && st.IsDir() {
 		cmd.Dir = s.CWD
 	}
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	// The TUI still owns the terminal. A delete command that shares it can
+	// clear the screen and wait on stdin, and Ctrl-C then does nothing.
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		if msg := trimOutput(out); msg != "" {
+			return fmt.Errorf("%s delete: %w: %s", name, err, msg)
+		}
 		return fmt.Errorf("%s delete: %w", name, err)
 	}
 	return nil
+}
+
+func trimOutput(out []byte) string {
+	msg := strings.TrimSpace(string(out))
+	runes := []rune(msg)
+	if len(runes) > 400 {
+		msg = string(runes[:400]) + "…"
+	}
+	return msg
 }
 
 func deleteCline(s model.Session) error {
