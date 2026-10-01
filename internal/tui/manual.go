@@ -57,9 +57,11 @@ Enter on a group applies that filter and returns to sessions. A group labeled (n
 
 [::b]Command line[-]
   [yellow]/[-]   edits the filter. Each word is a substring of the title, summary, directory, branch, model, agent, or excerpt.
+         Up and down, and page up and page down, move the list while the field is open.
+         Left and right stay in the field. j and k are letters here.
   [yellow]:[-]   opens command mode. The table lists views and filter tokens.
-         Type to narrow that list. Enter applies the command.
-         Enter on an empty command cycles the view.
+         Type to narrow that list. Up and down select a row.
+         Enter on an empty command cycles the view. After up or down, Enter applies the highlighted row.
          Another : cycles the view name in the field.
          Esc closes command mode and leaves the filter as it is.
 
@@ -84,7 +86,8 @@ Esc on the list or in the filter clears the filter. Esc in the preview, the manu
   s           stats
   ?           this manual
   q           quit
-  j / k       move down / up
+  j / k       move down / up when the list is focused. In / and : they are letters
+  up / down   move the list, including while / or : is open
 
 The mouse wheel scrolls the preview while the pointer is over it.
 
@@ -123,7 +126,7 @@ Yolo adds a documented auto-approve flag:
 Codex, Gemini, OpenCode, OpenClaw, Jules, Goose, and Aider are resumed without an extra approval flag.
 
 [::b]Delete[-]
-Delete is refused when removing the file air9s can see would leave the agent inconsistent.
+Delete removes one session and refuses a path outside that agent's own root.
   claude, codex, cursor    the transcript file, inside that agent's session root
   copilot                  one session-state directory
   agy                      rewrite history.jsonl without that conversation
@@ -134,8 +137,11 @@ Delete is refused when removing the file air9s can see would leave the agent inc
   goose                    goose session remove --session-id
   cline                    drop the task from taskHistory.json, then remove its task directory
   aider                    the .aider.chat.history.md file
-  grok, gemini, jules, kiro    disabled
-Jules sessions live in Google's cloud. Kiro keeps every conversation in one database.
+  grok                     that session directory, plus its active-session and metadata entries
+  gemini                   that session-*.json chat file
+  jules                    the row in sessions.json or sessions.txt; a cloud session needs JULES_API_KEY
+  kiro                     that conversation in data.sqlite3; the shell history table stays
+The jules CLI has no delete command. A remote session is deleted through the Jules API when JULES_API_KEY is set.
 
 [::b]Where sessions are read[-]
 Each path can be moved with the environment variable after it. A missing directory is skipped.
@@ -164,4 +170,10 @@ The index is $AIR9S_CACHE_DIR/index.db, or $XDG_CACHE_HOME/air9s/index.db, or ~/
   Colors live in skins/. Plugins live in plugins.yaml and plugins/.
   air9s info prints the config path, the index path, the skin, and the plugin count.
   A plugin runs a program, not a shell. Core keys always win.
+  examples/plugins in the repo has four you can copy into plugins/:
+    e  open-editor   open the directory in $AIR9S_EDITOR, or the first editor found
+    c  copy-session  copy agent, id, title, and directory to the clipboard
+    l  git-story     git status and recent commits ($AIR9S_GIT_LOG, default 20)
+    t  new-terminal  a shell in that directory ($AIR9S_TERMINAL, or Terminal.app)
+  Enabled plugin keys are drawn on the menu. Restart air9s after adding one.
 `

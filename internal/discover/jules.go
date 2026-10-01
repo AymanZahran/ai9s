@@ -139,8 +139,7 @@ func parseJulesList(raw, source string, mt int64) []model.Session {
 			ID: model.ID("jules", id), NativeID: id, Agent: "jules",
 			Title: title, CWD: cwd, Updated: time.Unix(mt, 0),
 			SourcePath: source, SourceMtime: mt,
-			CanDelete:    false,
-			DeleteReason: "Jules sessions live in Google's cloud",
+			CanDelete: true, DeleteMode: "jules",
 		})
 	}
 	return out
@@ -176,7 +175,7 @@ func parseJulesJSON(raw, source string, mt int64) []model.Session {
 			ID: model.ID("jules", id), NativeID: id, Agent: "jules",
 			Title: clip(title, 140), CWD: firstString(row, "repo", "repository", "cwd"),
 			Updated: when, SourcePath: source, SourceMtime: mt,
-			CanDelete: false, DeleteReason: "Jules sessions live in Google's cloud",
+			CanDelete: true, DeleteMode: "jules",
 		})
 	}
 	return out

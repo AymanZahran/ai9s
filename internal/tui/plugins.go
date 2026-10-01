@@ -1,9 +1,12 @@
 package tui
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"unicode"
 
@@ -86,7 +89,7 @@ func (ui *ui) execPlugin(p config.Plugin) {
 		}
 	}
 	binName := os.Expand(p.Command, func(k string) string { return env[k] })
-	bin, err := exec.LookPath(binName)
+	bin, err := resolvePluginCommand(binName, ui.cfg.Dir)
 	if err != nil {
 		ui.alert(p.Name + ": " + err.Error())
 		return
@@ -120,6 +123,38 @@ func (ui *ui) execPlugin(p config.Plugin) {
 	if err != nil {
 		ui.alert(p.Name + ": " + err.Error())
 	}
+}
+
+// resolvePluginCommand finds a plugin program. A bare name is taken from
+// PATH, then from the config plugins directory, so a script copied next to
+// its yaml file runs without an install step. A path is used as given.
+func resolvePluginCommand(command, configDir string) (string, error) {
+	command = strings.TrimSpace(command)
+	if command == "" {
+		return "", fmt.Errorf("empty command")
+	}
+	if strings.ContainsAny(command, `/\`) {
+		return exec.LookPath(command)
+	}
+	if path, err := exec.LookPath(command); err == nil {
+		return path, nil
+	}
+	candidate := filepath.Join(configDir, "plugins", command)
+	if executableFile(candidate) {
+		return candidate, nil
+	}
+	return "", fmt.Errorf("executable %s not found", command)
+}
+
+func executableFile(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil || !info.Mode().IsRegular() {
+		return false
+	}
+	if runtime.GOOS == "windows" {
+		return true
+	}
+	return info.Mode()&0o111 != 0
 }
 
 func fillPluginEnv(env map[string]string, s model.Session) {

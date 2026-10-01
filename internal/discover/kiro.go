@@ -107,8 +107,7 @@ func kiroSession(id, raw, path string, mt int64) model.Session {
 	s := model.Session{
 		ID: model.ID("kiro", id), NativeID: id, Agent: "kiro",
 		Title: id, SourcePath: path, SourceMtime: mt,
-		CanDelete:    false,
-		DeleteReason: "Kiro keeps every conversation in one database",
+		CanDelete: true, DeleteMode: "kiro",
 	}
 	var obj map[string]any
 	if json.Unmarshal([]byte(raw), &obj) != nil {

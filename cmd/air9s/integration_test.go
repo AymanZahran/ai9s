@@ -97,7 +97,7 @@ func TestCLIIntegration(t *testing.T) {
 		t.Fatalf("show claude %+v", shown)
 	}
 	kiro := showJSON(t, env, "kiro:conv-1")
-	if kiro.CanDelete || kiro.CWD != "/work/kiro" || kiro.Title != "rename the button" {
+	if !kiro.CanDelete || kiro.DeleteMode != "kiro" || kiro.CWD != "/work/kiro" || kiro.Title != "rename the button" {
 		t.Fatalf("show kiro %+v", kiro)
 	}
 
@@ -130,12 +130,16 @@ func TestCLIIntegration(t *testing.T) {
 	if _, err := os.Stat(claudePath); err != nil {
 		t.Fatal(err)
 	}
-	grokPath := filepath.Join(root, "grok", "sessions", "s1", "summary.json")
-	blocked := run(t, env, "delete", "grok:grok-1", "--yes")
-	if blocked.code == 0 || !strings.Contains(blocked.stderr, "Grok") {
-		t.Fatalf("grok delete code %d stderr %s", blocked.code, blocked.stderr)
+	grokPath := filepath.Join(root, "grok", "sessions", "proj", "grok-1", "summary.json")
+	grokShared := filepath.Join(root, "grok", "sessions", "proj", "prompt_history.jsonl")
+	grokDel := run(t, env, "delete", "grok:grok-1", "--yes")
+	if grokDel.code != 0 {
+		t.Fatalf("grok delete code %d stderr %s", grokDel.code, grokDel.stderr)
 	}
-	if _, err := os.Stat(grokPath); err != nil {
+	if _, err := os.Stat(grokPath); !os.IsNotExist(err) {
+		t.Fatal("grok session still exists")
+	}
+	if _, err := os.Stat(grokShared); err != nil {
 		t.Fatal(err)
 	}
 
@@ -176,7 +180,7 @@ func TestCLIIntegration(t *testing.T) {
 	for _, a := range rebuilt.Agents {
 		after[a.Agent] = a.Sessions
 	}
-	if after["claude"] != 0 || after["junie"] != 0 || after["hermes"] != 1 || after["jules"] != 1 || after["kiro"] != 1 {
+	if after["claude"] != 0 || after["junie"] != 0 || after["grok"] != 0 || after["hermes"] != 1 || after["jules"] != 1 || after["kiro"] != 1 {
 		t.Fatalf("after reindex %+v", after)
 	}
 	if strings.Contains(readLog(t, logPath), "jules") {
@@ -318,8 +322,9 @@ func seedFixtures(t *testing.T, root string) {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "claude", "projects", "demo", "abc.jsonl"),
 		`{"type":"user","timestamp":"2026-03-02T15:04:05Z","cwd":"/work/demo","gitBranch":"main","message":{"content":"ship the feature"}}`+"\n")
-	writeFile(t, filepath.Join(root, "grok", "sessions", "s1", "summary.json"),
+	writeFile(t, filepath.Join(root, "grok", "sessions", "proj", "grok-1", "summary.json"),
 		`{"info":{"id":"grok-1","cwd":"/work/grok"},"session_summary":"plan the release","current_model_id":"grok-4","head_branch":"main","updated_at":"2026-03-02T15:04:05Z","reasoning_effort":"high"}`)
+	writeFile(t, filepath.Join(root, "grok", "sessions", "proj", "prompt_history.jsonl"), "{}\n")
 	writeFile(t, filepath.Join(root, "junie", "sessions", "session-1", "transcript.md"),
 		"# Session transcript\nuser: tidy the docs\n")
 	writeFile(t, filepath.Join(root, "jules", "sessions.json"),

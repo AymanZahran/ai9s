@@ -27,38 +27,40 @@ air9s:
     limit: 400
 `
 
-const stockSkinYAML = `# Stock air9s skin. Point ui.skin at "stock", or set AIR9S_SKIN=stock.
-# Color values are tcell names (dodgerblue, yellow) or #RRGGBB.
+const stockSkinYAML = `# Stock skin, the same palette as k9s stock.
+# Point ui.skin at "stock", or set AIR9S_SKIN=stock.
+# An empty ui.skin uses these colors as the built-in theme.
+# Color values are tcell names (dodgerblue, fuchsia) or #RRGGBB.
 # The name default keeps the terminal's own color.
 air9s:
   body:
-    fgColor: white
+    fgColor: dodgerblue
     bgColor: black
-    logoColor: "#2A55F4"
+    logoColor: orange
   frame:
     border:
       fgColor: dodgerblue
-      focusColor: yellow
+      focusColor: aqua
     menu:
       fgColor: white
       keyColor: dodgerblue
-      numKeyColor: aqua
+      numKeyColor: fuchsia
     crumbs:
       fgColor: black
       bgColor: steelblue
-      activeColor: white
+      activeColor: orange
     title:
       fgColor: aqua
       bgColor: black
-      highlightColor: yellow
-      counterColor: yellow
-      filterColor: orange
+      highlightColor: fuchsia
+      counterColor: papayawhip
+      filterColor: steelblue
   views:
     table:
-      fgColor: cadetblue
+      fgColor: blue
       bgColor: black
       cursorFgColor: black
-      cursorBgColor: cadetblue
+      cursorBgColor: aqua
       header:
         fgColor: white
         bgColor: black
@@ -73,5 +75,8 @@ const defaultPluginsYAML = `# Plugins run a program on the machine. They do not 
 # $FILTER is the filter line. $NAME is the row name.
 # scopes: sessions, providers, directories, branches, models, or all.
 # background: true starts the program without leaving the UI, and discards its output.
+# Examples live in the air9s repo under examples/plugins. Copy a script and its
+# yaml file into this directory to turn one on. A bare command name is looked
+# up in PATH, then next to the yaml file.
 plugins: {}
 `

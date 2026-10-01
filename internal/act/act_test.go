@@ -1,6 +1,9 @@
 package act
 
 import (
+	"database/sql"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -198,6 +201,256 @@ func TestDeleteJunieClineAider(t *testing.T) {
 	}
 	if err := Delete(model.Session{Agent: "aider", NativeID: notes, CanDelete: true, DeleteMode: "aider", SourcePath: notes}); err == nil {
 		t.Fatal("deleted a file that is not an Aider history")
+	}
+}
+
+func TestDeleteGrokGeminiJulesKiro(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("GROK_HOME", filepath.Join(root, "grok"))
+	t.Setenv("GEMINI_HOME", filepath.Join(root, "gemini"))
+	t.Setenv("JULES_HOME", filepath.Join(root, "jules"))
+	t.Setenv("JULES_API_KEY", "")
+	t.Setenv("KIRO_CLI_DB", filepath.Join(root, "kiro.db"))
+
+	drop := filepath.Join(root, "grok", "sessions", "proj", "grok-1")
+	keep := filepath.Join(root, "grok", "sessions", "proj", "keep-1")
+	if err := os.MkdirAll(drop, 0o755); err != nil || os.MkdirAll(keep, 0o755) != nil {
+		t.Fatal(err)
+	}
+	summary := filepath.Join(drop, "summary.json")
+	if err := os.WriteFile(summary, []byte(`{"info":{"id":"grok-1"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(drop, "chat_history.jsonl"), []byte("{}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(keep, "summary.json"), []byte(`{"info":{"id":"keep-1"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	shared := filepath.Join(root, "grok", "sessions", "proj", "prompt_history.jsonl")
+	if err := os.WriteFile(shared, []byte("{}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "grok", "client-state"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	active := filepath.Join(root, "grok", "active_sessions.json")
+	if err := os.WriteFile(active, []byte(`[{"session_id":"grok-1","pid":1},{"session_id":"keep-1","pid":2}]`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	meta := filepath.Join(root, "grok", "client-state", "session-meta.json")
+	if err := os.WriteFile(meta, []byte("{\n  \"grok-1\": {\"provider\": \"xai\"},\n  \"keep-1\": {\"provider\": \"xai\"}\n}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Delete(model.Session{Agent: "grok", NativeID: "grok-1", CanDelete: true, DeleteMode: "grok", SourcePath: summary}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(drop); !os.IsNotExist(err) {
+		t.Fatal("grok session directory still exists")
+	}
+	if _, err := os.Stat(filepath.Join(keep, "summary.json")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(shared); err != nil {
+		t.Fatal(err)
+	}
+	activeBody, err := os.ReadFile(active)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(activeBody), "grok-1") || !strings.Contains(string(activeBody), "keep-1") {
+		t.Fatalf("active sessions %s", activeBody)
+	}
+	metaBody, err := os.ReadFile(meta)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(metaBody), "grok-1") || !strings.Contains(string(metaBody), "keep-1") {
+		t.Fatalf("session meta %s", metaBody)
+	}
+	outside := filepath.Join(t.TempDir(), "grok-1")
+	if err := os.MkdirAll(outside, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	outSummary := filepath.Join(outside, "summary.json")
+	if err := os.WriteFile(outSummary, []byte(`{"info":{"id":"grok-1"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Delete(model.Session{Agent: "grok", NativeID: "grok-1", CanDelete: true, DeleteMode: "grok", SourcePath: outSummary}); err == nil {
+		t.Fatal("deleted a grok session outside GROK_HOME")
+	}
+	if err := os.Symlink(outside, filepath.Join(root, "grok", "sessions", "proj", "grok-1")); err != nil {
+		t.Fatal(err)
+	}
+	if err := Delete(model.Session{Agent: "grok", NativeID: "grok-1", CanDelete: true, DeleteMode: "grok", SourcePath: filepath.Join(root, "grok", "sessions", "proj", "grok-1", "summary.json")}); err == nil {
+		t.Fatal("deleted a grok session through a symlink")
+	}
+	if _, err := os.Stat(outSummary); err != nil {
+		t.Fatal(err)
+	}
+
+	gem := filepath.Join(root, "gemini", "tmp", "demo", "chats")
+	if err := os.MkdirAll(gem, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	chat := filepath.Join(gem, "session-drop.json")
+	other := filepath.Join(gem, "session-keep.json")
+	projects := filepath.Join(root, "gemini", "projects.json")
+	if err := os.WriteFile(chat, []byte(`{"sessionId":"drop","messages":[]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(other, []byte(`{"sessionId":"keep","messages":[]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(projects, []byte(`{"projects":{"/work/demo":"demo"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Delete(model.Session{Agent: "gemini", NativeID: "drop", CanDelete: true, DeleteMode: "gemini", SourcePath: chat}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(chat); !os.IsNotExist(err) {
+		t.Fatal("gemini chat still exists")
+	}
+	if _, err := os.Stat(other); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(projects); err != nil {
+		t.Fatal(err)
+	}
+	if err := Delete(model.Session{Agent: "gemini", NativeID: "keep", CanDelete: true, DeleteMode: "gemini", SourcePath: other}); err != nil {
+		t.Fatal(err)
+	}
+	mismatch := filepath.Join(gem, "session-nope.json")
+	if err := os.WriteFile(mismatch, []byte(`{"sessionId":"other"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Delete(model.Session{Agent: "gemini", NativeID: "nope", CanDelete: true, DeleteMode: "gemini", SourcePath: mismatch}); err == nil {
+		t.Fatal("deleted a gemini chat whose session id did not match")
+	}
+	linked := filepath.Join(gem, "session-link.json")
+	if err := os.Symlink(projects, linked); err != nil {
+		t.Fatal(err)
+	}
+	if err := Delete(model.Session{Agent: "gemini", NativeID: "link", CanDelete: true, DeleteMode: "gemini", SourcePath: linked}); err == nil {
+		t.Fatal("deleted a symlinked gemini chat")
+	}
+	if _, err := os.Stat(projects); err != nil {
+		t.Fatal(err)
+	}
+
+	julesHome := filepath.Join(root, "jules")
+	if err := os.MkdirAll(julesHome, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	list := filepath.Join(julesHome, "sessions.json")
+	if err := os.WriteFile(list, []byte(`[{"id":"12345","title":"drop"},{"id":"99999","title":"stay"}]`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Delete(model.Session{Agent: "jules", NativeID: "12345", CanDelete: true, DeleteMode: "jules", SourcePath: list}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(list)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(got), "12345") || !strings.Contains(string(got), "99999") {
+		t.Fatalf("jules list %s", got)
+	}
+	text := filepath.Join(julesHome, "sessions.txt")
+	if err := os.WriteFile(text, []byte("ID TITLE\n4242 drop\n7777 stay\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Delete(model.Session{Agent: "jules", NativeID: "4242", CanDelete: true, DeleteMode: "jules", SourcePath: text}); err != nil {
+		t.Fatal(err)
+	}
+	got, err = os.ReadFile(text)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(got), "4242") || !strings.Contains(string(got), "7777") || !strings.Contains(string(got), "ID") {
+		t.Fatalf("jules text %s", got)
+	}
+	if err := Delete(model.Session{Agent: "jules", NativeID: "12345", CanDelete: true, DeleteMode: "jules", SourcePath: "jules:remote"}); err == nil {
+		t.Fatal("remote jules delete ran without an API key")
+	}
+	var hits int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		if r.Method != http.MethodDelete || r.URL.Path != "/v1alpha/sessions/12345" || r.Header.Get("X-Goog-Api-Key") != "test-key" {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	t.Cleanup(srv.Close)
+	prev := julesAPIBase
+	julesAPIBase = srv.URL + "/v1alpha"
+	t.Cleanup(func() { julesAPIBase = prev })
+	t.Setenv("JULES_API_KEY", "test-key")
+	if err := Delete(model.Session{Agent: "jules", NativeID: "12345", CanDelete: true, DeleteMode: "jules", SourcePath: "jules:remote"}); err != nil {
+		t.Fatal(err)
+	}
+	if hits != 1 {
+		t.Fatalf("jules api hits %d", hits)
+	}
+
+	dbPath := filepath.Join(root, "kiro.db")
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stmts := []string{
+		`CREATE TABLE conversations_v2 (conversation_id TEXT, key TEXT, value TEXT, updated_at INTEGER, created_at INTEGER)`,
+		`CREATE TABLE conversations (key TEXT, value TEXT)`,
+		`CREATE TABLE history (command TEXT)`,
+		`INSERT INTO conversations_v2 VALUES ('conv-1','k1','{"conversation_id":"conv-1"}',1,1)`,
+		`INSERT INTO conversations_v2 VALUES ('conv-2','k2','{"note":"conv-1 stays"}',1,1)`,
+		`INSERT INTO conversations VALUES ('k1','{"conversation_id":"conv-1"}')`,
+		`INSERT INTO conversations VALUES ('k2','{"conversation_id":"conv-2"}')`,
+		`INSERT INTO history VALUES ('echo kept')`,
+	}
+	for _, stmt := range stmts {
+		if _, err := db.Exec(stmt); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := Delete(model.Session{Agent: "kiro", NativeID: "conv-1", CanDelete: true, DeleteMode: "kiro", SourcePath: dbPath}); err != nil {
+		t.Fatal(err)
+	}
+	db, err = sql.Open("sqlite", dbPath+"?mode=ro")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	var n int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM conversations_v2 WHERE conversation_id = 'conv-1'`).Scan(&n); err != nil || n != 0 {
+		t.Fatalf("conv-1 rows %d %v", n, err)
+	}
+	if err := db.QueryRow(`SELECT COUNT(*) FROM conversations_v2 WHERE conversation_id = 'conv-2'`).Scan(&n); err != nil || n != 1 {
+		t.Fatalf("conv-2 rows %d %v", n, err)
+	}
+	if err := db.QueryRow(`SELECT COUNT(*) FROM conversations WHERE key = 'k1'`).Scan(&n); err != nil || n != 0 {
+		t.Fatalf("v1 k1 rows %d %v", n, err)
+	}
+	if err := db.QueryRow(`SELECT COUNT(*) FROM conversations WHERE key = 'k2'`).Scan(&n); err != nil || n != 1 {
+		t.Fatalf("v1 k2 rows %d %v", n, err)
+	}
+	var cmd string
+	if err := db.QueryRow(`SELECT command FROM history`).Scan(&cmd); err != nil || cmd != "echo kept" {
+		t.Fatalf("history %q %v", cmd, err)
+	}
+	if err := Delete(model.Session{Agent: "kiro", NativeID: "missing", CanDelete: true, DeleteMode: "kiro", SourcePath: dbPath}); err == nil {
+		t.Fatal("deleted a kiro conversation that was not in the database")
+	}
+	otherDB := filepath.Join(t.TempDir(), "data.sqlite3")
+	if err := os.WriteFile(otherDB, []byte("nope"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Delete(model.Session{Agent: "kiro", NativeID: "conv-2", CanDelete: true, DeleteMode: "kiro", SourcePath: otherDB}); err == nil {
+		t.Fatal("deleted from a database that is not the Kiro database")
 	}
 }
 

@@ -186,6 +186,118 @@ func TestEscapeClearsFilter(t *testing.T) {
 	}
 }
 
+func TestArrowsSelectWhilePromptIsOpen(t *testing.T) {
+	st, err := store.Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	dir := t.TempDir()
+	sessions := []model.Session{
+		{
+			ID: "claude:newest", NativeID: "newest", Agent: "claude", Title: "newest",
+			Updated: time.Date(2026, 3, 3, 15, 4, 5, 0, time.UTC), Messages: 3,
+			SourcePath: filepath.Join(dir, "newest.jsonl"), CanDelete: true, DeleteMode: "file",
+		},
+		{
+			ID: "claude:middle", NativeID: "middle", Agent: "claude", Title: "middle",
+			Updated: time.Date(2026, 3, 2, 15, 4, 5, 0, time.UTC), Messages: 2,
+			SourcePath: filepath.Join(dir, "middle.jsonl"), CanDelete: true, DeleteMode: "file",
+		},
+		{
+			ID: "claude:oldest", NativeID: "oldest", Agent: "claude", Title: "oldest",
+			Updated: time.Date(2026, 3, 1, 15, 4, 5, 0, time.UTC), Messages: 1,
+			SourcePath: filepath.Join(dir, "oldest.jsonl"), CanDelete: true, DeleteMode: "file",
+		},
+	}
+	sources := make([]store.Source, len(sessions))
+	for i, s := range sessions {
+		sources[i] = store.Source{Path: s.SourcePath, Mtime: 1}
+	}
+	if err := st.Apply("claude", sessions, sources); err != nil {
+		t.Fatal(err)
+	}
+
+	app := tview.NewApplication()
+	ui := newUI(app, st, config.Defaults())
+	ui.reload()
+	app.SetRoot(ui.layout, false)
+	screen := tcell.NewSimulationScreen("UTF-8")
+	if err := screen.Init(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(screen.Fini)
+	screen.SetSize(100, 30)
+	ui.table.SetRect(0, 0, 80, 24)
+	ui.table.Draw(screen)
+
+	row, _ := ui.table.GetSelection()
+	if row != 1 || !strings.Contains(ui.preview.GetText(true), "newest") {
+		t.Fatalf("start row %d preview %q", row, ui.preview.GetText(true))
+	}
+
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, '/', tcell.ModNone))
+	if app.GetFocus() != ui.filter {
+		t.Fatal("slash did not focus the filter")
+	}
+	send(ui.filter, tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone))
+	row, _ = ui.table.GetSelection()
+	if row != 2 || !strings.Contains(ui.preview.GetText(true), "middle") {
+		t.Fatalf("down row %d preview %q", row, ui.preview.GetText(true))
+	}
+	if app.GetFocus() != ui.filter || ui.filter.GetText() != "" {
+		t.Fatalf("down left filter %q focus %T", ui.filter.GetText(), app.GetFocus())
+	}
+	send(ui.filter, tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone))
+	send(ui.filter, tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone))
+	row, _ = ui.table.GetSelection()
+	if row != 2 {
+		t.Fatalf("up returned to row %d", row)
+	}
+	send(ui.filter, tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone))
+	row, _ = ui.table.GetSelection()
+	if row != 2 || ui.filter.GetText() != "" || app.GetFocus() != ui.filter {
+		t.Fatalf("left row %d text %q focus %T", row, ui.filter.GetText(), app.GetFocus())
+	}
+	send(ui.filter, tcell.NewEventKey(tcell.KeyPgDn, 0, tcell.ModNone))
+	row, _ = ui.table.GetSelection()
+	if row != 3 || !strings.Contains(ui.preview.GetText(true), "oldest") || ui.filter.GetText() != "" || app.GetFocus() != ui.filter {
+		t.Fatalf("page row %d text %q focus %T preview %q", row, ui.filter.GetText(), app.GetFocus(), ui.preview.GetText(true))
+	}
+	send(ui.filter, tcell.NewEventKey(tcell.KeyRune, 'k', tcell.ModNone))
+	if ui.filter.GetText() != "k" || app.GetFocus() != ui.filter {
+		t.Fatalf("k typed %q focus %T", ui.filter.GetText(), app.GetFocus())
+	}
+	send(ui.filter, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
+	if ui.filter.GetText() != "" || app.GetFocus() != ui.table {
+		t.Fatalf("filter esc text %q focus %T", ui.filter.GetText(), app.GetFocus())
+	}
+
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, ':', tcell.ModNone))
+	send(ui.command, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
+	if ui.view != viewProviders {
+		t.Fatalf("empty command cycled to %s", ui.view)
+	}
+
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, ':', tcell.ModNone))
+	if app.GetFocus() != ui.command {
+		t.Fatal("colon did not focus the command field")
+	}
+	send(ui.command, tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone))
+	send(ui.command, tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone))
+	row, _ = ui.table.GetSelection()
+	if row != 3 || ui.command.GetText() != "" || app.GetFocus() != ui.command {
+		t.Fatalf("command down row %d text %q focus %T", row, ui.command.GetText(), app.GetFocus())
+	}
+	if !strings.Contains(ui.preview.GetText(true), "directories") {
+		t.Fatalf("command preview %q", ui.preview.GetText(true))
+	}
+	send(ui.command, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
+	if ui.view != viewDirectories || app.GetFocus() != ui.table {
+		t.Fatalf("arrowed command view %s focus %T", ui.view, app.GetFocus())
+	}
+}
+
 func send(p tview.Primitive, ev *tcell.EventKey) {
 	if h := p.InputHandler(); h != nil {
 		h(ev, func(tview.Primitive) {})

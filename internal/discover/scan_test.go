@@ -71,7 +71,7 @@ func TestScanAgyAndGemini(t *testing.T) {
 				t.Fatal(b.Err)
 			}
 			gemS = len(b.Sessions)
-			if gemS != 1 || b.Sessions[0].CWD != "/work/demo" || b.Sessions[0].CanDelete || b.Sessions[0].Title != "ship it" {
+			if gemS != 1 || b.Sessions[0].CWD != "/work/demo" || !b.Sessions[0].CanDelete || b.Sessions[0].DeleteMode != "gemini" || b.Sessions[0].Title != "ship it" {
 				t.Fatalf("gemini %+v", b.Sessions)
 			}
 		}

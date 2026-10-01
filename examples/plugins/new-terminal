@@ -1,0 +1,85 @@
+#!/bin/sh
+# Open a terminal in the session directory.
+# AIR9S_TERMINAL is one program name. When it is empty, macOS uses Terminal.app
+# and other systems use the first installed terminal they recognize.
+set -eu
+dir=${1:-}
+if [ -z "$dir" ] || [ ! -d "$dir" ]; then
+  echo "new-terminal: no session directory" >&2
+  exit 1
+fi
+
+apple_terminal() {
+  app=$1
+  osascript - "$dir" "$app" <<'EOF'
+on run argv
+  set target to item 1 of argv
+  set appName to item 2 of argv
+  if appName is "Terminal" then
+    tell application "Terminal"
+      activate
+      do script "cd " & quoted form of target
+    end tell
+  else
+    tell application "iTerm"
+      activate
+      create window with default profile
+      tell current session of current window
+        write text "cd " & quoted form of target
+      end tell
+    end tell
+  end if
+end run
+EOF
+}
+
+launch_known() {
+  name=$(basename "$1")
+  case $name in
+    gnome-terminal|xfce4-terminal)
+      nohup "$1" --working-directory "$dir" >/dev/null 2>&1 &
+      ;;
+    konsole)
+      nohup "$1" --workdir "$dir" >/dev/null 2>&1 &
+      ;;
+    wezterm)
+      nohup "$1" start --cwd "$dir" >/dev/null 2>&1 &
+      ;;
+    kitty)
+      nohup "$1" --directory "$dir" >/dev/null 2>&1 &
+      ;;
+    alacritty)
+      nohup "$1" --working-directory "$dir" >/dev/null 2>&1 &
+      ;;
+    Terminal)
+      apple_terminal Terminal
+      ;;
+    iTerm|iTerm2)
+      apple_terminal iTerm
+      ;;
+    *)
+      (cd "$dir" && nohup "$1" >/dev/null 2>&1 &)
+      ;;
+  esac
+}
+
+if [ -n "${AIR9S_TERMINAL:-}" ]; then
+  launch_known "$AIR9S_TERMINAL"
+  exit 0
+fi
+
+case $(uname -s) in
+  Darwin)
+    apple_terminal Terminal
+    exit 0
+    ;;
+esac
+
+for candidate in gnome-terminal kitty alacritty wezterm konsole xfce4-terminal x-terminal-emulator; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    launch_known "$candidate"
+    exit 0
+  fi
+done
+echo "new-terminal: set AIR9S_TERMINAL to a program name" >&2
+exit 1

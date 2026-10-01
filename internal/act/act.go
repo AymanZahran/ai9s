@@ -2,17 +2,23 @@ package act
 
 import (
 	"bufio"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/AymanZahran/air9s/internal/discover"
 	"github.com/AymanZahran/air9s/internal/model"
+	_ "modernc.org/sqlite"
 )
 
 // LookPath resolves a resume or delete binary. Tests replace it.
@@ -207,10 +213,21 @@ func Delete(s model.Session) error {
 		return deleteCline(s)
 	case "aider":
 		return deleteAider(s)
+	case "grok":
+		return deleteGrok(s)
+	case "gemini":
+		return deleteGemini(s)
+	case "jules":
+		return deleteJules(s)
+	case "kiro":
+		return deleteKiro(s)
 	default:
 		return fmt.Errorf("deletion is disabled for %s", s.Agent)
 	}
 }
+
+// julesAPIBase is the Jules sessions collection. Tests point it at a local server.
+var julesAPIBase = "https://jules.googleapis.com/v1alpha"
 
 func hermesProfile(native string) (profile, id string, ok bool) {
 	rest, found := strings.CutPrefix(native, "p:")
@@ -508,6 +525,511 @@ func rewriteClineHistory(path, id string) error {
 	}
 	out = append(out, '\n')
 	return writeAtom(path, out)
+}
+
+func deleteGrok(s model.Session) error {
+	dir, err := grokSessionDir(s)
+	if err != nil {
+		return err
+	}
+	if err := scrubGrokIndexes(s.NativeID); err != nil {
+		return err
+	}
+	return os.RemoveAll(dir)
+}
+
+func grokSessionDir(s model.Session) (string, error) {
+	if s.Agent != "grok" {
+		return "", errors.New("grok delete is only used for Grok")
+	}
+	if err := plainID("session id", s.NativeID); err != nil {
+		return "", err
+	}
+	summary := filepath.Clean(s.SourcePath)
+	if filepath.Base(summary) != "summary.json" {
+		return "", errors.New("refusing to delete a file that is not a Grok session summary")
+	}
+	dir := filepath.Dir(summary)
+	if filepath.Base(dir) != s.NativeID {
+		return "", errors.New("refusing to delete a directory that is not that Grok session")
+	}
+	dir, err := cleanWithin(dir, discover.GrokSessions())
+	if err != nil {
+		return "", err
+	}
+	st, err := os.Lstat(dir)
+	if err != nil {
+		return "", err
+	}
+	if st.Mode()&os.ModeSymlink != 0 || !st.IsDir() {
+		return "", errors.New("refusing to delete a non-directory")
+	}
+	sum := filepath.Join(dir, "summary.json")
+	info, err := os.Lstat(sum)
+	if err != nil || info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() {
+		return "", errors.New("refusing to delete a directory that is not a Grok session")
+	}
+	return dir, nil
+}
+
+func scrubGrokIndexes(id string) error {
+	home := discover.GrokHome()
+	active := filepath.Join(home, "active_sessions.json")
+	if err := rewriteIfPresent(active, home, func(body []byte) ([]byte, bool, error) {
+		var rows []json.RawMessage
+		if err := json.Unmarshal(body, &rows); err != nil {
+			return nil, false, errors.New("active session list is not a JSON array")
+		}
+		kept := make([]json.RawMessage, 0, len(rows))
+		removed := 0
+		for _, raw := range rows {
+			var row struct {
+				SessionID string `json:"session_id"`
+			}
+			if json.Unmarshal(raw, &row) == nil && row.SessionID == id {
+				removed++
+				continue
+			}
+			kept = append(kept, raw)
+		}
+		if removed == 0 {
+			return nil, false, nil
+		}
+		out, err := json.MarshalIndent(kept, "", "  ")
+		if err != nil {
+			return nil, false, err
+		}
+		return append(out, '\n'), true, nil
+	}); err != nil {
+		return err
+	}
+	meta := filepath.Join(home, "client-state", "session-meta.json")
+	return rewriteIfPresent(meta, home, func(body []byte) ([]byte, bool, error) {
+		var doc map[string]json.RawMessage
+		if err := json.Unmarshal(body, &doc); err != nil {
+			return nil, false, errors.New("session metadata is not a JSON object")
+		}
+		if _, ok := doc[id]; !ok {
+			return nil, false, nil
+		}
+		delete(doc, id)
+		out, err := json.MarshalIndent(doc, "", "  ")
+		if err != nil {
+			return nil, false, err
+		}
+		return append(out, '\n'), true, nil
+	})
+}
+
+func rewriteIfPresent(path, root string, edit func([]byte) ([]byte, bool, error)) error {
+	if _, err := os.Lstat(path); err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	if _, err := cleanWithin(path, root); err != nil {
+		return err
+	}
+	if _, err := sameRegularFile(path, path); err != nil {
+		return err
+	}
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	out, changed, err := edit(body)
+	if err != nil || !changed {
+		return err
+	}
+	return writeAtom(path, out)
+}
+
+func deleteGemini(s model.Session) error {
+	if s.Agent != "gemini" {
+		return errors.New("gemini delete is only used for Gemini")
+	}
+	if err := plainID("session id", s.NativeID); err != nil {
+		return err
+	}
+	root := filepath.Join(discover.GeminiRoot(), "tmp")
+	path, err := cleanWithin(s.SourcePath, root)
+	if err != nil {
+		return err
+	}
+	base := filepath.Base(path)
+	if filepath.Base(filepath.Dir(path)) != "chats" || !strings.HasPrefix(base, "session-") || !strings.HasSuffix(base, ".json") {
+		return errors.New("refusing to delete a file that is not a Gemini chat")
+	}
+	info, err := os.Lstat(path)
+	if err != nil {
+		return err
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() {
+		return errors.New("refusing to delete a non-regular file")
+	}
+	got, err := geminiFileID(path)
+	if err != nil {
+		return err
+	}
+	stem := strings.TrimSuffix(strings.TrimPrefix(base, "session-"), ".json")
+	if got != "" && got != s.NativeID {
+		return errors.New("refusing to delete a Gemini chat for a different session")
+	}
+	if got == "" && stem != s.NativeID {
+		return errors.New("refusing to delete a Gemini chat for a different session")
+	}
+	return os.Remove(path)
+}
+
+func geminiFileID(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	dec := json.NewDecoder(f)
+	tok, err := dec.Token()
+	if err != nil || tok != json.Delim('{') {
+		return "", errors.New("gemini chat is not a JSON object")
+	}
+	for dec.More() {
+		key, err := dec.Token()
+		if err != nil {
+			return "", err
+		}
+		name, _ := key.(string)
+		if name == "sessionId" {
+			var id string
+			if err := dec.Decode(&id); err != nil {
+				return "", err
+			}
+			return strings.TrimSpace(id), nil
+		}
+		var skip json.RawMessage
+		if err := dec.Decode(&skip); err != nil {
+			return "", err
+		}
+	}
+	return "", nil
+}
+
+func deleteJules(s model.Session) error {
+	if s.Agent != "jules" {
+		return errors.New("jules delete is only used for Jules")
+	}
+	if err := plainID("session id", s.NativeID); err != nil {
+		return err
+	}
+	if s.SourcePath == "jules:remote" {
+		return deleteJulesRemote(s.NativeID, strings.TrimSpace(os.Getenv("JULES_API_KEY")))
+	}
+	return rewriteJulesLocal(s)
+}
+
+func deleteJulesRemote(id, apiKey string) error {
+	if apiKey == "" {
+		return errors.New("jules has no delete command; set JULES_API_KEY to delete the cloud session")
+	}
+	endpoint := strings.TrimRight(julesAPIBase, "/") + "/sessions/" + url.PathEscape(id)
+	req, err := http.NewRequest(http.MethodDelete, endpoint, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("X-Goog-Api-Key", apiKey)
+	client := &http.Client{
+		Timeout: 20 * time.Second,
+		CheckRedirect: func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("jules delete: %w", err)
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("jules delete returned %s", resp.Status)
+	}
+	return nil
+}
+
+func rewriteJulesLocal(s model.Session) error {
+	home := discover.JulesHome()
+	path := filepath.Clean(s.SourcePath)
+	base := filepath.Base(path)
+	if (base != "sessions.json" && base != "sessions.txt") || filepath.Clean(filepath.Dir(path)) != filepath.Clean(home) {
+		return errors.New("refusing to rewrite a file that is not the Jules session list")
+	}
+	resolved, err := cleanWithin(path, home)
+	if err != nil {
+		return err
+	}
+	info, err := os.Lstat(resolved)
+	if err != nil {
+		return err
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() {
+		return errors.New("refusing to rewrite a file that is not a regular file")
+	}
+	body, err := os.ReadFile(resolved)
+	if err != nil {
+		return err
+	}
+	trimmed := strings.TrimSpace(string(body))
+	if strings.HasPrefix(trimmed, "[") || strings.HasPrefix(trimmed, "{") {
+		out, err := dropJulesJSON(body, s.NativeID)
+		if err != nil {
+			return err
+		}
+		return writeAtom(resolved, out)
+	}
+	out, err := dropJulesText(body, s.NativeID)
+	if err != nil {
+		return err
+	}
+	return writeAtom(resolved, out)
+}
+
+func dropJulesJSON(body []byte, id string) ([]byte, error) {
+	var rows []json.RawMessage
+	if err := json.Unmarshal(body, &rows); err == nil {
+		kept, removed, err := filterJulesRows(rows, id)
+		if err != nil {
+			return nil, err
+		}
+		if removed == 0 {
+			return nil, errors.New("session id was not in the Jules session list")
+		}
+		out, err := json.MarshalIndent(kept, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+		return append(out, '\n'), nil
+	}
+	var doc map[string]json.RawMessage
+	if err := json.Unmarshal(body, &doc); err != nil {
+		return nil, errors.New("jules session list is not JSON")
+	}
+	raw, ok := doc["sessions"]
+	if !ok {
+		return nil, errors.New("jules session list has no sessions")
+	}
+	if err := json.Unmarshal(raw, &rows); err != nil {
+		return nil, err
+	}
+	kept, removed, err := filterJulesRows(rows, id)
+	if err != nil {
+		return nil, err
+	}
+	if removed == 0 {
+		return nil, errors.New("session id was not in the Jules session list")
+	}
+	encoded, err := json.Marshal(kept)
+	if err != nil {
+		return nil, err
+	}
+	doc["sessions"] = encoded
+	out, err := json.MarshalIndent(doc, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	return append(out, '\n'), nil
+}
+
+func filterJulesRows(rows []json.RawMessage, id string) ([]json.RawMessage, int, error) {
+	kept := make([]json.RawMessage, 0, len(rows))
+	removed := 0
+	for _, raw := range rows {
+		var row map[string]any
+		if json.Unmarshal(raw, &row) == nil && julesRowID(row) == id {
+			removed++
+			continue
+		}
+		kept = append(kept, raw)
+	}
+	return kept, removed, nil
+}
+
+func julesRowID(row map[string]any) string {
+	for _, key := range []string{"id", "session", "sessionId", "name"} {
+		s, ok := row[key].(string)
+		if !ok {
+			continue
+		}
+		s = strings.TrimSpace(s)
+		s = strings.TrimPrefix(s, "sessions/")
+		if s != "" {
+			return s
+		}
+	}
+	return ""
+}
+
+func dropJulesText(body []byte, id string) ([]byte, error) {
+	text := string(body)
+	nl := strings.HasSuffix(text, "\n")
+	lines := strings.Split(strings.TrimRight(text, "\n"), "\n")
+	kept := make([]string, 0, len(lines))
+	removed := 0
+	for _, line := range lines {
+		fields := strings.Fields(strings.TrimSpace(line))
+		if len(fields) > 0 && fields[0] == id {
+			removed++
+			continue
+		}
+		kept = append(kept, line)
+	}
+	if removed == 0 {
+		return nil, errors.New("session id was not in the Jules session list")
+	}
+	out := strings.Join(kept, "\n")
+	if nl || out != "" {
+		out += "\n"
+	}
+	return []byte(out), nil
+}
+
+func deleteKiro(s model.Session) error {
+	if s.Agent != "kiro" {
+		return errors.New("kiro delete is only used for Kiro")
+	}
+	if err := plainID("session id", s.NativeID); err != nil {
+		return err
+	}
+	want := discover.KiroDB()
+	path, err := sameRegularFile(s.SourcePath, want)
+	if err != nil {
+		return err
+	}
+	db, err := openWriteDB(path)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	removed, err := deleteKiroRows(tx, s.NativeID)
+	if err != nil {
+		return err
+	}
+	if removed == 0 {
+		return errors.New("conversation id was not in the Kiro database")
+	}
+	return tx.Commit()
+}
+
+func deleteKiroRows(tx *sql.Tx, id string) (int, error) {
+	removed := 0
+	hasV2, err := tableExists(tx, "conversations_v2")
+	if err != nil {
+		return 0, err
+	}
+	keys := map[string]struct{}{}
+	matchedV2 := false
+	if hasV2 {
+		rows, err := tx.Query(`
+			SELECT coalesce(key,''), coalesce(conversation_id,'')
+			FROM conversations_v2
+			WHERE conversation_id = ?
+			   OR (coalesce(conversation_id,'') = '' AND key = ?)
+			   OR json_extract(value, '$.conversation_id') = ?`, id, id, id)
+		if err != nil {
+			return 0, err
+		}
+		type pair struct{ key, conv string }
+		var pairs []pair
+		for rows.Next() {
+			var key, conv string
+			if err := rows.Scan(&key, &conv); err != nil {
+				rows.Close()
+				return 0, err
+			}
+			pairs = append(pairs, pair{key, conv})
+			if key != "" {
+				keys[key] = struct{}{}
+			}
+		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		rows.Close()
+		matchedV2 = len(pairs) > 0
+		for _, p := range pairs {
+			res, err := tx.Exec(`DELETE FROM conversations_v2 WHERE coalesce(key,'') = ? AND coalesce(conversation_id,'') = ?`, p.key, p.conv)
+			if err != nil {
+				return 0, err
+			}
+			n, err := res.RowsAffected()
+			if err != nil {
+				return 0, err
+			}
+			removed += int(n)
+		}
+	}
+	hasV1, err := tableExists(tx, "conversations")
+	if err != nil {
+		return 0, err
+	}
+	if hasV1 {
+		ids := make([]string, 0, len(keys)+1)
+		if matchedV2 {
+			for key := range keys {
+				ids = append(ids, key)
+			}
+		} else {
+			ids = append(ids, id)
+		}
+		for _, key := range ids {
+			res, err := tx.Exec(`DELETE FROM conversations WHERE key = ?`, key)
+			if err != nil {
+				return 0, err
+			}
+			n, err := res.RowsAffected()
+			if err != nil {
+				return 0, err
+			}
+			removed += int(n)
+		}
+	}
+	return removed, nil
+}
+
+func tableExists(tx *sql.Tx, name string) (bool, error) {
+	var got string
+	err := tx.QueryRow(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?`, name).Scan(&got)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func openWriteDB(path string) (*sql.DB, error) {
+	u := url.URL{Scheme: "file", Path: path, RawQuery: "_pragma=busy_timeout(3000)"}
+	db, err := sql.Open("sqlite", u.String())
+	if err != nil {
+		return nil, err
+	}
+	db.SetMaxOpenConns(1)
+	return db, nil
+}
+
+func plainID(label, value string) error {
+	if err := userArg(label, value); err != nil {
+		return err
+	}
+	if strings.ContainsAny(value, `/\`) || strings.Contains(value, "..") {
+		return fmt.Errorf("%s cannot be passed to the agent CLI", label)
+	}
+	return nil
 }
 
 func deleteAider(s model.Session) error {

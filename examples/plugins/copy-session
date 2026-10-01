@@ -1,0 +1,33 @@
+#!/bin/sh
+# Copy the arguments to the clipboard, separated by tabs.
+# One argument is copied unchanged. Choose the fields in the plugin args.
+set -eu
+if [ "$#" -eq 0 ]; then
+  echo "copy-session: nothing to copy" >&2
+  exit 1
+fi
+text=$1
+shift
+for part in "$@"; do
+  text=$(printf '%s\t%s' "$text" "$part")
+done
+
+if command -v pbcopy >/dev/null 2>&1; then
+  printf '%s' "$text" | pbcopy
+  exit 0
+fi
+if command -v wl-copy >/dev/null 2>&1; then
+  printf '%s' "$text" | wl-copy
+  exit 0
+fi
+if command -v xclip >/dev/null 2>&1; then
+  printf '%s' "$text" | xclip -selection clipboard
+  exit 0
+fi
+if command -v xsel >/dev/null 2>&1; then
+  printf '%s' "$text" | xsel --clipboard --input
+  exit 0
+fi
+printf '%s\n' "$text"
+echo "copy-session: no clipboard tool found. Press enter." >&2
+read _ || true

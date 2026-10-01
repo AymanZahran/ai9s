@@ -17,9 +17,19 @@ func CopilotState() string {
 	return filepath.Join(envOr("COPILOT_HOME", homeJoin(".copilot")), "session-state")
 }
 
-func GrokSessions() string {
-	return filepath.Join(envOr("GROK_HOME", homeJoin(".grok")), "sessions")
+func GrokHome() string {
+	return envOr("GROK_HOME", homeJoin(".grok"))
 }
+
+func GrokSessions() string {
+	return filepath.Join(GrokHome(), "sessions")
+}
+
+func GeminiRoot() string { return geminiRoot() }
+
+func JulesHome() string { return julesHome() }
+
+func KiroDB() string { return kiroDB() }
 
 func CursorProjects() string {
 	return filepath.Join(envOr("CURSOR_HOME", homeJoin(".cursor")), "projects")

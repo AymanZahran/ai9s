@@ -107,7 +107,7 @@ func TestNewAgentStores(t *testing.T) {
 	}
 	jules := scanJules(nil)
 	if jules.Err != nil || len(jules.Sessions) != 1 || jules.Sessions[0].NativeID != "12345" ||
-		jules.Sessions[0].CWD != "owner/repo" || jules.Sessions[0].CanDelete {
+		jules.Sessions[0].CWD != "owner/repo" || !jules.Sessions[0].CanDelete || jules.Sessions[0].DeleteMode != "jules" {
 		t.Fatalf("jules %+v %v", jules.Sessions, jules.Err)
 	}
 
@@ -179,7 +179,7 @@ func TestNewAgentStores(t *testing.T) {
 	if kiro.Err != nil || len(kiro.Sessions) != 1 {
 		t.Fatalf("kiro %+v %v", kiro.Sessions, kiro.Err)
 	}
-	if kiro.Sessions[0].NativeID != "conv-1" || kiro.Sessions[0].CWD != "/work/kiro" || kiro.Sessions[0].CanDelete ||
+	if kiro.Sessions[0].NativeID != "conv-1" || kiro.Sessions[0].CWD != "/work/kiro" || !kiro.Sessions[0].CanDelete || kiro.Sessions[0].DeleteMode != "kiro" ||
 		kiro.Sessions[0].Title != "rename the button" {
 		t.Fatalf("kiro session %+v", kiro.Sessions[0])
 	}

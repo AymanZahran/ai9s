@@ -30,6 +30,7 @@ GitHub Actions runs `gofmt` and `go test -count=1 -timeout 180s ./...` on Ubuntu
 | `internal/act` | Resume and delete |
 | `internal/tui` | List, views, manual, icons |
 | `site` | Documentation website, published by GitHub Pages |
+| `examples/plugins` | Opt-in plugins. Copy a script and its yaml into the config `plugins/` directory |
 
 ## Adding an agent
 

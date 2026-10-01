@@ -1,0 +1,33 @@
+#!/bin/sh
+# Show git status and recent commits for the session directory, then wait.
+# AIR9S_GIT_LOG is how many commits to show (default 20, at most 200).
+set -eu
+dir=${1:-}
+if [ -z "$dir" ] || [ ! -d "$dir" ]; then
+  echo "git-story: no session directory" >&2
+  exit 1
+fi
+if ! command -v git >/dev/null 2>&1; then
+  echo "git-story: git is not installed" >&2
+  exit 1
+fi
+if ! git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "git-story: not a git checkout: $dir" >&2
+  exit 1
+fi
+n=${AIR9S_GIT_LOG:-20}
+case $n in
+  ''|*[!0-9]*) n=20 ;;
+esac
+if [ "$n" -gt 200 ]; then
+  n=200
+fi
+if [ "$n" -lt 1 ]; then
+  n=20
+fi
+printf '== %s\n' "$dir"
+git -C "$dir" --no-pager status -sb
+printf '\n'
+git -C "$dir" --no-pager log --oneline --decorate -n "$n" || true
+printf '\nPress enter to return to air9s '
+read _ || true

@@ -21,14 +21,14 @@ func paintColor(s, fallback string) tcell.Color {
 
 func (ui *ui) applySkin() {
 	bg := paintColor(ui.cfg.Skin.Body.Bg, "black")
-	fg := paintColor(ui.cfg.Skin.Body.Fg, "white")
+	fg := paintColor(ui.cfg.Skin.Body.Fg, "dodgerblue")
 	border := paintColor(ui.cfg.Skin.Frame.Border.Fg, "dodgerblue")
 	title := paintColor(ui.cfg.Skin.Frame.Title.Fg, "aqua")
 	menu := paintColor(ui.cfg.Skin.Frame.Menu.Fg, "white")
 	crumbsBg := paintColor(ui.cfg.Skin.Frame.Crumbs.Bg, "steelblue")
 	crumbsFg := paintColor(ui.cfg.Skin.Frame.Crumbs.Fg, "black")
 	tableBg := paintColor(ui.cfg.Skin.Views.Table.Bg, "black")
-	filter := paintColor(ui.cfg.Skin.Frame.Title.Filter, "orange")
+	filter := paintColor(ui.cfg.Skin.Frame.Title.Filter, "steelblue")
 
 	ui.header.SetBackgroundColor(bg)
 	ui.header.SetTextColor(menu)
@@ -47,7 +47,7 @@ func (ui *ui) applySkin() {
 	ui.preview.SetTitleColor(title)
 	ui.table.SetSelectedStyle(tcell.StyleDefault.
 		Foreground(paintColor(ui.cfg.Skin.Views.Table.CursorFg, "black")).
-		Background(paintColor(ui.cfg.Skin.Views.Table.CursorBg, "cadetblue")).
+		Background(paintColor(ui.cfg.Skin.Views.Table.CursorBg, "aqua")).
 		Bold(true))
 	for _, field := range []*tview.InputField{ui.filter, ui.command} {
 		field.SetLabelColor(filter)
@@ -67,7 +67,7 @@ func (ui *ui) headerCell(text string, expand int) *tview.TableCell {
 }
 
 func (ui *ui) cell(text string) *tview.TableCell {
-	return tview.NewTableCell(text).SetTextColor(paintColor(ui.cfg.Skin.Views.Table.Fg, "cadetblue"))
+	return tview.NewTableCell(text).SetTextColor(paintColor(ui.cfg.Skin.Views.Table.Fg, "blue"))
 }
 
 func (ui *ui) mark(agent string) string {
@@ -106,12 +106,12 @@ func (ui *ui) previewBody(s model.Session) string {
 func (ui *ui) modal(text string, buttons []string, done func(int, string)) *tview.Modal {
 	m := tview.NewModal().SetText(text).AddButtons(buttons).SetDoneFunc(done)
 	m.SetBackgroundColor(paintColor(ui.cfg.Skin.Body.Bg, "black"))
-	m.SetTextColor(paintColor(ui.cfg.Skin.Body.Fg, "white"))
+	m.SetTextColor(paintColor(ui.cfg.Skin.Body.Fg, "dodgerblue"))
 	m.SetButtonBackgroundColor(paintColor(ui.cfg.Skin.Frame.Border.Fg, "dodgerblue"))
 	m.SetButtonTextColor(paintColor(ui.cfg.Skin.Views.Table.CursorFg, "black"))
 	m.SetButtonActivatedStyle(tcell.StyleDefault.
-		Foreground(paintColor(ui.cfg.Skin.Views.Table.CursorFg, "black")).
-		Background(paintColor(ui.cfg.Skin.Frame.Border.Focus, "yellow")).
+		Foreground(tcell.ColorWhite).
+		Background(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "fuchsia")).
 		Bold(true))
 	return m
 }

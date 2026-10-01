@@ -33,6 +33,23 @@ func Run(st *store.Store) (*act.Command, error) {
 			return ev
 		})
 	}
+	app.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
+		w, _ := screen.Size()
+		logo := 10
+		if ui.cfg.Body.UI.Logoless {
+			logo = 0
+		}
+		avail := w - logo - 1
+		if avail < 32 {
+			avail = 32
+		}
+		if avail == ui.menuMeasured {
+			return false
+		}
+		ui.menuMeasured = avail
+		ui.paintHeader()
+		return false
+	})
 	stopRefresh := func() {}
 	if cfg.Body.RefreshRate > 0 {
 		stopRefresh = ui.startRefresh(time.Duration(cfg.Body.RefreshRate) * time.Second)
@@ -49,6 +66,7 @@ type ui struct {
 	app             *tview.Application
 	store           *store.Store
 	layout          *tview.Flex
+	top             *tview.Flex
 	header          *tview.TextView
 	filter          *tview.InputField
 	table           *tview.Table
@@ -61,10 +79,12 @@ type ui struct {
 	pending         *act.Command
 	busy            bool
 	focused         string
+	menuMeasured    int
 	view            string
 	pages           *tview.Pages
 	command         *tview.InputField
 	commandOpen     bool
+	commandMoved    bool
 	suppressCommand bool
 	groups          []groupRow
 	suggestions     []commandHint
@@ -84,6 +104,7 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 
 	ui.filter = tview.NewInputField().SetLabel(" / ").SetFieldWidth(0)
 	ui.filter.SetChangedFunc(func(string) { ui.reload() })
+	ui.filter.SetInputCapture(ui.forwardListMotion)
 	ui.filter.SetDoneFunc(func(key tcell.Key) {
 		switch key {
 		case tcell.KeyTab:
@@ -103,6 +124,7 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 	ui.command = tview.NewInputField().SetLabel(" : ").SetFieldWidth(0)
 	ui.command.SetLabelColor(tcell.ColorYellow)
 	ui.command.SetChangedFunc(func(text string) {
+		ui.commandMoved = false
 		if ui.suppressCommand || !ui.commandOpen {
 			return
 		}
@@ -121,7 +143,7 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 			ui.cycleCommandView()
 			return nil
 		}
-		return ev
+		return ui.forwardListMotion(ev)
 	})
 	ui.command.SetFocusFunc(func() {
 		ui.focused = "command"
@@ -160,11 +182,11 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 	if cfg.Body.UI.Logoless {
 		logoW = 0
 	}
-	top := tview.NewFlex().SetDirection(tview.FlexColumn).
+	ui.top = tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(ui.header, 0, 1, false).
 		AddItem(ui.logo, logoW, 0, false)
 	ui.layout = tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(top, menuH, 0, false).
+		AddItem(ui.top, menuH, 0, false).
 		AddItem(ui.crumbs, crumbsH, 0, false).
 		AddItem(ui.info, infoH, 0, false).
 		AddItem(ui.pages, 1, 0, false).
@@ -220,16 +242,34 @@ func (ui *ui) paintChrome() {
 	footer := footerSessions
 	switch ui.focused {
 	case "preview":
-		ui.preview.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "yellow"))
-		ui.preview.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "yellow"))
+		ui.preview.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "aqua"))
+		ui.preview.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "fuchsia"))
 		ui.preview.SetTitle(" preview · scroll ")
 		footer = footerPreview
-	case "table", "command":
-		ui.table.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "yellow"))
-		ui.table.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "yellow"))
+	case "table", "filter", "command":
+		ui.table.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "aqua"))
+		ui.table.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "fuchsia"))
 	}
-	ui.footer.SetText(footer + "   " + ui.counter())
+	ui.footer.SetText(ui.paintFooter(footer))
 	ui.paintHeader()
+}
+
+// forwardListMotion lets the list move while / or : still has the cursor.
+// Letters, including j and k, and left/right/home/end stay in the field.
+func (ui *ui) forwardListMotion(ev *tcell.EventKey) *tcell.EventKey {
+	switch ev.Key() {
+	case tcell.KeyUp, tcell.KeyDown, tcell.KeyPgUp, tcell.KeyPgDn:
+	default:
+		return ev
+	}
+	if ui.commandOpen {
+		ui.commandMoved = true
+	}
+	if h := ui.table.InputHandler(); h != nil {
+		h(ev, func(tview.Primitive) {})
+	}
+	ui.paintCrumbs()
+	return nil
 }
 
 func (ui *ui) focusSessions() {
@@ -426,11 +466,11 @@ func (ui *ui) paintHeader() {
 	if ui.cfg.Body.UI.Headless {
 		return
 	}
-	num := ui.cfg.Skin.Frame.Menu.NumKey
-	key := ui.cfg.Skin.Frame.Menu.Key
-	fg := ui.cfg.Skin.Frame.Menu.Fg
-	hi := ui.cfg.Skin.Frame.Title.Highlight
-	ui.header.SetText(" " + hotkeyViews(ui.view, num, fg, hi) + "\n " + hotkeyActions(ui.focused, ui.view, key, fg))
+	text, lines := ui.menuText()
+	ui.header.SetText(text)
+	if ui.layout != nil && ui.top != nil && lines > 0 {
+		ui.layout.ResizeItem(ui.top, lines, 0)
+	}
 	if ui.cfg.Body.UI.Logoless {
 		ui.logo.SetText("")
 	} else {
@@ -472,7 +512,15 @@ func (ui *ui) paintCrumbs() {
 	if ui.focused == "preview" {
 		footer = footerPreview
 	}
-	ui.footer.SetText(footer + "   " + ui.counter())
+	ui.footer.SetText(ui.paintFooter(footer))
+}
+
+func (ui *ui) paintFooter(base string) string {
+	key := strings.TrimSpace(ui.cfg.Skin.Frame.Menu.Key)
+	if key == "" {
+		key = "dodgerblue"
+	}
+	return strings.ReplaceAll(base, "[yellow]", "["+key+"]") + "   " + ui.counter()
 }
 
 func (ui *ui) paintInfo() {
@@ -512,7 +560,7 @@ func (ui *ui) counter() string {
 	}
 	color := ui.cfg.Skin.Frame.Title.Counter
 	if color == "" {
-		color = "yellow"
+		color = "papayawhip"
 	}
 	return fmt.Sprintf("[%s]%d/%d[-]", color, row, total)
 }

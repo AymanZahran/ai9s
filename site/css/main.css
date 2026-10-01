@@ -177,7 +177,7 @@ tr:nth-child(even) td { background: #fafafa; }
 
 .term .row { white-space: pre; }
 .term .y { color: #e6c200; }
-.term .num { color: #7dd3fc; }
+.term .num { color: #ff00ff; }
 .term .key { color: #1e90ff; }
 .term .crumbs { background: #4682b4; color: #111; }
 .term .dim { color: #8d8d8d; }

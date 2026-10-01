@@ -93,6 +93,7 @@ func (ui *ui) cycleView() {
 
 func (ui *ui) openCommand() {
 	ui.commandOpen = true
+	ui.commandMoved = false
 	ui.suppressCommand = true
 	ui.command.SetText("")
 	ui.suppressCommand = false
@@ -133,6 +134,16 @@ func (ui *ui) cycleCommandView() {
 
 func (ui *ui) applyCommand(text string) {
 	text = strings.TrimSpace(text)
+	if ui.commandMoved {
+		ui.commandMoved = false
+		if row, _ := ui.table.GetSelection(); row > 0 && row-1 < len(ui.suggestions) {
+			hint := ui.suggestions[row-1].insert
+			if hint != text {
+				ui.applyCommand(hint)
+				return
+			}
+		}
+	}
 	if text == "" {
 		ui.cycleView()
 		ui.closeCommand()
@@ -389,7 +400,7 @@ func (ui *ui) paintGroups() {
 		}
 		mark := "  "
 		name := g.key
-		color := paintColor(ui.cfg.Skin.Views.Table.Fg, "cadetblue")
+		color := paintColor(ui.cfg.Skin.Views.Table.Fg, "blue")
 		if ui.view == viewProviders {
 			mark = ui.mark(g.key)
 			color = ui.colorOfAgent(g.key)
@@ -484,36 +495,8 @@ func menuItem(keyColor, textColor, hi, key, label string, active bool) string {
 	spec := textColor
 	if active {
 		spec += "::b"
+	} else {
+		spec += "::d"
 	}
 	return fmt.Sprintf("[%s]<%s>[-] [%s]%s[-]", keyColor, key, spec, label)
-}
-
-func hotkeyViews(active, num, fg, hi string) string {
-	var b strings.Builder
-	for i, spec := range viewSpecs {
-		if i > 0 {
-			b.WriteString("  ")
-		}
-		on := spec.name == active || (active == "" && spec.name == viewSessions)
-		b.WriteString(menuItem(num, fg, hi, spec.key, spec.name, on))
-	}
-	return b.String()
-}
-
-func hotkeyActions(focused, view, key, fg string) string {
-	item := func(k, label string) string {
-		return menuItem(key, fg, "", k, label, false)
-	}
-	switch focused {
-	case "preview":
-		return item("j/k", "scroll") + "  " + item("ctrl-b/f", "page") + "  " + item("g/G", "top/end") + "  " + item("tab", "sessions") + "  " + item("esc", "sessions") + "  " + item("?", "manual") + "  " + item("q", "quit")
-	case "command":
-		return item("enter", "apply") + "  " + item(":", "next view") + "  " + item("esc", "cancel") + "  " + item("?", "manual")
-	default:
-		enter := "resume"
-		if view != "" && view != viewSessions {
-			enter = "filter"
-		}
-		return item("/", "filter") + "  " + item(":", "views") + "  " + item("enter", enter) + "  " + item("d", "delete") + "  " + item("tab", "preview") + "  " + item("esc", "clear") + "  " + item("?", "manual") + "  " + item("q", "quit")
-	}
 }

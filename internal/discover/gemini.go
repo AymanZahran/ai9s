@@ -160,9 +160,8 @@ func readGemini(path, cwd string) (model.Session, bool) {
 		ID: model.ID("gemini", native), NativeID: native, Agent: "gemini",
 		Title: title, CWD: cwd, Updated: when, Messages: buf.n,
 		SourcePath: path, SourceMtime: fileMtime(path),
-		CanDelete:    false,
-		DeleteReason: "Gemini keeps project caches and side files beside the chat. Remove it from Gemini's own session list.",
-		Snippets:     buf.snippets(),
+		CanDelete: true, DeleteMode: "gemini",
+		Snippets: buf.snippets(),
 	}, true
 }
 

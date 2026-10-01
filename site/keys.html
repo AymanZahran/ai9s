@@ -27,7 +27,7 @@
   <main>
     <h1><span class="mark" aria-hidden="true">⌨</span> Keys</h1>
     <p>The same manual is inside the program. Press <code>?</code>. <code>j</code> and <code>k</code> scroll it, <code>g</code> and <code>G</code> jump, and Esc, <code>q</code>, or <code>?</code> returns to the list.</p>
-    <p>Hotkeys are drawn on the top two lines. The active view is bold. Angle brackets mark the key, in the same style as k9s.</p>
+    <p>Hotkeys are drawn in a grid at the top. View keys are the first row and the active view is bold. Actions continue on the rows under that, and installed plugin keys get rows of their own. Angle brackets mark the key, in the same style as k9s.</p>
 
     <div class="table-wrap">
       <table>
@@ -37,11 +37,11 @@
         <tbody>
           <tr><td><code>1</code>–<code>5</code></td><td>Sessions, providers, directories, branches, models.</td></tr>
           <tr><td>Enter</td><td>Resume the selected session. On a group view, apply that group as a filter and return to sessions.</td></tr>
-          <tr><td><code>j</code> / <code>k</code></td><td>Move down or up in the list. In the preview or the manual, scroll a line.</td></tr>
+          <tr><td><code>j</code> / <code>k</code></td><td>Move down or up when the list is focused. In the preview or the manual, scroll a line. In the filter and command fields they are typed letters.</td></tr>
           <tr><td>Tab</td><td>Focus the preview. Tab or Esc returns to the list.</td></tr>
-          <tr><td><code>/</code></td><td>Edit the filter text.</td></tr>
+          <tr><td><code>/</code></td><td>Edit the filter text. Up and down move the list while the field is open. Page Up and Page Down do too. Left and right stay in the field.</td></tr>
           <tr><td>Esc</td><td>Clear the filter from the list or the filter line. In the preview, the manual, or command mode, Esc goes back and leaves the filter alone.</td></tr>
-          <tr><td><code>:</code></td><td>Command mode. Type a view name or a filter token. Enter applies it. Enter on an empty command cycles the view. Another <code>:</code> cycles the view name in the field. Esc closes it.</td></tr>
+          <tr><td><code>:</code></td><td>Command mode. Type a view name or a filter token. Up and down select a row. Enter applies the highlighted row. Enter on an empty command cycles the view. Another <code>:</code> cycles the view name in the field. Esc closes it.</td></tr>
           <tr><td><code>d</code>, Ctrl-D</td><td>Delete, after confirmation. Sessions view only.</td></tr>
           <tr><td><code>a</code></td><td>Cycle the <code>agent:</code> filter.</td></tr>
           <tr><td><code>p</code></td><td>Add a <code>dir:</code> filter and focus the filter line so you can finish it.</td></tr>
@@ -61,8 +61,11 @@
     <h2>Group views</h2>
     <p>Providers, directories, branches, and models group the current filtered list. Enter on a row sets the matching token and returns to sessions. A row labeled <code>(none)</code> has an empty value, so Enter leaves the filter alone. Resume and delete stay on the sessions view. From a group view, delete tells you to switch back first.</p>
 
+    <h2>Example plugins</h2>
+    <p>Copy a pair from <code>examples/plugins</code> into the config <code>plugins/</code> directory. After a restart, <code>e</code> opens the directory, <code>c</code> copies a reference, <code>l</code> shows git status and recent commits, and <code>t</code> opens a terminal there. Those keys appear on the menu. See <a href="config.html">Config</a>.</p>
+
     <h2>Command mode</h2>
-    <p>The table lists view names and tokens: <code>agent:</code>, <code>dir:</code>, <code>branch:</code>, <code>model:</code>, <code>date:</code>, and <code>sort:</code>. Typing narrows that list. Enter on a token with a value rewrites that token in the filter and returns to sessions. Enter on a token with no value focuses the filter so you can type the rest, the same way <code>p</code> does.</p>
+    <p>The table lists view names and tokens: <code>agent:</code>, <code>dir:</code>, <code>branch:</code>, <code>model:</code>, <code>date:</code>, and <code>sort:</code>. Typing narrows that list. Up and down move through that list while the field stays focused. Enter on a token with a value rewrites that token in the filter and returns to sessions. Enter on a token with no value focuses the filter so you can type the rest, the same way <code>p</code> does.</p>
   </main>
   <footer class="site-footer">
     <p><a href="https://github.com/AymanZahran/air9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/AymanZahran/air9s/blob/main/LICENSE">MIT</a></p>
