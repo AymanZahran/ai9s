@@ -19,7 +19,7 @@ install: build
 
 test:
 	go test ./...
-	python3 -m unittest scripts/release_test.py
+	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts/release_test.py
 
 release:
 	python3 scripts/release.py $(VERSION) $(PART) $(if $(filter 1,$(INSTALL)),--install,) $(if $(filter 1,$(DRY)),--dry-run,)
