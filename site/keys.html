@@ -38,8 +38,9 @@
           <tr><td><code>1</code>–<code>5</code></td><td>Sessions, providers, directories, branches, models.</td></tr>
           <tr><td>Enter</td><td>Resume the selected session. Quitting that session returns to air9s. On a group view, apply that group as a filter and return to sessions.</td></tr>
           <tr><td><code>j</code> / <code>k</code></td><td>Move one line when the list or the preview is focused. In the manual, scroll a line. In the filter and command fields they are typed letters.</td></tr>
+          <tr><td><code>h</code> / <code>l</code></td><td>Pan left and right when the list or the preview is focused. Left and right do the same. In the filter and command fields, left and right stay in the field and these letters are typed.</td></tr>
           <tr><td>Page Up / Page Down</td><td>Move a page in the focused pane. The list moves its selection. The preview scrolls its text. Ctrl-B and Ctrl-F do the same, including while the filter or command field is open.</td></tr>
-          <tr><td>Mouse</td><td>The wheel scrolls the pane under the pointer. The list and the preview each have a scrollbar on the right. Drag it or click it to jump.</td></tr>
+          <tr><td>Mouse</td><td>The wheel scrolls the pane under the pointer. A horizontal wheel pans. The list and the preview each have a scrollbar on the right, and a scrollbar along the bottom when a line is wider than the window. Drag a bar or click it to jump.</td></tr>
           <tr><td><code>d</code></td><td>Describe the selected row. The list is replaced by the preview. Esc returns to the list. Tab opens and closes the same view.</td></tr>
           <tr><td><code>/</code></td><td>Edit the filter text. Up and down move the list while the field is open. Page Up and Page Down do too. Left and right stay in the field.</td></tr>
           <tr><td>Esc</td><td>Clear the filter from the list or the filter line. In the preview, the manual, or command mode, Esc goes back and leaves the filter alone.</td></tr>
@@ -58,13 +59,13 @@
     </div>
 
     <h2>Preview</h2>
-    <p>The list is the only window until you press <code>d</code>. Describe replaces it with the preview. <code>j</code> and <code>k</code> or the arrows scroll a line. Page Up, Page Down, Ctrl-B, and Ctrl-F scroll a page. <code>g</code> and <code>G</code> jump to the top or the end. Esc returns to the list. The wheel scrolls the view on screen, and that view has a scrollbar you can drag or click.</p>
+    <p>The list is the only window until you press <code>d</code>. Describe replaces it with the preview. <code>j</code> and <code>k</code> or up and down scroll a line. <code>h</code> and <code>l</code> or left and right pan a line that is wider than the window. Page Up, Page Down, Ctrl-B, and Ctrl-F scroll a page. <code>g</code> and <code>G</code> jump to the top or the end. Esc returns to the list. The wheel scrolls the view on screen. A horizontal wheel pans. Each view has a scrollbar on the right, and a bottom scrollbar when a line is wider than the window.</p>
 
     <h2>Group views</h2>
     <p>Providers, directories, branches, and models group the current filtered list. Enter on a row sets the matching token and returns to sessions. A row labeled <code>(none)</code> has an empty value, so Enter leaves the filter alone. Resume and delete stay on the sessions view. From a group view, delete tells you to switch back first.</p>
 
     <h2>Example plugins</h2>
-    <p>Copy a pair from <code>examples/plugins</code> into the config <code>plugins/</code> directory. After a restart, <code>e</code> opens the directory, <code>c</code> copies a reference, <code>l</code> shows git status and recent commits, and <code>t</code> opens a terminal there. Those keys appear on the menu. See <a href="config.html">Config</a>.</p>
+    <p>Copy a pair from <code>examples/plugins</code> into the config <code>plugins/</code> directory. After a restart, <code>e</code> opens the directory, <code>c</code> copies a reference, <code>b</code> shows git status and recent commits, and <code>t</code> opens a terminal there. Those keys appear on the menu. See <a href="config.html">Config</a>.</p>
 
     <h2>Command mode</h2>
     <p>The table lists view names and tokens: <code>agent:</code>, <code>dir:</code>, <code>branch:</code>, <code>model:</code>, <code>date:</code>, and <code>sort:</code>. Typing narrows that list. Up and down move through that list while the field stays focused. Enter on a token with a value rewrites that token in the filter and returns to sessions. Enter on a token with no value focuses the filter so you can type the rest, the same way <code>p</code> does.</p>

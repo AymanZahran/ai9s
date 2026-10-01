@@ -1,6 +1,6 @@
 # Git status and recent commits for the session directory.
 # AIR9S_GIT_LOG sets how many commits to show. The default is 20.
-shortCut: l
+shortCut: b
 description: git
 scopes: [sessions, directories]
 command: git-story

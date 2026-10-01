@@ -92,7 +92,7 @@ func TestExamplePluginsResolve(t *testing.T) {
 	want := map[string]string{
 		"e": "open-editor",
 		"c": "copy-session",
-		"l": "git-story",
+		"b": "git-story",
 		"t": "new-terminal",
 	}
 	if len(loaded.Plugins) != len(want) {

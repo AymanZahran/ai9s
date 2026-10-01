@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/AymanZahran/air9s/internal/query"
-	"github.com/rivo/tview"
 )
 
 const (
@@ -79,6 +78,7 @@ func (ui *ui) setView(name string) {
 	if ui.describing() {
 		ui.closeDescribe()
 	}
+	ui.listX = 0
 	ui.view = name
 	ui.reload()
 }
@@ -259,18 +259,18 @@ func filterHints(text string, agents []string) []commandHint {
 
 func (ui *ui) paintSuggestions(text string) {
 	ui.suggestions = filterHints(text, ui.agents)
-	ui.table.Clear()
 	ui.table.SetTitle(" commands ")
-	ui.table.SetCell(0, 0, ui.headerCell("COMMAND", 0))
-	ui.table.SetCell(0, 1, ui.headerCell("DETAIL", 1))
-	for i, hint := range ui.suggestions {
-		ui.table.SetCell(i+1, 0, ui.cell(hint.insert))
-		ui.table.SetCell(i+1, 1, ui.cell(hint.hint).SetExpansion(1))
-	}
 	if len(ui.suggestions) == 0 {
+		ui.setLines(nil, 0)
 		ui.preview.SetText("\n[gray]No command matches.[-]")
 		return
 	}
+	rows := make([][]cellText, 0, len(ui.suggestions)+1)
+	rows = append(rows, []cellText{{text: "COMMAND"}, {text: "DETAIL"}})
+	for _, hint := range ui.suggestions {
+		rows = append(rows, []cellText{{text: hint.insert}, {text: hint.hint}})
+	}
+	ui.useRows(rows)
 	ui.table.Select(1, 0)
 }
 
@@ -280,14 +280,24 @@ func (ui *ui) paintSessions() {
 		prev = ui.rows[row-1].ID
 	}
 	ui.groups = nil
-	ui.table.Clear()
 	ui.table.SetTitle(viewTitle(viewSessions))
-	sortName := querySort(ui.filter.GetText())
-	headers := []string{sorted("AGE", sortName, "recent", "oldest"), "", "AGENT", "DIR", "BRANCH", "CTX", sorted("MSGS", sortName, "messages", ""), sorted("TITLE", sortName, "", "title")}
-	exp := []int{0, 0, 0, 1, 0, 0, 0, 3}
-	for i, h := range headers {
-		ui.table.SetCell(0, i, ui.headerCell(h, exp[i]))
+	if len(ui.rows) == 0 {
+		ui.setLines(nil, 0)
+		ui.preview.SetText("\n[gray]No sessions match this filter.[-]")
+		return
 	}
+	sortName := querySort(ui.filter.GetText())
+	rows := make([][]cellText, 0, len(ui.rows)+1)
+	rows = append(rows, []cellText{
+		{text: sorted("AGE", sortName, "recent", "oldest")},
+		{text: ""},
+		{text: "AGENT"},
+		{text: "DIR"},
+		{text: "BRANCH"},
+		{text: "CTX", right: true},
+		{text: sorted("MSGS", sortName, "messages", ""), right: true},
+		{text: sorted("TITLE", sortName, "", "title")},
+	})
 	sel := 1
 	for i, s := range ui.rows {
 		if s.ID == prev {
@@ -297,19 +307,18 @@ func (ui *ui) paintSessions() {
 		if branch == "" {
 			branch = "-"
 		}
-		ui.table.SetCell(i+1, 0, ui.cell(relAge(s.Updated)))
-		ui.table.SetCell(i+1, 1, ui.cell(ui.mark(s.Agent)).SetAlign(tview.AlignCenter))
-		ui.table.SetCell(i+1, 2, ui.cell(s.Agent).SetTextColor(ui.colorOfAgent(s.Agent)))
-		ui.table.SetCell(i+1, 3, ui.cell(shortPath(s.CWD)).SetMaxWidth(36).SetExpansion(1))
-		ui.table.SetCell(i+1, 4, ui.cell(branch).SetMaxWidth(18))
-		ui.table.SetCell(i+1, 5, ui.cell(contextLabel(s.Usage)).SetAlign(tview.AlignRight))
-		ui.table.SetCell(i+1, 6, ui.cell(fmt.Sprintf("%d", s.Messages)).SetAlign(tview.AlignRight))
-		ui.table.SetCell(i+1, 7, ui.cell(s.Title).SetExpansion(3))
+		rows = append(rows, []cellText{
+			{text: relAge(s.Updated)},
+			{text: ui.mark(s.Agent)},
+			{text: s.Agent, color: ui.agentTag(s.Agent)},
+			{text: shortPath(s.CWD)},
+			{text: branch},
+			{text: contextLabel(s.Usage), right: true},
+			{text: fmt.Sprintf("%d", s.Messages), right: true},
+			{text: s.Title},
+		})
 	}
-	if len(ui.rows) == 0 {
-		ui.preview.SetText("\n[gray]No sessions match this filter.[-]")
-		return
-	}
+	ui.useRows(rows)
 	if sel > len(ui.rows) {
 		sel = 1
 	}
@@ -386,16 +395,20 @@ func (ui *ui) paintGroups() {
 		snaps[i] = sessionSnap{id: s.ID, agent: s.Agent, cwd: s.CWD, branch: s.Branch, model: s.Model, messages: s.Messages, updated: s.Updated}
 	}
 	ui.groups = groupSessions(snaps, ui.view)
-	ui.table.Clear()
 	ui.table.SetTitle(viewTitle(ui.view))
-	headers := []string{"", "NAME", "SESSIONS", "MSGS", "LATEST"}
-	for i, h := range headers {
-		exp := 0
-		if i == 1 {
-			exp = 1
-		}
-		ui.table.SetCell(0, i, ui.headerCell(h, exp))
+	if len(ui.groups) == 0 {
+		ui.setLines(nil, 0)
+		ui.preview.SetText("\n[gray]No sessions match this filter.[-]")
+		return
 	}
+	rows := make([][]cellText, 0, len(ui.groups)+1)
+	rows = append(rows, []cellText{
+		{text: ""},
+		{text: "NAME"},
+		{text: "SESSIONS", right: true},
+		{text: "MSGS", right: true},
+		{text: "LATEST"},
+	})
 	sel := 1
 	for i, g := range ui.groups {
 		if g.key == prev {
@@ -403,29 +416,37 @@ func (ui *ui) paintGroups() {
 		}
 		mark := "  "
 		name := g.key
-		color := paintColor(ui.cfg.Skin.Views.Table.Fg, "blue")
+		color := ""
 		if ui.view == viewProviders {
 			mark = ui.mark(g.key)
-			color = ui.colorOfAgent(g.key)
+			color = ui.agentTag(g.key)
 		}
 		if ui.view == viewDirectories && g.key != "(none)" {
 			name = shortPath(g.key)
 		}
-		ui.table.SetCell(i+1, 0, ui.cell(mark).SetAlign(tview.AlignCenter))
-		ui.table.SetCell(i+1, 1, ui.cell(name).SetTextColor(color).SetExpansion(1))
-		ui.table.SetCell(i+1, 2, ui.cell(fmt.Sprintf("%d", g.sessions)).SetAlign(tview.AlignRight))
-		ui.table.SetCell(i+1, 3, ui.cell(fmt.Sprintf("%d", g.messages)).SetAlign(tview.AlignRight))
-		ui.table.SetCell(i+1, 4, ui.cell(relAge(g.updated)))
+		rows = append(rows, []cellText{
+			{text: mark},
+			{text: name, color: color},
+			{text: fmt.Sprintf("%d", g.sessions), right: true},
+			{text: fmt.Sprintf("%d", g.messages), right: true},
+			{text: relAge(g.updated)},
+		})
 	}
-	if len(ui.groups) == 0 {
-		ui.preview.SetText("\n[gray]No sessions match this filter.[-]")
-		return
-	}
+	ui.useRows(rows)
 	if sel > len(ui.groups) {
 		sel = 1
 	}
 	ui.table.Select(sel, 0)
 	ui.showRow(sel)
+}
+
+func (ui *ui) useRows(rows [][]cellText) {
+	widths := columnWidths(rows)
+	lines := make([]string, len(rows))
+	for i, row := range rows {
+		lines[i] = renderCells(row, widths)
+	}
+	ui.setLines(lines, rowWidth(widths))
 }
 
 func (ui *ui) showGroup(row int) {

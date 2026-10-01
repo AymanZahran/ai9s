@@ -17,7 +17,7 @@ import (
 	"github.com/AymanZahran/air9s/internal/tui"
 )
 
-const version = "0.2.5"
+const version = "0.2.6"
 
 func main() {
 	if len(os.Args) < 2 {

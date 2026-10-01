@@ -47,7 +47,7 @@ func (ui *ui) showManual() {
 const manualText = `[::b]air9s manual[-]
 
 [::b]Views[-]
-  [yellow]<1>[-] sessions      the conversation list. Enter resumes. d describes. ctrl-d deletes.
+  [yellow]<1>[-] sessions      the conversation list. Enter resumes. d describes. ctrl-d deletes. h/l pans.
   [yellow]<2>[-] providers     group the current filter by agent
   [yellow]<3>[-] directories   group by working directory
   [yellow]<4>[-] branches      group by git branch
@@ -74,7 +74,7 @@ Esc on the list or in the filter clears the filter. Esc in describe, the manual,
 
 [::b]Other keys[-]
   enter       resume in the session directory. Quitting the agent returns here. On a group, apply that filter
-  d           describe. The list is replaced by the preview. j/k or arrows scroll a line, page up/down or ctrl-b/f scroll a page, g/G jump
+  d           describe. The list is replaced by the preview. j/k or up/down scroll a line, h/l or left/right pan, page up/down or ctrl-b/f scroll a page, g/G jump
   esc         return from describe to the list. On the list or in the filter, esc clears the filter
   ctrl-d      delete, after confirmation. Only from the sessions view. d does not delete
   a           cycle the agent: filter
@@ -86,14 +86,18 @@ Esc on the list or in the filter clears the filter. Esc in describe, the manual,
   ?           this manual
   q           quit
   j / k       move down / up one line when the list or the preview is focused. In / and : they are letters
+  h / l       pan left / right when the list or the preview is focused. In / and : they are letters
+  left / right  pan the list or the preview. In / and : they move the cursor in the field
   up / down   move one line in the focused pane, including the list while / or : is open
   pgup / pgdn move a page in the focused pane. The list moves its selection. The preview scrolls its text
   ctrl-b / f  the same page motion, in the list and in the preview
 
 The list fills the window. Describe uses that same window until you press esc.
+Describe keeps each line intact, so a long line pans sideways instead of wrapping.
 Each of those views draws a scrollbar on the right.
+When a line is wider than the window, a scrollbar along the bottom pans it.
 The mouse wheel scrolls the view on screen: the list moves several rows, describe scrolls several lines.
-Drag the scrollbar, or click it, to jump.
+A horizontal wheel pans. Drag a scrollbar, or click it, to jump.
 
 [::b]Resume[-]
 Resume runs that agent's own CLI in the session directory when the directory still exists.
@@ -178,7 +182,7 @@ The index is $AIR9S_CACHE_DIR/index.db, or $XDG_CACHE_HOME/air9s/index.db, or ~/
   examples/plugins in the repo has four you can copy into plugins/:
     e  open-editor   open the directory in $AIR9S_EDITOR, or the first editor found
     c  copy-session  copy agent, id, title, and directory to the clipboard
-    l  git-story     git status and recent commits ($AIR9S_GIT_LOG, default 20)
+    b  git-story     git status and recent commits ($AIR9S_GIT_LOG, default 20)
     t  new-terminal  a shell in that directory ($AIR9S_TERMINAL, or Terminal.app)
   Enabled plugin keys are drawn on the menu. Restart air9s after adding one.
 `

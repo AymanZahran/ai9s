@@ -467,8 +467,9 @@ func TestPageAndScrollbar(t *testing.T) {
 		t.Fatalf("preview bar %+v", ui.previewBar)
 	}
 	_, _, pw, ph := ui.preview.GetInnerRect()
-	if pw != 27 || ph != 14 {
-		t.Fatalf("preview inner %d x %d", pw, ph)
+	// The fixture line is wider than this pane, so the bottom bar takes one row.
+	if pw != 27 || ph != 13 || ui.previewXBar.h < 2 {
+		t.Fatalf("preview inner %d x %d bar %+v", pw, ph, ui.previewXBar)
 	}
 	send(ui.preview, tcell.NewEventKey(tcell.KeyPgDn, 0, tcell.ModNone))
 	prow, _ := ui.preview.GetScrollOffset()
@@ -489,6 +490,117 @@ func TestPageAndScrollbar(t *testing.T) {
 	prow, _ = ui.preview.GetScrollOffset()
 	if prow != ph+1+wheelRows-ph {
 		t.Fatalf("preview page up row %d", prow)
+	}
+}
+
+func TestHorizontalScroll(t *testing.T) {
+	st, err := store.Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	title := strings.Repeat("title-", 30) + "TAIL"
+	path := filepath.Join(t.TempDir(), "wide.jsonl")
+	sess := model.Session{
+		ID: "claude:wide", NativeID: "wide", Agent: "claude", Title: title,
+		CWD: "/work/app", Branch: "main", Updated: time.Date(2026, 3, 2, 15, 4, 5, 0, time.UTC),
+		Messages: 2, SourcePath: path, CanDelete: true, DeleteMode: "file",
+	}
+	if err := st.Apply("claude", []model.Session{sess}, []store.Source{{Path: path, Mtime: 1}}); err != nil {
+		t.Fatal(err)
+	}
+
+	app := tview.NewApplication()
+	ui := newUI(app, st, config.Defaults())
+	ui.reload()
+	screen := tcell.NewSimulationScreen("UTF-8")
+	if err := screen.Init(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(screen.Fini)
+	screen.SetSize(80, 30)
+	ui.table.SetRect(0, 0, 36, 12)
+	ui.table.Draw(screen)
+
+	cell := ui.table.GetCell(1, 0)
+	if cell == nil || strings.Contains(cell.Text, "TAIL") {
+		t.Fatalf("unscrolled cell %#v", cell)
+	}
+	if ui.listWide <= ui.listViewW || ui.listX != 0 || ui.listXBar.h < 2 {
+		t.Fatalf("wide %d view %d x %d bar %+v", ui.listWide, ui.listViewW, ui.listX, ui.listXBar)
+	}
+	r, _, _, _ := screen.GetContent(ui.listXBar.x, ui.listXBar.y)
+	if r != '─' && r != '━' {
+		t.Fatalf("bottom bar rune %q", string(r))
+	}
+	_, _, width, _ := ui.table.GetInnerRect()
+	if width != 33 {
+		t.Fatalf("list inner width %d", width)
+	}
+
+	prev := -1
+	for i := 0; i < 400 && ui.listX != prev; i++ {
+		prev = ui.listX
+		send(ui.table, tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone))
+	}
+	ui.table.Draw(screen)
+	cell = ui.table.GetCell(1, 0)
+	if cell == nil || !strings.Contains(cell.Text, "TAIL") {
+		t.Fatalf("scrolled cell %#v x %d wide %d", cell, ui.listX, ui.listWide)
+	}
+
+	send(ui.table, tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone))
+	if ui.listX != prev-hScrollStep && ui.listX >= prev {
+		t.Fatalf("left x %d prev %d", ui.listX, prev)
+	}
+	ui.setListX(0)
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, 'l', tcell.ModNone))
+	if ui.listX != hScrollStep {
+		t.Fatalf("l x %d", ui.listX)
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, 'h', tcell.ModNone))
+	if ui.listX != 0 {
+		t.Fatalf("h x %d", ui.listX)
+	}
+
+	ui.onMouse(tcell.NewEventMouse(4, 4, tcell.WheelRight, tcell.ModNone), tview.MouseScrollRight)
+	if ui.listX != hScrollStep {
+		t.Fatalf("wheel x %d", ui.listX)
+	}
+	ui.table.Draw(screen)
+	ui.onMouse(tcell.NewEventMouse(ui.listXBar.x+ui.listXBar.h-1, ui.listXBar.y, tcell.Button1, tcell.ModNone), tview.MouseLeftDown)
+	if ui.listX < ui.listWide/2 {
+		t.Fatalf("bar click x %d wide %d", ui.listX, ui.listWide)
+	}
+
+	ui.app.SetFocus(ui.filter)
+	held := ui.listX
+	send(ui.filter, tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone))
+	if ui.listX != held || app.GetFocus() != ui.filter {
+		t.Fatalf("filter left x %d focus %T", ui.listX, app.GetFocus())
+	}
+
+	ui.preview.SetText(strings.Repeat("m", 180))
+	ui.body.SwitchToPage("describe")
+	ui.preview.SetRect(0, 14, 40, 12)
+	ui.preview.Draw(screen)
+	if ui.previewXBar.h < 2 {
+		t.Fatalf("preview x bar %+v", ui.previewXBar)
+	}
+	send(ui.preview, tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone))
+	_, col := ui.preview.GetScrollOffset()
+	if col != hScrollStep {
+		t.Fatalf("preview col %d", col)
+	}
+	send(ui.preview, tcell.NewEventKey(tcell.KeyRune, 'h', tcell.ModNone))
+	_, col = ui.preview.GetScrollOffset()
+	if col != 0 {
+		t.Fatalf("preview h col %d", col)
+	}
+	ui.onMouse(tcell.NewEventMouse(2, 16, tcell.WheelRight, tcell.ModNone), tview.MouseScrollRight)
+	_, col = ui.preview.GetScrollOffset()
+	if col != hScrollStep {
+		t.Fatalf("preview wheel col %d", col)
 	}
 }
 

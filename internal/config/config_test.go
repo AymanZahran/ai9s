@@ -100,7 +100,7 @@ func TestPluginCollisions(t *testing.T) {
 }
 
 func TestBlockedShortcuts(t *testing.T) {
-	if !Blocked("ctrl-d") || !Blocked("G") || !Blocked("shift-g") || Blocked("ctrl-e") || Blocked("E") {
+	if !Blocked("ctrl-d") || !Blocked("G") || !Blocked("shift-g") || !Blocked("h") || !Blocked("l") || Blocked("b") || Blocked("ctrl-e") || Blocked("E") {
 		t.Fatal("shortcut reservation")
 	}
 	if c, ok := CanonShortcut("Shift-E"); !ok || c != "shift-e" {

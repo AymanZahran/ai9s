@@ -70,7 +70,7 @@ air9s:
 
 const defaultPluginsYAML = `# Plugins run a program on the machine. They do not get a shell.
 # List them here, or put one plugin in each file under plugins/.
-# Reserved keys are ignored: q / : d y r s ? a p o j k g G 1-5, enter, tab, esc, ctrl-d.
+# Reserved keys are ignored: q / : d y r s ? a p o j k h l g G 1-5, enter, tab, esc, ctrl-d.
 # A selected session provides $ID $NATIVE_ID $AGENT $CWD $TITLE $BRANCH $MODEL.
 # $FILTER is the filter line. $NAME is the row name.
 # scopes: sessions, providers, directories, branches, models, or all.

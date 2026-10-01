@@ -17,7 +17,7 @@ Restart air9s. The keys show on the menu. They work on the session list and the 
 | --- | --- | --- | --- |
 | `e` | `open-editor` | Opens `$CWD` in an editor. A terminal editor uses this screen. A GUI editor returns to the list. | `AIR9S_EDITOR`, one program name such as `nvim`, `hx`, `code`, `cursor`, or `zed`. |
 | `c` | `copy-session` | Copies the arguments to the clipboard, tab-separated. | The `args` list. One argument is copied as itself. |
-| `l` | `git-story` | Shows `git status` and recent commits, then waits for enter. | `AIR9S_GIT_LOG`, default 20. |
+| `b` | `git-story` | Shows `git status` and recent commits, then waits for enter. | `AIR9S_GIT_LOG`, default 20. |
 | `t` | `new-terminal` | Opens a terminal in `$CWD` without resuming the agent. | `AIR9S_TERMINAL`, one program name. Empty uses Terminal.app on macOS. |
 
 `AIR9S_EDITOR` and `AIR9S_TERMINAL` are program names. They are not shell lines. Delete a yaml file, or move it out of `plugins/`, to turn that plugin off.

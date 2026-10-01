@@ -97,6 +97,12 @@ type ui struct {
 	logo            *tview.TextView
 	listBar         scrollBar
 	previewBar      scrollBar
+	listXBar        scrollBar
+	previewXBar     scrollBar
+	lines           []string
+	listWide        int
+	listX           int
+	listViewW       int
 	scrollDrag      string
 	scrollGrab      int
 }
@@ -170,7 +176,7 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 		ui.paintChrome()
 	})
 
-	ui.preview = tview.NewTextView().SetDynamicColors(true).SetWrap(true).SetScrollable(true)
+	ui.preview = tview.NewTextView().SetDynamicColors(true).SetWrap(false).SetScrollable(true)
 	ui.preview.SetBorder(true).SetTitle(" describe ")
 	ui.preview.SetInputCapture(ui.previewKeys)
 	ui.preview.SetDoneFunc(ui.previewDone)
@@ -235,8 +241,8 @@ func (ui *ui) clearFilter() {
 }
 
 const (
-	footerSessions = `[yellow]d[-] describe   [yellow]ctrl-d[-] delete   [yellow]pgup/pgdn[-] page   [yellow]enter[-] resume   [yellow]/[-] filter   [yellow]a[-] agent   [yellow]p[-] directory   [yellow]o[-] sort   [yellow]y[-] yolo   [yellow]r[-] reindex   [yellow]s[-] stats   [yellow]?[-] help   [yellow]q[-] quit`
-	footerPreview  = `[yellow]j/k[-] line   [yellow]pgup/pgdn[-] page   [yellow]g/G[-] top/end   [yellow]wheel[-] scroll   [yellow]esc[-] list   [yellow]ctrl-d[-] delete   [yellow]enter[-] resume   [yellow]q[-] quit`
+	footerSessions = `[yellow]d[-] describe   [yellow]ctrl-d[-] delete   [yellow]h/l[-] pan   [yellow]pgup/pgdn[-] page   [yellow]enter[-] resume   [yellow]/[-] filter   [yellow]a[-] agent   [yellow]p[-] directory   [yellow]o[-] sort   [yellow]y[-] yolo   [yellow]r[-] reindex   [yellow]s[-] stats   [yellow]?[-] help   [yellow]q[-] quit`
+	footerPreview  = `[yellow]j/k[-] line   [yellow]h/l[-] pan   [yellow]pgup/pgdn[-] page   [yellow]g/G[-] top/end   [yellow]wheel[-] scroll   [yellow]esc[-] list   [yellow]ctrl-d[-] delete   [yellow]enter[-] resume   [yellow]q[-] quit`
 )
 
 func (ui *ui) paintChrome() {
@@ -374,6 +380,12 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyPgDn:
 		ui.moveSelection(ui.listPage())
 		return nil
+	case tcell.KeyLeft:
+		ui.scrollListX(-hScrollStep)
+		return nil
+	case tcell.KeyRight:
+		ui.scrollListX(hScrollStep)
+		return nil
 	}
 	if ev.Key() != tcell.KeyRune {
 		if ui.tryPlugin(ev) {
@@ -417,6 +429,10 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 		return tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
 	case 'k':
 		return tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
+	case 'h':
+		ui.scrollListX(-hScrollStep)
+	case 'l':
+		ui.scrollListX(hScrollStep)
 	case '1', '2', '3', '4', '5':
 		if spec, ok := viewByKey(string(ev.Rune())); ok {
 			ui.setView(spec.name)
@@ -448,6 +464,12 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyPgDn:
 		ui.scrollPreview(ui.previewPage())
 		return nil
+	case tcell.KeyLeft:
+		ui.scrollPreviewX(-hScrollStep)
+		return nil
+	case tcell.KeyRight:
+		ui.scrollPreviewX(hScrollStep)
+		return nil
 	case tcell.KeyCtrlB, tcell.KeyCtrlF:
 		if ui.tryPlugin(ev) {
 			return nil
@@ -473,6 +495,12 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 			ui.openCommand()
 			return nil
 		case 'd':
+			return nil
+		case 'h':
+			ui.scrollPreviewX(-hScrollStep)
+			return nil
+		case 'l':
+			ui.scrollPreviewX(hScrollStep)
 			return nil
 		case '?':
 			ui.showManual()

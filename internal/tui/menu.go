@@ -135,6 +135,7 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 	case "preview":
 		return []menuHint{
 			item("j/k", "line"),
+			item("h/l", "pan"),
 			item("pgup/pgdn", "page"),
 			item("g/G", "top/end"),
 			item("wheel", "scroll"),
@@ -171,6 +172,7 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 			item(":", "command"),
 			item("d", "describe"),
 			item("ctrl-d", "delete"),
+			item("h/l", "pan"),
 			item("enter", enter),
 			item("pgup/pgdn", "page"),
 			item("wheel", "scroll"),

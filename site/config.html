@@ -86,12 +86,12 @@
         <tbody>
           <tr><td><code>e</code></td><td><code>open-editor</code></td><td>Open <code>$CWD</code>. A terminal editor uses this screen. A GUI editor returns to the list.</td><td><code>AIR9S_EDITOR</code></td></tr>
           <tr><td><code>c</code></td><td><code>copy-session</code></td><td>Copy the arguments to the clipboard. Several arguments are separated by tabs.</td><td>the <code>args</code> list</td></tr>
-          <tr><td><code>l</code></td><td><code>git-story</code></td><td>Show git status and recent commits, then wait for enter.</td><td><code>AIR9S_GIT_LOG</code>, default 20</td></tr>
+          <tr><td><code>b</code></td><td><code>git-story</code></td><td>Show git status and recent commits, then wait for enter.</td><td><code>AIR9S_GIT_LOG</code>, default 20</td></tr>
           <tr><td><code>t</code></td><td><code>new-terminal</code></td><td>Open a terminal in <code>$CWD</code> without resuming the agent.</td><td><code>AIR9S_TERMINAL</code>. Empty uses Terminal.app on macOS.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>These shortcuts are reserved and ignored: <code>q</code>, <code>/</code>, <code>:</code>, <code>d</code>, <code>y</code>, <code>r</code>, <code>s</code>, <code>?</code>, <code>a</code>, <code>p</code>, <code>o</code>, <code>j</code>, <code>k</code>, <code>g</code>, <code>G</code>, <code>1</code>–<code>5</code>, Enter, Tab, Esc, and Ctrl-D. A repeated shortcut is ignored too. air9s prints the reason on startup and in the header.</p>
+    <p>These shortcuts are reserved and ignored: <code>q</code>, <code>/</code>, <code>:</code>, <code>d</code>, <code>y</code>, <code>r</code>, <code>s</code>, <code>?</code>, <code>a</code>, <code>p</code>, <code>o</code>, <code>j</code>, <code>k</code>, <code>h</code>, <code>l</code>, <code>g</code>, <code>G</code>, <code>1</code>–<code>5</code>, Enter, Tab, Esc, and Ctrl-D. A repeated shortcut is ignored too. air9s prints the reason on startup and in the header.</p>
     <p>Do not put tokens or other secrets in these files. A new <code>config.yaml</code> is mode <code>0600</code>.</p>
   </main>
   <footer class="site-footer">

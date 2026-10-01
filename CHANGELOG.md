@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.2.6
+
+- Left and right pan the list and the describe view. `h` and `l` do the same. A bottom scrollbar appears when a line is wider than the window, and the horizontal wheel moves it.
+- The example git plugin uses `b`. `h` and `l` stay reserved for panning.
+
 ## 0.2.5
 
 - The built-in skin is a black screen: white text, a white selection bar, and a black crumbs line.

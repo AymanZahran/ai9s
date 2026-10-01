@@ -9,21 +9,33 @@ import (
 )
 
 // wheelRows is how many rows or preview lines one mouse-wheel notch moves.
-const wheelRows = 3
+// hScrollStep is how many columns left/right, h/l, and the horizontal wheel move.
+const (
+	wheelRows   = 3
+	hScrollStep = 4
+)
 
-// scrollBar is the one-column gutter drawn on the right of a pane.
-// pos is the current position and maxPos is the furthest it can go.
-// A maxPos of 0 means the whole pane fits, so the thumb fills the track.
+// scrollBar is a gutter on a pane. Vertical bars use x as the column and h as
+// the track height. Horizontal bars set horizontal, use y as the row, and h as
+// the track width. pos is the current position and maxPos is the furthest it
+// can go. A maxPos of 0 means the whole pane fits, so the thumb fills the track.
 type scrollBar struct {
-	x, y, h int
-	pos     int
-	maxPos  int
-	top     int
-	length  int
+	x, y, h    int
+	pos        int
+	maxPos     int
+	top        int
+	length     int
+	horizontal bool
 }
 
 func (b scrollBar) hit(x, y int) bool {
-	return b.h > 0 && x == b.x && y >= b.y && y < b.y+b.h
+	if b.h <= 0 {
+		return false
+	}
+	if b.horizontal {
+		return y == b.y && x >= b.x && x < b.x+b.h
+	}
+	return x == b.x && y >= b.y && y < b.y+b.h
 }
 
 // posForThumbTop maps a thumb top, relative to the track, back to a position.
@@ -89,28 +101,45 @@ func (ui *ui) installScroll() {
 	ui.app.SetMouseCapture(ui.onMouse)
 }
 
-// drawScroll paints the gutter and returns an inner rect one column narrower
-// so the table or preview text stays clear of it.
+// drawScroll paints the right gutter, and a bottom gutter when a line is wider
+// than the window. The returned rect stays clear of both.
 func (ui *ui) drawScroll(screen tcell.Screen, x, y, width, height int, kind string) (int, int, int, int) {
 	ix, iy, iw, ih := insetBorder(x, y, width, height)
 	if iw < 2 || ih < 1 {
 		ui.storeBar(kind, scrollBar{})
+		ui.storeBar(kind+"-x", scrollBar{})
 		return ix, iy, iw, ih
+	}
+	contentW := iw - 1
+	contentH := ih
+	wide := ui.listWide
+	if kind == "preview" {
+		wide = lineWidth(ui.preview.GetText(true))
+	} else if contentW > 0 {
+		ui.applyHScroll(contentW)
+		wide = ui.listWide
+	}
+	showX := wide > contentW && ih >= 2
+	if showX {
+		contentH = ih - 1
 	}
 	var bar scrollBar
 	switch kind {
 	case "preview":
-		page := ih
-		total := wrappedRows(ui.preview.GetText(true), iw-1)
+		page := contentH
+		if page < 1 {
+			page = 1
+		}
+		total := previewLines(ui.preview.GetText(true))
 		maxPos := total - page
 		if maxPos < 0 {
 			maxPos = 0
 		}
 		offset, _ := ui.preview.GetScrollOffset()
-		bar = layoutBar(ix+iw-1, iy, ih, offset, maxPos, page, total)
+		bar = layoutBar(ix+iw-1, iy, contentH, offset, maxPos, page, total)
 	default:
 		total := ui.listCount()
-		page := ih - 1
+		page := contentH - 1
 		if page < 1 {
 			page = 1
 		}
@@ -118,42 +147,86 @@ func (ui *ui) drawScroll(screen tcell.Screen, x, y, width, height int, kind stri
 		if total > page {
 			maxPos = total - 1
 		}
-		bar = layoutBar(ix+iw-1, iy, ih, ui.listPos(), maxPos, page, total)
+		bar = layoutBar(ix+iw-1, iy, contentH, ui.listPos(), maxPos, page, total)
 	}
 	ui.storeBar(kind, bar)
 	ui.paintBar(screen, bar, kind)
-	return ix, iy, iw - 1, ih
+
+	var across scrollBar
+	if showX {
+		max := wide - contentW
+		if max < 0 {
+			max = 0
+		}
+		pos := ui.listX
+		if kind == "preview" {
+			_, pos = ui.preview.GetScrollOffset()
+		}
+		if pos > max {
+			pos = max
+		}
+		across = layoutBar(ix, iy+ih-1, contentW, pos, max, contentW, wide)
+		across.horizontal = true
+		ui.paintBar(screen, across, kind+"-x")
+		if screen != nil {
+			screen.SetContent(ix+iw-1, iy+ih-1, '┘', nil, ui.barStyle(false, kind))
+		}
+	}
+	ui.storeBar(kind+"-x", across)
+	return ix, iy, contentW, contentH
 }
 
 func (ui *ui) storeBar(kind string, bar scrollBar) {
-	if kind == "preview" {
+	switch kind {
+	case "preview":
 		ui.previewBar = bar
-		return
+	case "preview-x":
+		ui.previewXBar = bar
+	case "list-x":
+		ui.listXBar = bar
+	default:
+		ui.listBar = bar
 	}
-	ui.listBar = bar
+}
+
+func (ui *ui) barFocused(kind string) bool {
+	if strings.HasPrefix(kind, "preview") {
+		return ui.focused == "preview"
+	}
+	return ui.focused == "table" || ui.focused == "filter" || ui.focused == "command"
+}
+
+func (ui *ui) barStyle(thumb bool, kind string) tcell.Style {
+	bg := paintColor(ui.cfg.Skin.Views.Table.Bg, "black")
+	fg := paintColor(ui.cfg.Skin.Frame.Border.Fg, "white")
+	if thumb && ui.barFocused(kind) {
+		fg = paintColor(ui.cfg.Skin.Frame.Border.Focus, "white")
+	}
+	return tcell.StyleDefault.Foreground(fg).Background(bg)
 }
 
 func (ui *ui) paintBar(screen tcell.Screen, bar scrollBar, kind string) {
-	if bar.h <= 0 {
+	if bar.h <= 0 || screen == nil {
 		return
 	}
-	bg := paintColor(ui.cfg.Skin.Views.Table.Bg, "black")
-	track := tcell.StyleDefault.Foreground(paintColor(ui.cfg.Skin.Frame.Border.Fg, "white")).Background(bg)
-	thumbColor := paintColor(ui.cfg.Skin.Frame.Border.Fg, "white")
-	focused := (kind == "preview" && ui.focused == "preview") ||
-		(kind != "preview" && (ui.focused == "table" || ui.focused == "filter" || ui.focused == "command"))
-	if focused {
-		thumbColor = paintColor(ui.cfg.Skin.Frame.Border.Focus, "white")
+	track := ui.barStyle(false, kind)
+	thumb := ui.barStyle(true, kind)
+	trackRune, thumbRune := '│', '┃'
+	if bar.horizontal {
+		trackRune, thumbRune = '─', '━'
 	}
-	thumb := tcell.StyleDefault.Foreground(thumbColor).Background(bg)
 	for i := 0; i < bar.h; i++ {
-		r := '│'
+		r := trackRune
 		style := track
 		if i >= bar.top && i < bar.top+bar.length {
-			r = '┃'
+			r = thumbRune
 			style = thumb
 		}
-		screen.SetContent(bar.x, bar.y+i, r, nil, style)
+		px, py := bar.x, bar.y+i
+		if bar.horizontal {
+			px, py = bar.x+i, bar.y
+		}
+		screen.SetContent(px, py, r, nil, style)
 	}
 }
 
@@ -239,16 +312,82 @@ func (ui *ui) scrollPreview(delta int) {
 }
 
 func (ui *ui) setPreviewPos(pos int) {
-	if pos <= 0 {
-		ui.preview.ScrollToBeginning()
-		return
-	}
 	_, col := ui.preview.GetScrollOffset()
-	if ui.previewBar.maxPos > 0 && pos >= ui.previewBar.maxPos {
-		ui.preview.ScrollTo(ui.previewBar.maxPos, col)
-		return
+	if pos < 0 {
+		pos = 0
+	}
+	if ui.previewBar.maxPos > 0 && pos > ui.previewBar.maxPos {
+		pos = ui.previewBar.maxPos
 	}
 	ui.preview.ScrollTo(pos, col)
+}
+
+func (ui *ui) setLines(lines []string, wide int) {
+	ui.lines = lines
+	ui.listWide = wide
+	w := ui.listViewW
+	if w < 1 {
+		w = wide
+		if w < 1 {
+			w = 1
+		}
+	}
+	ui.applyHScroll(w)
+}
+
+func (ui *ui) applyHScroll(viewW int) {
+	if viewW < 1 {
+		viewW = 1
+	}
+	ui.listViewW = viewW
+	max := ui.listWide - viewW
+	if max < 0 {
+		max = 0
+	}
+	if ui.listX > max {
+		ui.listX = max
+	}
+	if ui.listX < 0 {
+		ui.listX = 0
+	}
+	ui.table.Clear()
+	for i, line := range ui.lines {
+		shown := clipTagged(line, ui.listX, viewW)
+		cell := ui.cell(shown).SetExpansion(1)
+		if i == 0 {
+			cell = ui.headerCell(shown, 1)
+		}
+		ui.table.SetCell(i, 0, cell)
+	}
+}
+
+func (ui *ui) scrollListX(delta int) {
+	ui.setListX(ui.listX + delta)
+}
+
+func (ui *ui) setListX(pos int) {
+	ui.listX = pos
+	w := ui.listViewW
+	if w < 1 {
+		w = 1
+	}
+	ui.applyHScroll(w)
+}
+
+func (ui *ui) scrollPreviewX(delta int) {
+	_, col := ui.preview.GetScrollOffset()
+	ui.setPreviewCol(col + delta)
+}
+
+func (ui *ui) setPreviewCol(col int) {
+	row, _ := ui.preview.GetScrollOffset()
+	if col < 0 {
+		col = 0
+	}
+	if ui.previewXBar.maxPos > 0 && col > ui.previewXBar.maxPos {
+		col = ui.previewXBar.maxPos
+	}
+	ui.preview.ScrollTo(row, col)
 }
 
 func (ui *ui) onMouse(ev *tcell.EventMouse, action tview.MouseAction) (*tcell.EventMouse, tview.MouseAction) {
@@ -260,9 +399,9 @@ func (ui *ui) onMouse(ev *tcell.EventMouse, action tview.MouseAction) (*tcell.Ev
 	describe := ui.describing()
 	switch action {
 	case tview.MouseLeftUp, tview.MouseLeftClick:
-		onBar := ui.listBar.hit(x, y)
+		onBar := ui.listBar.hit(x, y) || ui.listXBar.hit(x, y)
 		if describe {
-			onBar = ui.previewBar.hit(x, y)
+			onBar = ui.previewBar.hit(x, y) || ui.previewXBar.hit(x, y)
 		}
 		if ui.scrollDrag != "" || onBar {
 			ui.scrollDrag = ""
@@ -270,7 +409,11 @@ func (ui *ui) onMouse(ev *tcell.EventMouse, action tview.MouseAction) (*tcell.Ev
 		}
 	case tview.MouseMove:
 		if ui.scrollDrag != "" {
-			ui.dragTo(ui.scrollDrag, y)
+			if strings.HasSuffix(ui.scrollDrag, "-x") {
+				ui.dragToX(ui.scrollDrag, x)
+			} else {
+				ui.dragTo(ui.scrollDrag, y)
+			}
 			return nil, action
 		}
 	case tview.MouseLeftDown:
@@ -279,8 +422,18 @@ func (ui *ui) onMouse(ev *tcell.EventMouse, action tview.MouseAction) (*tcell.Ev
 			ui.focusSessions()
 			return nil, action
 		}
+		if !describe && ui.listXBar.hit(x, y) {
+			ui.beginDrag("list-x", ui.listXBar, x)
+			ui.focusSessions()
+			return nil, action
+		}
 		if describe && ui.previewBar.hit(x, y) {
 			ui.beginDrag("preview", ui.previewBar, y)
+			ui.app.SetFocus(ui.preview)
+			return nil, action
+		}
+		if describe && ui.previewXBar.hit(x, y) {
+			ui.beginDrag("preview-x", ui.previewXBar, x)
 			ui.app.SetFocus(ui.preview)
 			return nil, action
 		}
@@ -297,18 +450,39 @@ func (ui *ui) onMouse(ev *tcell.EventMouse, action tview.MouseAction) (*tcell.Ev
 			ui.scrollPreview(step)
 			return nil, action
 		}
+	case tview.MouseScrollLeft, tview.MouseScrollRight:
+		step := hScrollStep
+		if action == tview.MouseScrollLeft {
+			step = -hScrollStep
+		}
+		if !describe && ui.table.InRect(x, y) {
+			ui.scrollListX(step)
+			return nil, action
+		}
+		if describe && ui.preview.InRect(x, y) {
+			ui.scrollPreviewX(step)
+			return nil, action
+		}
 	}
 	return ev, action
 }
 
-func (ui *ui) beginDrag(which string, bar scrollBar, y int) {
+func (ui *ui) beginDrag(which string, bar scrollBar, at int) {
 	ui.scrollDrag = which
-	grab := y - (bar.y + bar.top)
+	origin := bar.y
+	if bar.horizontal {
+		origin = bar.x
+	}
+	grab := at - (origin + bar.top)
 	if grab < 0 || grab >= bar.length {
 		grab = bar.length / 2
 	}
 	ui.scrollGrab = grab
-	ui.dragTo(which, y)
+	if bar.horizontal {
+		ui.dragToX(which, at)
+		return
+	}
+	ui.dragTo(which, at)
 }
 
 func (ui *ui) dragTo(which string, y int) {
@@ -328,8 +502,40 @@ func (ui *ui) dragTo(which string, y int) {
 	ui.paintCrumbs()
 }
 
-// wrappedRows estimates how many screen rows text occupies at width.
-// The scrollbar uses it so the thumb tracks wrapped preview lines.
+func (ui *ui) dragToX(which string, x int) {
+	bar := ui.listXBar
+	if which == "preview-x" {
+		bar = ui.previewXBar
+	}
+	if bar.maxPos <= 0 || bar.h <= 0 {
+		return
+	}
+	pos := bar.posForThumbTop((x - bar.x) - ui.scrollGrab)
+	if which == "preview-x" {
+		ui.setPreviewCol(pos)
+		return
+	}
+	ui.setListX(pos)
+}
+
+func lineWidth(text string) int {
+	max := 0
+	for _, line := range strings.Split(text, "\n") {
+		if w := runewidth.StringWidth(line); w > max {
+			max = w
+		}
+	}
+	return max
+}
+
+func previewLines(text string) int {
+	if text == "" {
+		return 0
+	}
+	return strings.Count(text, "\n") + 1
+}
+
+// wrappedRows estimates how many screen rows text would occupy if it wrapped.
 func wrappedRows(text string, width int) int {
 	if text == "" {
 		return 0
