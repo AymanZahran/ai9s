@@ -231,6 +231,64 @@ func TestEscapeClearsFilter(t *testing.T) {
 	}
 }
 
+func TestEscapeReturnsToDrilledView(t *testing.T) {
+	st, err := store.Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	path := filepath.Join(t.TempDir(), "one.jsonl")
+	sess := model.Session{
+		ID: "claude:one", NativeID: "one", Agent: "claude", Title: "ship the feature",
+		CWD: "/work/app", Updated: time.Date(2026, 3, 2, 15, 4, 5, 0, time.UTC),
+		SourcePath: path, CanDelete: true, DeleteMode: "file",
+	}
+	if err := st.Apply("claude", []model.Session{sess}, []store.Source{{Path: path, Mtime: 1}}); err != nil {
+		t.Fatal(err)
+	}
+	app := tview.NewApplication()
+	ui := newUI(app, st, config.Defaults())
+	ui.reload()
+	app.SetRoot(ui.layout, false)
+
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, '2', tcell.ModNone))
+	if ui.view != viewProviders {
+		t.Fatalf("providers %s", ui.view)
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
+	if ui.view != viewSessions || ui.drilled != viewProviders || !strings.Contains(ui.filter.GetText(), "agent:claude") {
+		t.Fatalf("drill view %s from %s filter %q", ui.view, ui.drilled, ui.filter.GetText())
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, 'd', tcell.ModNone))
+	send(ui.preview, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
+	if ui.view != viewSessions || ui.drilled != viewProviders || !strings.Contains(ui.filter.GetText(), "agent:claude") {
+		t.Fatalf("describe esc view %s from %s filter %q", ui.view, ui.drilled, ui.filter.GetText())
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
+	if ui.view != viewProviders || ui.drilled != "" || ui.filter.GetText() != "" {
+		t.Fatalf("back view %s from %q filter %q", ui.view, ui.drilled, ui.filter.GetText())
+	}
+	ui.filter.SetText("zzz")
+	send(ui.table, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
+	if ui.view != viewProviders || ui.filter.GetText() != "" {
+		t.Fatalf("group root view %s filter %q", ui.view, ui.filter.GetText())
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, '1', tcell.ModNone))
+	ui.filter.SetText("agent:claude")
+	send(ui.table, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
+	if ui.view != viewSessions || ui.filter.GetText() != "" {
+		t.Fatalf("sessions esc view %s filter %q", ui.view, ui.filter.GetText())
+	}
+	header := ui.header.GetText(true)
+	info := ui.info.GetText(true)
+	if strings.Contains(info, "claude") || strings.Contains(header, "yolo") || strings.Contains(header, "pgup") {
+		t.Fatalf("chrome info %q header %q", info, header)
+	}
+	if !strings.Contains(ui.table.GetCell(0, 0).Text, "TOKENS") {
+		t.Fatalf("header %q", ui.table.GetCell(0, 0).Text)
+	}
+}
+
 func TestArrowsSelectWhilePromptIsOpen(t *testing.T) {
 	st, err := store.Open(filepath.Join(t.TempDir(), "index.db"))
 	if err != nil {
@@ -457,6 +515,28 @@ func TestPageAndScrollbar(t *testing.T) {
 		t.Fatalf("scrollbar click row %d", row)
 	}
 
+	ui.table.Select(start, 0)
+	send(ui.table, tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModMeta))
+	row, _ = ui.table.GetSelection()
+	if row != start+ui.listPage() {
+		t.Fatalf("cmd-down row %d page %d", row, ui.listPage())
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModCtrl))
+	row, _ = ui.table.GetSelection()
+	if row != start {
+		t.Fatalf("ctrl-up row %d", row)
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModAlt))
+	row, _ = ui.table.GetSelection()
+	if row != start+ui.listPage() {
+		t.Fatalf("alt-down row %d", row)
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone))
+	row, _ = ui.table.GetSelection()
+	if row != start+ui.listPage()-1 {
+		t.Fatalf("plain up row %d", row)
+	}
+
 	var lines []string
 	for i := 0; i < 40; i++ {
 		lines = append(lines, "preview line stays on one row")
@@ -492,6 +572,12 @@ func TestPageAndScrollbar(t *testing.T) {
 	prow, _ = ui.preview.GetScrollOffset()
 	if prow != ph+1+wheelRows-ph {
 		t.Fatalf("preview page up row %d", prow)
+	}
+	held := prow
+	send(ui.preview, tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModMeta))
+	prow, _ = ui.preview.GetScrollOffset()
+	if prow != held+ph {
+		t.Fatalf("preview cmd-down row %d held %d page %d", prow, held, ph)
 	}
 }
 

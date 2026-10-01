@@ -74,26 +74,28 @@ type SkinHeader struct {
 }
 
 func defaultSkin() Skin {
-	// Matches the k9s black-and-wtf skin: a black screen and white text.
-	// A named skin file replaces any field it sets.
-	s := Skin{
-		Body: SkinBody{Fg: "white", Bg: "black", Logo: "white"},
+	// True black, not the palette color named black. Terminals often paint
+	// that index as charcoal, which is the grey screen. Accents follow the
+	// k9s stock skin so the text, keys, and cursor stay readable on black.
+	// A named skin file replaces any field it sets. The crumbs stay black.
+	const black = "#000000"
+	return Skin{
+		Body: SkinBody{Fg: "lightskyblue", Bg: black, Logo: "orange"},
 		Frame: SkinFrame{
-			Border: SkinBorder{Fg: "white", Focus: "white"},
-			Menu:   SkinMenu{Fg: "white", Key: "white", NumKey: "navajowhite"},
-			Crumbs: SkinCrumbs{Fg: "white", Bg: "black", Active: "white"},
+			Border: SkinBorder{Fg: "dodgerblue", Focus: "aqua"},
+			Menu:   SkinMenu{Fg: "white", Key: "darkturquoise", NumKey: "fuchsia"},
+			Crumbs: SkinCrumbs{Fg: "lightskyblue", Bg: black, Active: "aqua"},
 			Title: SkinTitle{
-				Fg: "white", Bg: "black", Highlight: "white",
-				Counter: "navajowhite", Filter: "slategray",
+				Fg: "aqua", Bg: black, Highlight: "aqua",
+				Counter: "white", Filter: "lightskyblue",
 			},
 		},
 		Views: SkinViews{Table: SkinTable{
-			Fg: "white", Bg: "black",
-			CursorFg: "black", CursorBg: "white",
-			Header: SkinHeader{Fg: "gray", Bg: "black"},
+			Fg: "lightskyblue", Bg: black,
+			CursorFg: "black", CursorBg: "aqua",
+			Header: SkinHeader{Fg: "white", Bg: black},
 		}},
 	}
-	return s
 }
 
 func (s *Skin) fill() {

@@ -72,7 +72,11 @@ func (ui *ui) headerCell(text string, expand int) *tview.TableCell {
 }
 
 func (ui *ui) cell(text string) *tview.TableCell {
-	return tview.NewTableCell(text).SetTextColor(paintColor(ui.cfg.Skin.Views.Table.Fg, "white"))
+	// SetBackgroundColor clears the cell's transparent flag. A transparent
+	// cell keeps the terminal's palette black, which themed terminals draw grey.
+	return tview.NewTableCell(text).
+		SetTextColor(paintColor(ui.cfg.Skin.Views.Table.Fg, "white")).
+		SetBackgroundColor(paintColor(ui.cfg.Skin.Views.Table.Bg, "#000000"))
 }
 
 func (ui *ui) mark(agent string) string {

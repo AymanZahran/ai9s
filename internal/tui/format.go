@@ -9,36 +9,42 @@ import (
 
 	"github.com/AymanZahran/air9s/internal/model"
 	"github.com/AymanZahran/air9s/internal/query"
-	"github.com/mattn/go-runewidth"
 )
 
-// Icon is the mark drawn beside an agent. Every icon occupies two columns.
-// Glyphs are taken from what that product prints. Cursor's logo is a cube
-// image, so its cell is blank. Jules, Goose, Cline, and Aider print a name
-// and no glyph, so those cells are the first two letters of the name.
+// Icon is the two-column mark beside an agent.
+//
+// Published by that project, and wide enough for a terminal to draw:
+// OpenClaw's README heading is the lobster, Goose's README uses the goose,
+// and Hermes Agent's README heading is the caduceus (padded, because that
+// glyph is one column). Gemini's prompt glyph is ✦, which draws as a plus,
+// so the cell uses the sparkle emoji instead.
+//
+// Claude, Codex, Copilot, Grok, Antigravity, Cursor, OpenCode, Junie, Jules,
+// Cline, Aider, and Kiro publish a picture logo and no emoji. Those cells are
+// a brand-colored mark, not a character the vendor prints.
 func Icon(agent string) string {
 	icon := map[string]string{
-		"claude":      "✻",  // Claude Code status glyph, U+273B
-		"codex":       ">_", // Codex banner: ">_ OpenAI Codex"
-		"copilot":     "╭╮", // eyes of the Copilot CLI mascot
-		"grok":        "⣠⣾", // opening cells of Grok's braille logo
-		"antigravity": "▄▀", // opening cells of the Antigravity CLI logo
-		"gemini":      "✦",  // Gemini CLI prompt glyph, U+2726
-		"cursor":      "  ",
-		"opencode":    "█▀", // opening cells of the OpenCode wordmark
-		"hermes":      "██", // opening cells of the Hermes banner
-		"openclaw":    "🦞",  // OpenClaw's own README mark
-		"junie":       "//", // Junie help banner
-		"jules":       "Ju",
-		"goose":       "Go",
-		"cline":       "Cl",
-		"aider":       "Ai",
-		"kiro":        "╭─", // Kiro CLI menu frame
+		"claude":      "🟠",
+		"codex":       "🟢",
+		"copilot":     "🟣",
+		"grok":        "⚫",
+		"antigravity": "🔵",
+		"gemini":      "✨",
+		"cursor":      "🔷",
+		"opencode":    "🟧",
+		"hermes":      "☤ ",
+		"openclaw":    "🦞",
+		"junie":       "🟨",
+		"jules":       "🌙",
+		"goose":       "🪿",
+		"cline":       "🟩",
+		"aider":       "🔴",
+		"kiro":        "🔶",
 	}[agent]
 	if icon == "" {
 		icon = "⚪"
 	}
-	if runewidth.StringWidth(icon) < 2 {
+	if textWidth(icon) < 2 {
 		icon += " "
 	}
 	return icon
@@ -162,15 +168,6 @@ func preview(s model.Session) string {
 		fmt.Fprintf(&b, "  [gray]%s[-]", s.Model)
 	}
 	fmt.Fprintf(&b, "\n%s   %d messages   %s\n", relAge(s.Updated), s.Messages, s.ID)
-	if s.CanDelete {
-		b.WriteString("[green]delete: yes[-]\n")
-	} else {
-		reason := s.DeleteReason
-		if reason == "" {
-			reason = "disabled for this agent"
-		}
-		fmt.Fprintf(&b, "[red]delete: no[-]  %s\n", reason)
-	}
 	for _, line := range UsageLines(s.Usage) {
 		fmt.Fprintf(&b, "%s\n", line)
 	}
@@ -191,21 +188,19 @@ func preview(s model.Session) string {
 }
 
 // UsageLines describes context and token accounting for the preview and show command.
+// Context and tokens are always present. A dash means the session file did not record them.
 func UsageLines(u model.Usage) []string {
-	if u.Empty() {
-		return nil
-	}
 	var lines []string
-	if u.Context > 0 || u.Window > 0 {
-		switch {
-		case u.Context > 0 && u.Window > 0:
-			pct := u.Context * 100 / u.Window
-			lines = append(lines, fmt.Sprintf("context    %s / %s  (%d%%)", compactCount(u.Context), compactCount(u.Window), pct))
-		case u.Context > 0:
-			lines = append(lines, "context    "+compactCount(u.Context))
-		default:
-			lines = append(lines, "context    window "+compactCount(u.Window))
-		}
+	switch {
+	case u.Context > 0 && u.Window > 0:
+		pct := u.Context * 100 / u.Window
+		lines = append(lines, fmt.Sprintf("context    %s / %s  (%d%%)", compactCount(u.Context), compactCount(u.Window), pct))
+	case u.Context > 0:
+		lines = append(lines, "context    "+compactCount(u.Context))
+	case u.Window > 0:
+		lines = append(lines, "context    window "+compactCount(u.Window))
+	default:
+		lines = append(lines, "context    -")
 	}
 	var parts []string
 	if u.Input > 0 && u.Input != u.Context {
@@ -228,6 +223,8 @@ func UsageLines(u model.Usage) []string {
 	}
 	if len(parts) > 0 {
 		lines = append(lines, "tokens     "+strings.Join(parts, "   "))
+	} else {
+		lines = append(lines, "tokens     -")
 	}
 	if u.CostUSD > 0 {
 		lines = append(lines, "cost       $"+trimCost(u.CostUSD))
@@ -247,12 +244,27 @@ func contextLabel(u model.Usage) string {
 		return compactCount(u.Context) + "/" + compactCount(u.Window)
 	case u.Context > 0:
 		return compactCount(u.Context)
-	case u.Total > 0:
-		return compactCount(u.Total)
 	case u.Window > 0:
 		return "/" + compactCount(u.Window)
 	default:
-		return ""
+		return "-"
+	}
+}
+
+// tokenLabel is the TOKENS column. It is the session total when the file
+// recorded one, otherwise input and output. It is not the CTX prompt size.
+func tokenLabel(u model.Usage) string {
+	switch {
+	case u.Total > 0:
+		return compactCount(u.Total)
+	case u.Input > 0 && u.Output > 0:
+		return compactCount(u.Input) + "+" + compactCount(u.Output)
+	case u.Input > 0:
+		return compactCount(u.Input)
+	case u.Output > 0:
+		return compactCount(u.Output)
+	default:
+		return "-"
 	}
 }
 

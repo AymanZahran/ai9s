@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Left and right pan by the same column width the table paints, so a cut-off title moves and the bottom scrollbar appears when a line is wider than the window.
+- The built-in skin is true black with k9s accent colors: blue text, an orange logo, a blue border, and an aqua selection bar. The crumbs line stays black.
+- OpenClaw, Goose, and Hermes use the mark published in that project's README. Gemini uses a sparkle, because its prompt glyph draws as a plus. The other agents publish a picture logo and no emoji, so those cells are a brand-colored mark.
+- Describe always shows context and token usage, with a dash when the file has none. It no longer prints whether delete is available. The session list has a TOKENS column beside CTX.
+- Command-Up and Command-Down move a page on the list and in describe. Control or Alt with those arrows do the same. Page Up and Page Down still work.
+- The screen no longer has a yolo toggle. `air9s resume --yolo` is unchanged.
+- Escape returns to the group you opened, and on that group it clears the filter and stays there. The line under the crumbs no longer lists every provider.
+
 ## 0.2.9
 
 - Delete stays inside air9s. Confirming Ctrl-D no longer takes over the terminal, so a delete cannot leave a blank screen that ignores Ctrl-C.

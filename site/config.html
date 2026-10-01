@@ -63,7 +63,7 @@
 
     <h2>Skins</h2>
     <p>A skin file uses the same shape as the stock skin: body, frame, and table colors. Values are tcell names such as <code>white</code>, or <code>#RRGGBB</code>. The name <code>default</code> keeps the terminal color. <code>agents</code> maps an agent id to a color and overrides the built-in mark.</p>
-    <p>With <code>ui.skin</code> empty, the screen is black, the same way the k9s black skin is: white text and borders, warm view keys, a gray column header, and a white selection bar. A skin file replaces any field it sets, and the rest stay on that palette. The shortcut bar is a grid: view keys on the first row, actions beneath them, and a further row for each group of plugin keys you have installed.</p>
+    <p>With <code>ui.skin</code> empty, the screen is true black (<code>#000000</code>) with the k9s accent colors: blue text, an orange logo, a blue border, fuchsia view keys, and an aqua selection bar. The crumbs line stays black. The named <code>stock</code> skin is the older white-on-black palette. A skin file replaces any field it sets, and the rest stay on the built-in palette. The shortcut bar is a grid: view keys on the first row, actions beneath them, and a further row for each group of plugin keys you have installed.</p>
 
     <h2>Plugins</h2>
     <p>A plugin runs a program. It does not get a shell. Put the list in <code>plugins.yaml</code>, or one plugin in each file under <code>plugins/</code>. <code>background: true</code> starts it without leaving the UI and discards its output. Otherwise air9s suspends the screen, the way resume does.</p>
@@ -91,7 +91,7 @@
         </tbody>
       </table>
     </div>
-    <p>These shortcuts are reserved and ignored: <code>q</code>, <code>/</code>, <code>:</code>, <code>d</code>, <code>y</code>, <code>r</code>, <code>s</code>, <code>?</code>, <code>a</code>, <code>p</code>, <code>o</code>, <code>j</code>, <code>k</code>, <code>h</code>, <code>l</code>, <code>g</code>, <code>G</code>, <code>1</code>–<code>5</code>, Enter, Tab, Esc, and Ctrl-D. A repeated shortcut is ignored too. air9s prints the reason on startup and in the header.</p>
+    <p>These shortcuts are reserved and ignored: <code>q</code>, <code>/</code>, <code>:</code>, <code>d</code>, <code>r</code>, <code>s</code>, <code>?</code>, <code>a</code>, <code>p</code>, <code>o</code>, <code>j</code>, <code>k</code>, <code>h</code>, <code>l</code>, <code>g</code>, <code>G</code>, <code>1</code>–<code>5</code>, Enter, Tab, Esc, and Ctrl-D. A repeated shortcut is ignored too. air9s prints the reason on startup and in the header.</p>
     <p>Do not put tokens or other secrets in these files. A new <code>config.yaml</code> is mode <code>0600</code>.</p>
   </main>
   <footer class="site-footer">

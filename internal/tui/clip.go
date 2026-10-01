@@ -4,9 +4,22 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/mattn/go-runewidth"
 	"github.com/rivo/tview"
 )
+
+// textWidth is the column count tview will paint. The list scroller uses the
+// same count, so a line tview would ellipsize is a line the scroller can pan.
+func textWidth(s string) int {
+	return tview.TaggedStringWidth(s)
+}
+
+func runeWidth(r rune) int {
+	w := textWidth(string(r))
+	if w < 1 {
+		return 1
+	}
+	return w
+}
 
 // cellText is one column in a row that can be wider than the window.
 type cellText struct {
@@ -16,7 +29,7 @@ type cellText struct {
 }
 
 func padWidth(text string, width int, right bool) string {
-	w := runewidth.StringWidth(text)
+	w := textWidth(text)
 	if w >= width {
 		return text
 	}
@@ -37,7 +50,7 @@ func columnWidths(rows [][]cellText) []int {
 	widths := make([]int, n)
 	for _, row := range rows {
 		for i, cell := range row {
-			if w := runewidth.StringWidth(cell.text); w > widths[i] {
+			if w := textWidth(cell.text); w > widths[i] {
 				widths[i] = w
 			}
 		}
@@ -112,16 +125,28 @@ func clipTagged(s string, skip, take int) string {
 			}
 		}
 		r, size := utf8.DecodeRuneInString(s[i:])
-		w := runewidth.RuneWidth(r)
-		if w < 1 {
-			w = 1
-		}
+		w := runeWidth(r)
 		if !writeRune(&b, &style, &started, &visible, &col, skip, take, r, w) {
 			break
 		}
 		i += size
 	}
 	return b.String()
+}
+
+// fitTagged clips s to take columns and then drops whole runes until tview's
+// own width agrees. A leftover column is what makes the table draw an ellipsis
+// that never moves.
+func fitTagged(s string, skip, take int) string {
+	if take < 1 {
+		return ""
+	}
+	shown := clipTagged(s, skip, take)
+	for take > 1 && textWidth(shown) > take {
+		take--
+		shown = clipTagged(s, skip, take)
+	}
+	return shown
 }
 
 func writeRune(b *strings.Builder, style *string, started *bool, visible, col *int, skip, take int, r rune, w int) bool {

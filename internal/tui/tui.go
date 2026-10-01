@@ -80,7 +80,7 @@ type ui struct {
 	rows            []model.Session
 	agents          []string
 	warnings        []string
-	yolo            bool
+	drilled         string
 	pending         *act.Command
 	busy            bool
 	busyNote        string
@@ -127,7 +127,7 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 		case tcell.KeyTab:
 			ui.focusPreview()
 		case tcell.KeyEscape:
-			ui.clearFilter()
+			ui.escapeView()
 			ui.focusSessions()
 		case tcell.KeyEnter, tcell.KeyBacktab:
 			ui.focusSessions()
@@ -193,7 +193,7 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 	ui.body = tview.NewPages().
 		AddPage("list", ui.table, true, true).
 		AddPage("describe", ui.preview, true, false)
-	menuH, crumbsH, infoH, logoW := 2, 1, 2, 10
+	menuH, crumbsH, infoH, logoW := 2, 1, 1, 10
 	if cfg.Body.UI.Headless {
 		menuH, crumbsH, infoH, logoW = 0, 0, 0, 0
 	}
@@ -245,9 +245,18 @@ func (ui *ui) clearFilter() {
 }
 
 const (
-	footerSessions = `[yellow]d[-] describe   [yellow]ctrl-d[-] delete   [yellow]h/l[-] pan   [yellow]pgup/pgdn[-] page   [yellow]enter[-] resume   [yellow]/[-] filter   [yellow]a[-] agent   [yellow]p[-] directory   [yellow]o[-] sort   [yellow]y[-] yolo   [yellow]r[-] reindex   [yellow]s[-] stats   [yellow]?[-] help   [yellow]q[-] quit`
-	footerPreview  = `[yellow]j/k[-] line   [yellow]h/l[-] pan   [yellow]pgup/pgdn[-] page   [yellow]g/G[-] top/end   [yellow]wheel[-] scroll   [yellow]esc[-] list   [yellow]ctrl-d[-] delete   [yellow]enter[-] resume   [yellow]q[-] quit`
+	footerSessions = `[yellow]d[-] describe   [yellow]ctrl-d[-] delete   [yellow]h/l[-] pan   [yellow]⌘↑/⌘↓[-] page   [yellow]enter[-] resume   [yellow]/[-] filter   [yellow]a[-] agent   [yellow]p[-] directory   [yellow]o[-] sort   [yellow]r[-] reindex   [yellow]s[-] stats   [yellow]?[-] help   [yellow]q[-] quit`
+	footerPreview  = `[yellow]j/k[-] line   [yellow]h/l[-] pan   [yellow]⌘↑/⌘↓[-] page   [yellow]g/G[-] top/end   [yellow]wheel[-] scroll   [yellow]esc[-] list   [yellow]ctrl-d[-] delete   [yellow]enter[-] resume   [yellow]q[-] quit`
 )
+
+// paging reports Command, Control, or Alt held with Up or Down.
+// On a Mac those are the page keys. Page Up and Page Down stay as aliases.
+func paging(ev *tcell.EventKey) bool {
+	if ev.Key() != tcell.KeyUp && ev.Key() != tcell.KeyDown {
+		return false
+	}
+	return ev.Modifiers()&(tcell.ModMeta|tcell.ModCtrl|tcell.ModAlt) != 0
+}
 
 func (ui *ui) paintChrome() {
 	// Do not call HasFocus here. TextView.Focus holds its lock while this runs.
@@ -276,6 +285,17 @@ func (ui *ui) paintChrome() {
 // forwardListMotion lets the list move while / or : still has the cursor.
 // Letters, including j and k, and left/right/home/end stay in the field.
 func (ui *ui) forwardListMotion(ev *tcell.EventKey) *tcell.EventKey {
+	if paging(ev) {
+		delta := ui.listPage()
+		if ev.Key() == tcell.KeyUp {
+			delta = -delta
+		}
+		if ui.commandOpen {
+			ui.commandMoved = true
+		}
+		ui.moveSelection(delta)
+		return nil
+	}
 	switch ev.Key() {
 	case tcell.KeyUp, tcell.KeyDown:
 	case tcell.KeyPgUp, tcell.KeyCtrlB:
@@ -376,8 +396,17 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 		ui.openDescribe()
 		return nil
 	case tcell.KeyEscape:
-		ui.clearFilter()
+		ui.escapeView()
 		return nil
+	case tcell.KeyUp, tcell.KeyDown:
+		if paging(ev) {
+			delta := ui.listPage()
+			if ev.Key() == tcell.KeyUp {
+				delta = -delta
+			}
+			ui.moveSelection(delta)
+			return nil
+		}
 	case tcell.KeyPgUp:
 		ui.moveSelection(-ui.listPage())
 		return nil
@@ -414,9 +443,6 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 		ui.openCommand()
 	case 'd':
 		ui.openDescribe()
-	case 'y':
-		ui.yolo = !ui.yolo
-		ui.paintHeader()
 	case 'r':
 		ui.reindex()
 	case 'a':
@@ -462,6 +488,15 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	switch ev.Key() {
+	case tcell.KeyUp, tcell.KeyDown:
+		if paging(ev) {
+			delta := ui.previewPage()
+			if ev.Key() == tcell.KeyUp {
+				delta = -delta
+			}
+			ui.scrollPreview(delta)
+			return nil
+		}
 	case tcell.KeyPgUp:
 		ui.scrollPreview(-ui.previewPage())
 		return nil
@@ -625,9 +660,6 @@ func (ui *ui) paintCrumbs() {
 	stats, _ := ui.store.Stats()
 	active := ui.cfg.Skin.Frame.Crumbs.Active
 	var extra string
-	if ui.yolo {
-		extra += "  yolo"
-	}
 	if ui.busy {
 		note := ui.busyNote
 		if note == "" {
@@ -653,24 +685,42 @@ func (ui *ui) paintFooter(base string) string {
 }
 
 func (ui *ui) paintInfo() {
-	stats, _ := ui.store.Stats()
+	if ui.cfg.Body.UI.Headless {
+		return
+	}
 	var b strings.Builder
+	lines := 1
 	if len(ui.warnings) > 0 {
 		fmt.Fprintf(&b, "[red]%s[-]\n", ui.warnings[0])
+		lines = 2
 	}
-	if len(stats.Agents) == 0 {
-		b.WriteString(" ")
-	}
-	for i, a := range stats.Agents {
-		if i > 0 {
-			b.WriteString("   ")
-		}
-		fmt.Fprintf(&b, "%s [%s]%s %d[-]", ui.mark(a.Agent), ui.agentTag(a.Agent), a.Agent, a.Sessions)
-	}
-	if len(ui.warnings) == 0 {
-		b.WriteString("\n[gray]agent: dir: branch: model: date:<7d sort:recent[-]")
-	}
+	b.WriteString("[gray]agent: dir: branch: model: date:<7d sort:recent[-]")
 	ui.info.SetText(b.String())
+	if ui.layout != nil {
+		ui.layout.ResizeItem(ui.info, lines, 0)
+	}
+}
+
+// escapeView returns to the group the current list was opened from.
+// Describe closes first and keeps the filter. A sessions list opened on its
+// own only clears the filter.
+func (ui *ui) escapeView() {
+	if ui.describing() {
+		ui.closeDescribe()
+		return
+	}
+	if ui.drilled != "" {
+		back := ui.drilled
+		ui.drilled = ""
+		ui.view = back
+		if ui.filter.GetText() == "" {
+			ui.reload()
+			return
+		}
+		ui.filter.SetText("")
+		return
+	}
+	ui.clearFilter()
 }
 
 func (ui *ui) counter() string {
@@ -743,7 +793,7 @@ func (ui *ui) resumeSelected() {
 	if !ok {
 		return
 	}
-	cmd, err := act.Plan(s, ui.yolo)
+	cmd, err := act.Plan(s, false)
 	if err != nil {
 		ui.alert(err.Error())
 		return

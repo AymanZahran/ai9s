@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/mattn/go-runewidth"
 	"github.com/rivo/tview"
 )
 
@@ -113,13 +112,17 @@ func (ui *ui) drawScroll(screen tcell.Screen, x, y, width, height int, kind stri
 	contentW := iw - 1
 	contentH := ih
 	wide := ui.listWide
+	paintW := contentW
 	if kind == "preview" {
 		wide = lineWidth(ui.preview.GetText(true))
 	} else if contentW > 0 {
 		ui.applyHScroll(contentW)
 		wide = ui.listWide
+		if ui.listViewW > 0 {
+			paintW = ui.listViewW
+		}
 	}
-	showX := wide > contentW && ih >= 2
+	showX := wide > paintW && ih >= 2
 	if showX {
 		contentH = ih - 1
 	}
@@ -154,7 +157,7 @@ func (ui *ui) drawScroll(screen tcell.Screen, x, y, width, height int, kind stri
 
 	var across scrollBar
 	if showX {
-		max := wide - contentW
+		max := wide - paintW
 		if max < 0 {
 			max = 0
 		}
@@ -165,7 +168,7 @@ func (ui *ui) drawScroll(screen tcell.Screen, x, y, width, height int, kind stri
 		if pos > max {
 			pos = max
 		}
-		across = layoutBar(ix, iy+ih-1, contentW, pos, max, contentW, wide)
+		across = layoutBar(ix, iy+ih-1, contentW, pos, max, paintW, wide)
 		across.horizontal = true
 		ui.paintBar(screen, across, kind+"-x")
 		if screen != nil {
@@ -350,14 +353,24 @@ func (ui *ui) applyHScroll(viewW int) {
 	if ui.listX < 0 {
 		ui.listX = 0
 	}
-	ui.table.Clear()
+	if len(ui.lines) == 0 {
+		ui.table.Clear()
+		return
+	}
 	for i, line := range ui.lines {
-		shown := clipTagged(line, ui.listX, viewW)
-		cell := ui.cell(shown).SetExpansion(1)
+		shown := fitTagged(line, ui.listX, viewW)
+		w := textWidth(shown)
+		if w < 1 {
+			w = 1
+		}
+		cell := ui.cell(shown).SetExpansion(0).SetMaxWidth(w)
 		if i == 0 {
-			cell = ui.headerCell(shown, 1)
+			cell = ui.headerCell(shown, 0).SetMaxWidth(w)
 		}
 		ui.table.SetCell(i, 0, cell)
+	}
+	for ui.table.GetRowCount() > len(ui.lines) {
+		ui.table.RemoveRow(ui.table.GetRowCount() - 1)
 	}
 }
 
@@ -384,10 +397,27 @@ func (ui *ui) setPreviewCol(col int) {
 	if col < 0 {
 		col = 0
 	}
-	if ui.previewXBar.maxPos > 0 && col > ui.previewXBar.maxPos {
-		col = ui.previewXBar.maxPos
+	if max := ui.previewMaxCol(); col > max {
+		col = max
 	}
 	ui.preview.ScrollTo(row, col)
+}
+
+// previewMaxCol is how far describe can pan. The bar is zero until the first
+// draw, so the limit comes from the text width when that bar is not ready.
+func (ui *ui) previewMaxCol() int {
+	wide := lineWidth(ui.preview.GetText(true))
+	view := ui.previewXBar.h
+	if view < 1 {
+		_, _, view, _ = ui.preview.GetInnerRect()
+	}
+	if view < 1 {
+		return wide
+	}
+	if wide <= view {
+		return 0
+	}
+	return wide - view
 }
 
 func (ui *ui) onMouse(ev *tcell.EventMouse, action tview.MouseAction) (*tcell.EventMouse, tview.MouseAction) {
@@ -521,7 +551,7 @@ func (ui *ui) dragToX(which string, x int) {
 func lineWidth(text string) int {
 	max := 0
 	for _, line := range strings.Split(text, "\n") {
-		if w := runewidth.StringWidth(line); w > max {
+		if w := textWidth(line); w > max {
 			max = w
 		}
 	}
@@ -558,7 +588,7 @@ func oneLineRows(line string, width int) int {
 	used := 0
 	word := ""
 	flush := func(s string) {
-		w := runewidth.StringWidth(s)
+		w := textWidth(s)
 		if w == 0 {
 			return
 		}

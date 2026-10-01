@@ -83,6 +83,7 @@ func (ui *ui) setView(name string) {
 	if ui.describing() {
 		ui.closeDescribe()
 	}
+	ui.drilled = ""
 	ui.listX = 0
 	ui.view = name
 	ui.reload()
@@ -96,6 +97,7 @@ func (ui *ui) cycleView() {
 			break
 		}
 	}
+	ui.drilled = ""
 	ui.view = next
 }
 
@@ -158,11 +160,13 @@ func (ui *ui) applyCommand(text string) {
 		return
 	}
 	if spec, ok := viewByName(text); ok {
+		ui.drilled = ""
 		ui.view = spec.name
 		ui.closeCommand()
 		return
 	}
 	if key, val, ok := filterToken(text); ok {
+		ui.drilled = ""
 		ui.view = viewSessions
 		ui.dismissCommand()
 		if val == "" {
@@ -300,6 +304,7 @@ func (ui *ui) paintSessions() {
 		{text: "DIR"},
 		{text: "BRANCH"},
 		{text: "CTX", right: true},
+		{text: "TOKENS", right: true},
 		{text: sorted("MSGS", sortName, "messages", ""), right: true},
 		{text: sorted("TITLE", sortName, "", "title")},
 	})
@@ -319,6 +324,7 @@ func (ui *ui) paintSessions() {
 			{text: shortPath(s.CWD)},
 			{text: branch},
 			{text: contextLabel(s.Usage), right: true},
+			{text: tokenLabel(s.Usage), right: true},
 			{text: fmt.Sprintf("%d", s.Messages), right: true},
 			{text: s.Title},
 		})
@@ -548,6 +554,7 @@ func (ui *ui) activateGroup() {
 	if spec.name == viewBranches && g.worktree != "" {
 		text = setToken(text, "dir", quoteTok(g.worktree))
 	}
+	ui.drilled = ui.view
 	ui.view = viewSessions
 	ui.filter.SetText(text)
 	ui.focusSessions()

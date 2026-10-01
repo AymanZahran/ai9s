@@ -99,8 +99,18 @@ func TestPluginCollisions(t *testing.T) {
 	}
 }
 
+func TestDefaultSkinIsTrueBlack(t *testing.T) {
+	s := Defaults().Skin
+	if s.Body.Bg != "#000000" || s.Frame.Crumbs.Bg != "#000000" || s.Views.Table.Bg != "#000000" || s.Views.Table.Header.Bg != "#000000" {
+		t.Fatalf("background %+v %+v", s.Body, s.Views.Table)
+	}
+	if s.Body.Fg != "lightskyblue" || s.Body.Logo != "orange" || s.Views.Table.CursorBg != "aqua" || s.Frame.Menu.NumKey != "fuchsia" || s.Frame.Border.Fg != "dodgerblue" {
+		t.Fatalf("accents body %+v frame %+v table %+v", s.Body, s.Frame, s.Views.Table)
+	}
+}
+
 func TestBlockedShortcuts(t *testing.T) {
-	if !Blocked("ctrl-d") || !Blocked("G") || !Blocked("shift-g") || !Blocked("h") || !Blocked("l") || Blocked("b") || Blocked("ctrl-e") || Blocked("E") {
+	if !Blocked("ctrl-d") || !Blocked("G") || !Blocked("shift-g") || !Blocked("h") || !Blocked("l") || Blocked("b") || Blocked("y") || Blocked("ctrl-e") || Blocked("E") {
 		t.Fatal("shortcut reservation")
 	}
 	if c, ok := CanonShortcut("Shift-E"); !ok || c != "shift-e" {
