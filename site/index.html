@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>air9s — Resume your AI coding sessions in style</title>
+  <meta name="description" content="air9s is a terminal UI for the AI coding sessions already on your machine. Search, preview, filter, resume, and delete them from one list.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://aymanzahran.github.io/air9s/">
+  <meta property="og:title" content="air9s — Resume your AI coding sessions in style">
+  <meta property="og:description" content="A terminal UI for the AI coding sessions already on your machine.">
+  <meta property="og:image" content="https://aymanzahran.github.io/air9s/assets/logo.png">
+  <meta property="og:type" content="website">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="index.html">air9s</a>
+    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <nav class="site-nav" aria-label="Documentation">
+      <a href="install.html">Install</a>
+      <a href="commands.html">Commands</a>
+      <a href="keys.html">Keys</a>
+      <a href="agents.html">Agents</a>
+      <a href="filters.html">Filters</a>
+      <a href="contributing.html">Contributing</a>
+      <a href="https://github.com/AymanZahran/air9s">GitHub</a>
+    </nav>
+  </header>
+
+  <img class="hero" src="assets/logo.svg" alt="air9s logo: two blue octagons joined like a bone, each with a white propeller">
+
+  <main>
+    <h1><span class="mark" aria-hidden="true">⌘</span> Who left the agents running?</h1>
+    <p>air9s is a terminal UI for the AI coding sessions already on your machine. It indexes them locally, then lets you search, preview, filter, resume, and — where it is safe — delete them.</p>
+    <p>The list works like a cluster browser: hotkeys across the top, a filter line, a table, and a preview you can scroll. Each agent keeps the mark it actually prints. Nothing is uploaded.</p>
+
+    <pre><code>git clone https://github.com/AymanZahran/air9s.git
+cd air9s
+make install</code></pre>
+    <p>Or <code>go install github.com/AymanZahran/air9s/cmd/air9s@latest</code>. Details are on the <a href="install.html">install</a> page. Requires Go 1.23 or newer.</p>
+
+    <h1><span class="mark" aria-hidden="true">▣</span> Features</h1>
+    <ul>
+      <li>Sessions at your fingertips
+        <ul>
+          <li>Claude, Codex, Copilot CLI, Grok, Antigravity, Gemini CLI, Cursor, OpenCode, Hermes, OpenClaw, Junie, Jules, Goose, Cline, Aider, and Kiro.</li>
+        </ul>
+      </li>
+      <li>Keyboard first
+        <ul>
+          <li>Hotkeys stay on the top row. <code>/</code> edits the filter. <code>:</code> opens views and filter tokens. <code>?</code> opens a scrollable manual.</li>
+        </ul>
+      </li>
+      <li>Five views
+        <ul>
+          <li><code>1</code> through <code>5</code> switch sessions, providers, directories, branches, and models. Enter on a group applies that filter.</li>
+        </ul>
+      </li>
+      <li>Preview you can actually read
+        <ul>
+          <li>Tab moves into the excerpt. <code>j</code> and <code>k</code> scroll it. Tab or Esc returns to the list.</li>
+        </ul>
+      </li>
+      <li>Resume in the original directory
+        <ul>
+          <li>Enter runs that agent's own CLI. <code>--yolo</code> adds an approval flag only when the agent documents one.</li>
+        </ul>
+      </li>
+      <li>Delete only when one file, one directory, or one CLI call is enough
+        <ul>
+          <li>Grok, Gemini, Jules, and Kiro stay read-only. The preview says why.</li>
+        </ul>
+      </li>
+      <li>A local index
+        <ul>
+          <li>SQLite under your cache directory. Files are skipped when their modification time has not changed. One agent failing does not drop the others.</li>
+        </ul>
+      </li>
+      <li>Metadata when the agent recorded it
+        <ul>
+          <li>Context size, window, tokens, cache, reasoning, cost, and premium requests. The CTX column is the latest prompt size, not a sum of every turn.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h1><span class="mark" aria-hidden="true">☰</span> Documentation</h1>
+    <ul>
+      <li><a href="install.html">Installation</a> — source, <code>go install</code>, and the cache directory</li>
+      <li><a href="commands.html">Commands</a> — index, search, show, resume, delete</li>
+      <li><a href="keys.html">Keys</a> — the list, the preview, and command mode</li>
+      <li><a href="agents.html">Agents</a> — where each session lives, and which deletes are refused</li>
+      <li><a href="filters.html">Filters</a> — agent, directory, branch, model, date, and sort</li>
+      <li><a href="contributing.html">Contributing</a> — tests, formatting, and how to add an agent</li>
+    </ul>
+
+    <h2><span class="mark" aria-hidden="true">▤</span> Preview</h2>
+    <p>A sketch of the session list. The rows below are examples, not a recording of anyone's sessions.</p>
+    <div class="term" role="img" aria-label="Example air9s session list">
+      <div class="row"><span class="y">&lt;1&gt;</span> <span class="b">sessions</span>  <span class="y">&lt;2&gt;</span> providers  <span class="y">&lt;3&gt;</span> directories  <span class="y">&lt;4&gt;</span> branches  <span class="y">&lt;5&gt;</span> models</div>
+      <div class="row"><span class="y">&lt;/&gt;</span> filter  <span class="y">&lt;:&gt;</span> views  <span class="y">&lt;enter&gt;</span> resume  <span class="y">&lt;d&gt;</span> delete  <span class="y">&lt;tab&gt;</span> preview  <span class="y">&lt;?&gt;</span> manual  <span class="y">&lt;q&gt;</span> quit</div>
+      <div class="row"><span class="b"> air9s </span>  4 sessions   48 messages</div>
+      <div class="row"><span class="claude">✻  claude 1</span>   <span class="codex">&gt;_ codex 1</span>   <span class="hermes">██ hermes 1</span>   <span class="kiro">╭─ kiro 1</span></div>
+      <div class="row dim">agent: dir: branch: model: date:&lt;7d sort:recent</div>
+      <div class="row dim"> AGE  ICON  AGENT    DIR    BRANCH   CTX   MSGS  TITLE</div>
+      <div class="row sel"> 2h   ✻     claude   demo   main     12k   14    sketch the readme</div>
+      <div class="row"> 5h   &gt;_    codex    cli    main     8k    22    rename the command</div>
+      <div class="row"> 1d   ██    hermes   ops    release  —     6     check the deploy</div>
+      <div class="row"> 3d   ╭─    kiro     app    main     —     6     rename the button</div>
+      <div class="pane">
+        <div class="row"><span class="b"> preview · scroll </span></div>
+        <div class="row">claude · sketch the readme</div>
+        <div class="row dim">/work/demo · main · 14 messages</div>
+        <div class="row">user: sketch the readme for the session finder</div>
+      </div>
+    </div>
+
+    <h2><span class="mark" aria-hidden="true">✉</span> Get in touch</h2>
+    <ul>
+      <li><a href="https://github.com/AymanZahran/air9s">Repository</a></li>
+      <li><a href="https://github.com/AymanZahran/air9s/issues">Issues</a> — leave transcripts, tokens, and credentials out of the report</li>
+      <li><a href="contributing.html">Contributing</a></li>
+    </ul>
+  </main>
+
+  <footer class="site-footer">
+    <p><a href="https://github.com/AymanZahran/air9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/AymanZahran/air9s/blob/main/LICENSE">MIT</a></p>
+    <p>© 2026 The air9s authors.</p>
+  </footer>
+</body>
+</html>

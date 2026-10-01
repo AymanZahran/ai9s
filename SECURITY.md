@@ -1,0 +1,15 @@
+# Security
+
+## Reporting a vulnerability
+
+Report security issues privately through [GitHub Security Advisories](https://github.com/AymanZahran/air9s/security/advisories/new).
+
+Do not open a public issue for a vulnerability. Do not include session transcripts, tokens, credentials, or the contents of an index database.
+
+## What air9s stores
+
+air9s reads session files that are already on the machine. The index keeps titles, metadata, and short excerpts. It does not upload them. Treat `index.db` as sensitive and do not commit it. Database files are gitignored.
+
+Jules is contacted only when `AIR9S_JULES_REMOTE=1`. Other agents are read from local files. Resume runs the agent CLI you already have installed. air9s does not add an auto-approve flag unless that CLI documents one and you pass `--yolo` or toggle it in the UI.
+
+Delete removes or rewrites session data for the agents where that is supported. `delete` without `--yes` refuses to run when stdin is not a terminal. Read the agents page before using `--yes`.

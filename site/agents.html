@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agents — air9s</title>
+  <meta name="description" content="Which AI coding agents air9s indexes, how each one resumes, and which deletes are refused.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://aymanzahran.github.io/air9s/agents.html">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="index.html">air9s</a>
+    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <nav class="site-nav" aria-label="Documentation">
+      <a href="install.html">Install</a>
+      <a href="commands.html">Commands</a>
+      <a href="keys.html">Keys</a>
+      <a href="agents.html" aria-current="page">Agents</a>
+      <a href="filters.html">Filters</a>
+      <a href="contributing.html">Contributing</a>
+      <a href="https://github.com/AymanZahran/air9s">GitHub</a>
+    </nav>
+  </header>
+  <main>
+    <h1><span class="mark" aria-hidden="true">◎</span> Agents</h1>
+    <p>Paths below are the defaults. Point any of them somewhere else with the environment variable in the last column. A missing directory is skipped. air9s only reads session stores. It does not read credential files.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Agent</th><th>What is read</th><th>Resume</th><th>Delete</th><th>Override</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>claude</code></td><td><code>$CLAUDE_CONFIG_DIR/projects/**/*.jsonl</code></td><td><code>claude --resume &lt;id&gt;</code></td><td>the transcript file</td><td><code>CLAUDE_CONFIG_DIR</code></td></tr>
+          <tr><td><code>codex</code></td><td><code>$CODEX_HOME/sessions/**/rollout-*.jsonl</code></td><td><code>codex resume &lt;id&gt;</code></td><td>the rollout file</td><td><code>CODEX_HOME</code></td></tr>
+          <tr><td><code>copilot</code></td><td><code>$COPILOT_HOME/session-state/&lt;id&gt;/</code></td><td><code>copilot --resume &lt;id&gt;</code></td><td>that session directory</td><td><code>COPILOT_HOME</code></td></tr>
+          <tr><td><code>grok</code></td><td><code>$GROK_HOME/sessions/**/summary.json</code></td><td><code>grok --resume &lt;id&gt;</code></td><td>no</td><td><code>GROK_HOME</code></td></tr>
+          <tr><td><code>agy</code></td><td><code>$GEMINI_HOME/antigravity-cli/history.jsonl</code></td><td><code>agy --conversation &lt;id&gt;</code></td><td>that conversation's lines</td><td><code>GEMINI_HOME</code></td></tr>
+          <tr><td><code>gemini</code></td><td><code>$GEMINI_HOME/tmp/&lt;project&gt;/chats/session-*.json</code></td><td><code>gemini --session-file &lt;path&gt;</code></td><td>no</td><td><code>GEMINI_HOME</code></td></tr>
+          <tr><td><code>cursor</code></td><td><code>$CURSOR_HOME/projects/**/agent-transcripts/&lt;id&gt;/&lt;id&gt;.jsonl</code></td><td><code>cursor-agent --resume &lt;id&gt;</code> (or <code>agent</code>)</td><td>the transcript file</td><td><code>CURSOR_HOME</code></td></tr>
+          <tr><td><code>opencode</code></td><td><code>$XDG_DATA_HOME/opencode/opencode.db</code></td><td><code>opencode --session &lt;id&gt;</code></td><td><code>opencode session delete &lt;id&gt;</code></td><td><code>OPENCODE_DB</code></td></tr>
+          <tr><td><code>hermes</code></td><td><code>$HERMES_HOME/state.db</code> and <code>profiles/&lt;name&gt;/state.db</code></td><td><code>hermes --resume &lt;id&gt;</code> (<code>-p &lt;profile&gt;</code> for a named profile)</td><td><code>hermes sessions delete &lt;id&gt; --yes</code></td><td><code>HERMES_HOME</code></td></tr>
+          <tr><td><code>openclaw</code></td><td><code>$OPENCLAW_STATE_DIR/agents/&lt;id&gt;/agent/openclaw-agent.sqlite</code></td><td><code>openclaw resume &lt;session-key&gt;</code></td><td><code>openclaw sessions delete &lt;key&gt; --yes</code></td><td><code>OPENCLAW_STATE_DIR</code>, else <code>OPENCLAW_HOME</code></td></tr>
+          <tr><td><code>junie</code></td><td><code>$JUNIE_HOME/sessions/session-*/transcript.md</code></td><td><code>junie --resume --session-id=&lt;id&gt;</code></td><td>that session directory</td><td><code>JUNIE_HOME</code></td></tr>
+          <tr><td><code>jules</code></td><td><code>$JULES_HOME/sessions.json</code> or <code>sessions.txt</code></td><td><code>jules teleport &lt;id&gt;</code></td><td>no</td><td><code>JULES_HOME</code></td></tr>
+          <tr><td><code>goose</code></td><td><code>$GOOSE_HOME/sessions/sessions.db</code></td><td><code>goose session --resume --session-id &lt;id&gt;</code></td><td><code>goose session remove --session-id &lt;id&gt;</code></td><td><code>GOOSE_HOME</code></td></tr>
+          <tr><td><code>cline</code></td><td><code>$CLINE_HOME/data/state/taskHistory.json</code></td><td><code>cline task open &lt;id&gt;</code></td><td>rewrite the history, then remove the task directory</td><td><code>CLINE_HOME</code></td></tr>
+          <tr><td><code>aider</code></td><td><code>.aider.chat.history.md</code> under the configured roots</td><td><code>aider --restore-chat-history</code></td><td>that history file</td><td><code>AIDER_CHAT_ROOTS</code>, <code>AIDER_HOME</code>, <code>AIDER_CHAT_HISTORY</code></td></tr>
+          <tr><td><code>kiro</code></td><td><code>kiro-cli</code> <code>data.sqlite3</code> (<code>conversations_v2</code>)</td><td><code>kiro-cli chat --resume-id &lt;id&gt;</code></td><td>no</td><td><code>KIRO_CLI_DB</code>, else <code>KIRO_HOME</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Yolo</h2>
+    <p><code>--yolo</code>, and the <code>y</code> key, add a flag only when the agent documents one:</p>
+    <ul>
+      <li>Claude and Antigravity: <code>--dangerously-skip-permissions</code></li>
+      <li>Grok: <code>--always-approve</code></li>
+      <li>Copilot: <code>--allow-all-tools</code></li>
+      <li>Cursor: <code>--force</code></li>
+      <li>Hermes: <code>--yolo</code></li>
+      <li>Junie: <code>--brave</code></li>
+      <li>Cline: <code>--yolo</code> on <code>task open</code></li>
+      <li>Kiro: <code>--trust-all-tools</code> before the subcommand</li>
+    </ul>
+    <p>Codex, Gemini, OpenCode, OpenClaw, Jules, Goose, and Aider resume without an extra approval flag.</p>
+
+    <h2>Read limits</h2>
+    <ul>
+      <li>Subagent transcripts are skipped.</li>
+      <li>Kiro's shell <code>history</code> table is skipped. Resume uses <code>kiro-cli</code>, which is separate from the Kiro IDE.</li>
+      <li>Goose resume and delete need the <code>goose</code> command on <code>PATH</code>.</li>
+      <li>Jules talks to Google only when <code>AIR9S_JULES_REMOTE=1</code>. Otherwise air9s reads the local snapshot and does not run <code>jules</code>.</li>
+      <li>Aider does not walk the home directory unless <code>AIDER_SCAN_HOME=1</code>.</li>
+      <li>OpenClaw's working directory is the workspace recorded on the session. air9s does not read OpenClaw credentials.</li>
+    </ul>
+
+    <h2>Why some deletes are refused</h2>
+    <p>Grok and Gemini keep indexes, active-session records, or project side files next to the transcript. Jules sessions live in Google's cloud. Kiro keeps every conversation in one database. Removing the file air9s can see would leave those tools inconsistent, so delete is disabled and the preview says so.</p>
+    <p>Antigravity stores every conversation in one <code>history.jsonl</code>. Delete rewrites that file without the chosen id. Cline delete rewrites <code>taskHistory.json</code> first, then removes that task's directory. OpenCode, Hermes, OpenClaw, and Goose delete through each CLI. Other enabled deletes remove a single transcript or Aider history file, or one Copilot <code>session-state</code> or Junie <code>session-*</code> directory, and only when the path is still inside that agent's session root.</p>
+
+    <h2>Not indexed yet</h2>
+    <p>These need a stable file layout and a real resume command before an adapter should claim them: Copilot in VS Code, Kimi, Qwen, Pi, Crush, Vibe, and Prime. Adding one is described in <a href="contributing.html">Contributing</a>.</p>
+
+    <h2>Icons</h2>
+    <p>Each icon is two columns wide. The glyph is one that product prints. Cursor's logo is a picture, so its cell is blank. Jules, Goose, Cline, and Aider print a name and no glyph, so those cells are the first two letters of the name. An unknown agent is shown as ⚪.</p>
+  </main>
+  <footer class="site-footer">
+    <p><a href="https://github.com/AymanZahran/air9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/AymanZahran/air9s/blob/main/LICENSE">MIT</a></p>
+    <p>© 2026 The air9s authors.</p>
+  </footer>
+</body>
+</html>

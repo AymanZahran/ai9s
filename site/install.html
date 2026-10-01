@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Install — air9s</title>
+  <meta name="description" content="Install air9s from source or with go install. Go 1.23 or newer.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://aymanzahran.github.io/air9s/install.html">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="index.html">air9s</a>
+    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <nav class="site-nav" aria-label="Documentation">
+      <a href="install.html" aria-current="page">Install</a>
+      <a href="commands.html">Commands</a>
+      <a href="keys.html">Keys</a>
+      <a href="agents.html">Agents</a>
+      <a href="filters.html">Filters</a>
+      <a href="contributing.html">Contributing</a>
+      <a href="https://github.com/AymanZahran/air9s">GitHub</a>
+    </nav>
+  </header>
+  <main>
+    <h1><span class="mark" aria-hidden="true">↓</span> Installation</h1>
+    <p>air9s is a single Go binary. It runs on macOS, Linux, and Windows. GitHub Actions tests it on Ubuntu.</p>
+
+    <h2>From source</h2>
+    <pre><code>git clone https://github.com/AymanZahran/air9s.git
+cd air9s
+make install</code></pre>
+    <p><code>make install</code> copies the binary to <code>~/.local/bin</code>. Put that directory on your <code>PATH</code>, or choose another prefix:</p>
+    <pre><code>make install PREFIX=/usr/local</code></pre>
+
+    <h2>With the Go tool</h2>
+    <p>Requires Go 1.23 or newer.</p>
+    <pre><code>go install github.com/AymanZahran/air9s/cmd/air9s@latest</code></pre>
+    <p>The binary lands in <code>$(go env GOPATH)/bin</code>.</p>
+
+    <h2>Check</h2>
+    <pre><code>air9s version
+air9s</code></pre>
+    <p>With no arguments, air9s indexes and opens the list. A non-terminal stdin prints a short message and exits, so scripts should call <code>air9s search</code> or <code>air9s stats</code>.</p>
+
+    <h2>Terminal</h2>
+    <p>Use a terminal with 256 colors. On Unix-like systems:</p>
+    <pre><code>export TERM=xterm-256color</code></pre>
+    <p>The mouse wheel scrolls the preview when the pointer is over it. Resume needs the agent CLI on <code>PATH</code>. air9s does not embed those CLIs.</p>
+
+    <h2>Where the index lives</h2>
+    <p>The cache database is the first of these that applies:</p>
+    <ol>
+      <li><code>$AIR9S_CACHE_DIR/index.db</code></li>
+      <li><code>$XDG_CACHE_HOME/air9s/index.db</code></li>
+      <li><code>~/.cache/air9s/index.db</code></li>
+    </ol>
+    <p>It stores titles, metadata, and short excerpts, not a second full copy of every log. Delete that directory any time. The next run rebuilds it from the agent files.</p>
+  </main>
+  <footer class="site-footer">
+    <p><a href="https://github.com/AymanZahran/air9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/AymanZahran/air9s/blob/main/LICENSE">MIT</a></p>
+    <p>© 2026 The air9s authors.</p>
+  </footer>
+</body>
+</html>

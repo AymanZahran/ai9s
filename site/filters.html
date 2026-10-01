@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Filters — air9s</title>
+  <meta name="description" content="air9s filter tokens for agent, directory, branch, model, date, and sort.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://aymanzahran.github.io/air9s/filters.html">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="index.html">air9s</a>
+    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <nav class="site-nav" aria-label="Documentation">
+      <a href="install.html">Install</a>
+      <a href="commands.html">Commands</a>
+      <a href="keys.html">Keys</a>
+      <a href="agents.html">Agents</a>
+      <a href="filters.html" aria-current="page">Filters</a>
+      <a href="contributing.html">Contributing</a>
+      <a href="https://github.com/AymanZahran/air9s">GitHub</a>
+    </nav>
+  </header>
+  <main>
+    <h1><span class="mark" aria-hidden="true">/</span> Filters</h1>
+    <p>Free text matches the title and a capped excerpt of the transcript. Quote a phrase to keep it together: <code>"auth bug"</code>. Tokens and free text combine.</p>
+    <pre><code>air9s search 'agent:claude dir:my-repo date:&lt;7d "auth bug"'</code></pre>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Token</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>agent:claude</code></td><td>Agent id. Also <code>a:</code>.</td></tr>
+          <tr><td><code>dir:repo</code></td><td>Working directory contains the text. Also <code>cwd:</code> and <code>directory:</code>.</td></tr>
+          <tr><td><code>branch:main</code></td><td>Git branch contains the text.</td></tr>
+          <tr><td><code>model:sonnet</code></td><td>Model name contains the text.</td></tr>
+          <tr><td><code>date:&lt;7d</code></td><td>Updated in the last 7 days. Units: <code>m</code>, <code>h</code>, <code>d</code>, <code>w</code>.</td></tr>
+          <tr><td><code>date:&gt;30d</code></td><td>Updated more than 30 days ago.</td></tr>
+          <tr><td><code>date:2026-03-02</code></td><td>That calendar day. <code>date:2026-03</code> is the whole month.</td></tr>
+          <tr><td><code>sort:messages</code></td><td><code>recent</code> (default), <code>oldest</code>, <code>messages</code>, or <code>title</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>In the UI</h2>
+    <p><code>/</code> edits the filter text directly. <code>:</code> opens command mode, where the same tokens are listed and Enter writes one of them into the filter. Setting a token replaces the previous value of that token. A value with a space is quoted.</p>
+    <p>The header shows the token names as a hint: <code>agent: dir: branch: model: date:&lt;7d sort:recent</code>.</p>
+
+    <h2>Metadata</h2>
+    <p>The preview and <code>air9s show</code> print a context line and a token line when the session file has them: latest prompt size, context window, input, output, cache read, cache write, reasoning tokens, cost, premium requests, and reasoning effort. The CTX column is the latest context size, or <code>used/window</code> when both are known.</p>
+    <p>Claude records per-turn usage and cost. Codex records token totals and, when present, the context window. Copilot CLI records the latest prompt size, cache, reasoning effort, and premium requests. OpenCode records session token totals and the latest prompt size. Grok records reasoning effort. Hermes records token totals and cost. OpenClaw records the context window separately from the estimated prompt size. Goose and Cline record token totals, and Cline records cost. Gemini, Cursor, Antigravity, Junie, Jules, Aider, and Kiro leave the token lines empty when their files do not carry totals.</p>
+  </main>
+  <footer class="site-footer">
+    <p><a href="https://github.com/AymanZahran/air9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/AymanZahran/air9s/blob/main/LICENSE">MIT</a></p>
+    <p>© 2026 The air9s authors.</p>
+  </footer>
+</body>
+</html>

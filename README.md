@@ -1,5 +1,17 @@
 # air9s
 
+<p align="center">
+  <img src="site/assets/logo.svg" alt="air9s" width="520">
+</p>
+
+<p align="center">
+  <a href="https://aymanzahran.github.io/air9s/">Website</a>
+  ·
+  <a href="https://github.com/AymanZahran/air9s/actions/workflows/ci.yml">CI</a>
+  ·
+  <a href="LICENSE">MIT</a>
+</p>
+
 air9s is a keyboard-first finder for local AI coding sessions. It indexes the session files already on your machine, then lets you search, preview, filter, resume, and — where it is safe — delete them.
 
 The interface is a terminal list: a header with the hotkeys on top, a filter line, a session table, a preview pane, and a footer of key hints. Each agent has its own icon in the header, the table, and the preview. `1` through `5` switch the table between sessions, providers, directories, branches, and models. `/` edits the filter and `:` opens a command line for those views and for filter tokens. `?` opens a scrollable manual. Tab moves into the preview so the excerpt can be scrolled; Tab or Esc returns to the list. The CTX column, the preview, and `air9s show` include context size and token counts when the agent recorded them.
@@ -131,6 +143,8 @@ make build
 ```
 
 GitHub Actions runs that test suite on Ubuntu for the Go version in `go.mod` and for the current stable Go. `cmd/air9s/integration_test.go` builds the binary and runs `index`, `search`, `show`, `resume --print`, and `delete` against temporary fixtures. The fixtures override every agent home, so the test does not read a developer's real sessions, and Jules is not contacted. A missing `gofmt` diff fails the same workflow.
+
+The documentation site lives in [`site/`](site/) and is published with GitHub Pages from [`.github/workflows/pages.yml`](.github/workflows/pages.yml). See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request, and [SECURITY.md](SECURITY.md) for private vulnerability reports.
 
 ## License
 

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Keys — air9s</title>
+  <meta name="description" content="air9s keyboard shortcuts for views, filtering, preview, resume, and delete.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://aymanzahran.github.io/air9s/keys.html">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="index.html">air9s</a>
+    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <nav class="site-nav" aria-label="Documentation">
+      <a href="install.html">Install</a>
+      <a href="commands.html">Commands</a>
+      <a href="keys.html" aria-current="page">Keys</a>
+      <a href="agents.html">Agents</a>
+      <a href="filters.html">Filters</a>
+      <a href="contributing.html">Contributing</a>
+      <a href="https://github.com/AymanZahran/air9s">GitHub</a>
+    </nav>
+  </header>
+  <main>
+    <h1><span class="mark" aria-hidden="true">⌨</span> Keys</h1>
+    <p>The same manual is inside the program. Press <code>?</code>. <code>j</code> and <code>k</code> scroll it, <code>g</code> and <code>G</code> jump, and Esc, <code>q</code>, or <code>?</code> returns to the list.</p>
+    <p>Hotkeys are drawn on the top two lines. The active view is bold. Angle brackets mark the key, in the same style as k9s.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Key</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>1</code>–<code>5</code></td><td>Sessions, providers, directories, branches, models.</td></tr>
+          <tr><td>Enter</td><td>Resume the selected session. On a group view, apply that group as a filter and return to sessions.</td></tr>
+          <tr><td><code>j</code> / <code>k</code></td><td>Move down or up in the list. In the preview or the manual, scroll a line.</td></tr>
+          <tr><td>Tab</td><td>Focus the preview. Tab or Esc returns to the list.</td></tr>
+          <tr><td><code>/</code></td><td>Edit the filter text.</td></tr>
+          <tr><td><code>:</code></td><td>Command mode. Type a view name or a filter token. Enter applies it. Enter on an empty command cycles the view. Another <code>:</code> cycles the view name in the field. Esc closes it.</td></tr>
+          <tr><td><code>d</code>, Ctrl-D</td><td>Delete, after confirmation. Sessions view only.</td></tr>
+          <tr><td><code>a</code></td><td>Cycle the <code>agent:</code> filter.</td></tr>
+          <tr><td><code>p</code></td><td>Add a <code>dir:</code> filter and focus the filter line so you can finish it.</td></tr>
+          <tr><td><code>o</code></td><td>Cycle sort: recent, oldest, messages, title.</td></tr>
+          <tr><td><code>y</code></td><td>Toggle yolo for the next resume.</td></tr>
+          <tr><td><code>r</code></td><td>Reindex.</td></tr>
+          <tr><td><code>s</code></td><td>Stats.</td></tr>
+          <tr><td><code>?</code></td><td>Scrollable manual.</td></tr>
+          <tr><td><code>q</code></td><td>Quit.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Preview</h2>
+    <p>While the preview is focused, <code>j</code> and <code>k</code> or the arrows scroll a line. Page Up, Page Down, Ctrl-B, and Ctrl-F scroll a page. <code>g</code> and <code>G</code> jump to the top or the end. The mouse wheel scrolls when the pointer is over the preview.</p>
+
+    <h2>Group views</h2>
+    <p>Providers, directories, branches, and models group the current filtered list. Enter on a row sets the matching token and returns to sessions. A row labeled <code>(none)</code> has an empty value, so Enter leaves the filter alone. Resume and delete stay on the sessions view. From a group view, delete tells you to switch back first.</p>
+
+    <h2>Command mode</h2>
+    <p>The table lists view names and tokens: <code>agent:</code>, <code>dir:</code>, <code>branch:</code>, <code>model:</code>, <code>date:</code>, and <code>sort:</code>. Typing narrows that list. Enter on a token with a value rewrites that token in the filter and returns to sessions. Enter on a token with no value focuses the filter so you can type the rest, the same way <code>p</code> does.</p>
+  </main>
+  <footer class="site-footer">
+    <p><a href="https://github.com/AymanZahran/air9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/AymanZahran/air9s/blob/main/LICENSE">MIT</a></p>
+    <p>© 2026 The air9s authors.</p>
+  </footer>
+</body>
+</html>
