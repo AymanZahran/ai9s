@@ -46,6 +46,10 @@ A session's `SourcePath` has to be a path the scanner also returns in its file l
 
 Behavior changes belong in `README.md` and on the matching page under `site/`. The site is static HTML. GitHub Pages publishes the `site` directory. There is no site build step.
 
+## Releases
+
+Tag `vX.Y.Z` to match `version` in `cmd/air9s/main.go`. The Homebrew formula in [AymanZahran/homebrew-air9s](https://github.com/AymanZahran/homebrew-air9s) needs that tag's archive URL and sha256.
+
 ## Pull requests
 
 Keep the change focused. Run `gofmt` and `go test ./...` before you push. Commit subjects in this repository are sentence case and end with a period.

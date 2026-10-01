@@ -18,6 +18,25 @@ The interface is a terminal list: a header with the hotkeys on top, a filter lin
 
 ## Install
 
+### Homebrew
+
+```sh
+brew tap AymanZahran/air9s
+brew install air9s
+```
+
+The formula is in [AymanZahran/homebrew-air9s](https://github.com/AymanZahran/homebrew-air9s). `brew install --HEAD air9s` builds the latest `main`.
+
+While those repositories are private, tap over SSH and export a GitHub token so Homebrew can download the release archive:
+
+```sh
+brew tap AymanZahran/air9s git@github.com:AymanZahran/homebrew-air9s.git
+export HOMEBREW_GITHUB_API_TOKEN="$(gh auth token)"
+brew install air9s
+```
+
+### From source
+
 Requires Go 1.23 or newer.
 
 ```sh

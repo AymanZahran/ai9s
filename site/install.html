@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Install — air9s</title>
-  <meta name="description" content="Install air9s from source or with go install. Go 1.23 or newer.">
+  <meta name="description" content="Install air9s with Homebrew, from source, or with go install.">
   <link rel="stylesheet" href="css/main.css">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="canonical" href="https://aymanzahran.github.io/air9s/install.html">
@@ -26,6 +26,14 @@
   <main>
     <h1><span class="mark" aria-hidden="true">↓</span> Installation</h1>
     <p>air9s is a single Go binary. It runs on macOS, Linux, and Windows. GitHub Actions tests it on Ubuntu.</p>
+
+    <h2>Homebrew</h2>
+    <pre><code>brew tap AymanZahran/air9s
+brew install air9s</code></pre>
+    <p>The formula is in <a href="https://github.com/AymanZahran/homebrew-air9s">AymanZahran/homebrew-air9s</a>. <code>brew install --HEAD air9s</code> builds the latest <code>main</code>. While those repositories are private, tap over SSH and export a GitHub token so Homebrew can download the release archive:</p>
+    <pre><code>brew tap AymanZahran/air9s git@github.com:AymanZahran/homebrew-air9s.git
+export HOMEBREW_GITHUB_API_TOKEN="$(gh auth token)"
+brew install air9s</code></pre>
 
     <h2>From source</h2>
     <pre><code>git clone https://github.com/AymanZahran/air9s.git

@@ -7,3 +7,4 @@
 - Views for sessions, providers, directories, branches, and models. `:` opens command mode. `?` opens the manual.
 - GitHub Actions runs formatting and the test suite, including a fixture-backed CLI integration test.
 - Documentation website published with GitHub Pages.
+- Homebrew tap `AymanZahran/air9s`.
