@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Cut an air9s release and publish it on GitHub.
+"""Cut an air9s release through pull requests.
 
-Write the notes under "## Unreleased" in CHANGELOG.md, then from a clean main:
+Write the notes under "## Unreleased" in CHANGELOG.md and merge that commit
+first. Then, from a clean main that matches origin:
 
     make release
 
-That bumps the version in cmd/air9s/main.go, moves those notes under the new
-version, runs the tests, pushes an annotated tag, and creates the GitHub
-Release. It then points the Homebrew formula at that tag's archive.
+That opens a pull request for the version bump, waits until the checks pass,
+and merges it. Only then does it push an annotated tag and create the GitHub
+Release. The Homebrew formula gets its own pull request, and that merges the
+same way. A failed or missing check leaves the pull request open.
 
     make release VERSION=1.2.3
     make release PART=minor
@@ -21,12 +23,14 @@ builds that source and does not pass -X.
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import re
 import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 import urllib.request
 from pathlib import Path
 
@@ -43,6 +47,9 @@ FORMULA_URL_RE = re.compile(
     r'url "https://github.com/AymanZahran/air9s/archive/refs/tags/v\d+\.\d+\.\d+\.tar\.gz", using: Air9sDownloadStrategy'
 )
 FORMULA_SHA_RE = re.compile(r'sha256 "[0-9a-f]{64}"')
+ORIGIN_RE = re.compile(r"github\.com[:/](?P<owner>[^/]+)/(?P<name>[^/.]+)")
+PASS_BUCKETS = {"pass", "skipping"}
+KNOWN_BUCKETS = PASS_BUCKETS | {"fail", "pending", "cancel"}
 
 
 class ReleaseError(Exception):
@@ -132,6 +139,90 @@ def update_formula(text: str, version: str, sha256: str) -> str:
     return updated
 
 
+def release_branch(version: str) -> str:
+    return f"release/{version}"
+
+
+def formula_branch(version: str) -> str:
+    return f"formula/air9s-{version}"
+
+
+def release_pr_body(notes: str) -> str:
+    return (
+        notes.rstrip()
+        + "\n\nThis pull request merges only after the checks pass. "
+        + "The tag and the GitHub Release are created after that merge.\n"
+    )
+
+
+def formula_pr_body(version: str, sha256: str) -> str:
+    return (
+        f"Point the Homebrew formula at air9s {version}.\n\n"
+        f"Archive sha256 `{sha256}`.\n\n"
+        "This pull request merges only after the formula check passes.\n"
+    )
+
+
+def origin_slug(url: str) -> str:
+    match = ORIGIN_RE.search(url.strip())
+    if match is None:
+        die(f"origin is not a GitHub repository: {url}")
+    return f"{match.group('owner')}/{match.group('name')}"
+
+
+def checks_decision(checks: list[dict]) -> str:
+    """Return pass, fail, or wait.
+
+    A pull request merges only when at least one check passed and none failed
+    or are still running. An empty report waits, so a missing Actions run
+    cannot merge.
+    """
+    if not checks:
+        return "wait"
+    buckets = []
+    for item in checks:
+        bucket = item.get("bucket")
+        if bucket not in KNOWN_BUCKETS:
+            return "fail"
+        buckets.append(bucket)
+    if "fail" in buckets or "cancel" in buckets:
+        return "fail"
+    if "pending" in buckets or "pass" not in buckets:
+        return "wait"
+    return "pass"
+
+
+def format_checks(checks: list[dict]) -> str:
+    parts = []
+    for item in checks:
+        if item.get("bucket") == "pass":
+            continue
+        name = str(item.get("name") or "check")
+        state = str(item.get("state") or item.get("bucket") or "unknown")
+        parts.append(f"{name} {state}")
+    return ", ".join(parts) or "checks failed"
+
+
+def wait_for_checks(fetch, sleep, now, empty_grace_s: int = 180, timeout_s: int = 1200, interval_s: int = 15) -> None:
+    started = now()
+    deadline = started + timeout_s
+    seen = False
+    while True:
+        checks = fetch()
+        if checks:
+            seen = True
+        decision = checks_decision(checks)
+        if decision == "pass":
+            return
+        if decision == "fail":
+            die(f"checks failed: {format_checks(checks)}. The pull request is still open.")
+        if not seen and now() - started >= empty_grace_s:
+            die("GitHub reported no checks. The pull request is still open.")
+        if now() >= deadline:
+            die("checks did not finish. The pull request is still open.")
+        sleep(interval_s)
+
+
 def run(args: list[str], cwd: Path | None = None, env: dict[str, str] | None = None) -> str:
     proc = subprocess.run(
         args,
@@ -181,20 +272,23 @@ def tap_dir() -> Path:
     return path
 
 
-def require_clean_main() -> None:
-    branch = git("rev-parse", "--abbrev-ref", "HEAD").strip()
+def require_ready_checkout(cwd: Path) -> None:
+    label = cwd.name
+    branch = git("rev-parse", "--abbrev-ref", "HEAD", cwd=cwd).strip()
     if branch != "main":
-        die(f"releases are cut from main (this checkout is {branch})")
-    dirty = git("status", "--porcelain").strip()
+        die(f"{label} is on {branch}, not main")
+    dirty = git("status", "--porcelain", cwd=cwd).strip()
     if dirty:
-        die("commit or stash the working tree before releasing")
-    git("fetch", "origin", "main")
-    counts = git("rev-list", "--left-right", "--count", "origin/main...HEAD").split()
+        die(f"{label} has uncommitted changes")
+    git("fetch", "origin", "main", cwd=cwd)
+    counts = git("rev-list", "--left-right", "--count", "origin/main...HEAD", cwd=cwd).split()
     if len(counts) != 2:
-        die("could not compare main with origin")
-    behind = int(counts[0])
+        die(f"could not compare {label} with origin")
+    behind, ahead = int(counts[0]), int(counts[1])
     if behind:
-        die("main is behind origin; pull before releasing")
+        die(f"{label} is behind origin")
+    if ahead:
+        die(f"{label} has unpushed commits. Open a pull request for them first.")
 
 
 def require_current_tag(current: str) -> None:
@@ -220,10 +314,157 @@ def require_new_tag(version: str) -> None:
         die(f"{tag} already exists on origin")
 
 
+def ensure_new_branch(cwd: Path, branch: str) -> None:
+    local = subprocess.run(
+        ["git", "show-ref", "--verify", "--quiet", f"refs/heads/{branch}"],
+        cwd=cwd,
+    )
+    if local.returncode == 0:
+        die(f"{branch} already exists")
+    remote = git("ls-remote", "--heads", "origin", branch, cwd=cwd).strip()
+    if remote:
+        die(f"{branch} already exists on origin")
+
+
 def restore_sources() -> None:
     subprocess.run(
         ["git", "checkout", "--", "CHANGELOG.md", "cmd/air9s/main.go"],
         cwd=ROOT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def child_env() -> dict[str, str]:
+    env = os.environ.copy()
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    return env
+
+
+def commit_on_new_branch(cwd: Path, branch: str, paths: list[str], message: str) -> None:
+    if git("rev-parse", "--abbrev-ref", "HEAD", cwd=cwd).strip() != "main":
+        die(f"{cwd.name} is not on main")
+    ensure_new_branch(cwd, branch)
+    git("checkout", "-b", branch, cwd=cwd)
+    try:
+        git("add", *paths, cwd=cwd)
+        staged = set(git("diff", "--cached", "--name-only", cwd=cwd).split())
+        if staged != set(paths):
+            die("commit would include unexpected files: " + " ".join(sorted(staged)))
+        git("commit", "-m", message, cwd=cwd)
+        git("push", "-u", "origin", branch, cwd=cwd)
+    except ReleaseError:
+        head = git("rev-parse", "HEAD", cwd=cwd).strip()
+        main_sha = git("rev-parse", "main", cwd=cwd).strip()
+        if head == main_sha:
+            subprocess.run(
+                ["git", "restore", "--source=HEAD", "--staged", "--worktree", "--", *paths],
+                cwd=cwd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            subprocess.run(
+                ["git", "checkout", "main"],
+                cwd=cwd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            subprocess.run(
+                ["git", "branch", "-D", branch],
+                cwd=cwd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        raise
+
+
+def open_pull_request(repo: str, branch: str, title: str, body: str) -> int:
+    out = run(
+        [
+            "gh",
+            "pr",
+            "create",
+            "--repo",
+            repo,
+            "--base",
+            "main",
+            "--head",
+            branch,
+            "--title",
+            title,
+            "--body",
+            body,
+        ]
+    )
+    match = re.search(r"/pull/(\d+)", out)
+    if match is None:
+        die("could not read the pull request number")
+    print(out.strip())
+    return int(match.group(1))
+
+
+def fetch_checks(repo: str, number: int) -> list[dict]:
+    proc = subprocess.run(
+        [
+            "gh",
+            "pr",
+            "checks",
+            str(number),
+            "--repo",
+            repo,
+            "--json",
+            "name,bucket,state",
+        ],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    text = proc.stdout.strip()
+    if not text:
+        return []
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        die("could not read check status")
+    if not isinstance(data, list):
+        die("could not read check status")
+    return data
+
+
+def merge_pull_request(repo: str, number: int, title: str, head: str, body: str) -> None:
+    run(
+        [
+            "gh",
+            "pr",
+            "merge",
+            str(number),
+            "--repo",
+            repo,
+            "--squash",
+            "--delete-branch",
+            "--match-head-commit",
+            head,
+            "--subject",
+            title,
+            "--body",
+            body,
+        ]
+    )
+
+
+def land_pull_request(cwd: Path, repo: str, branch: str, number: int, title: str, body: str) -> None:
+    head = git("rev-parse", branch, cwd=cwd).strip()
+    git("checkout", "main", cwd=cwd)
+    try:
+        wait_for_checks(lambda: fetch_checks(repo, number), time.sleep, time.time)
+        merge_pull_request(repo, number, title, head, body)
+    except ReleaseError:
+        print(f"pull request {repo}#{number} is still open", file=sys.stderr)
+        raise
+    git("pull", "--ff-only", "origin", "main", cwd=cwd)
+    subprocess.run(
+        ["git", "branch", "-D", branch],
+        cwd=cwd,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
@@ -261,16 +502,17 @@ def archive_sha(version: str) -> str:
         path.unlink(missing_ok=True)
 
 
-def publish_formula(version: str, sha256: str) -> None:
-    tap = tap_dir()
-    dirty = git("status", "--porcelain", cwd=tap).strip()
-    if dirty:
-        die(f"{tap} has uncommitted changes")
+def publish_formula(version: str, sha256: str, tap: Path) -> None:
+    branch = formula_branch(version)
+    ensure_new_branch(tap, branch)
     formula = tap / "Formula" / "air9s.rb"
     formula.write_text(update_formula(formula.read_text(), version, sha256))
-    git("add", "Formula/air9s.rb", cwd=tap)
-    git("commit", "-m", f"Point the formula at air9s {version}.", cwd=tap)
-    git("push", "origin", "main", cwd=tap)
+    message = f"Point the formula at air9s {version}."
+    body = formula_pr_body(version, sha256)
+    commit_on_new_branch(tap, branch, ["Formula/air9s.rb"], message)
+    repo = origin_slug(git("remote", "get-url", "origin", cwd=tap).strip())
+    number = open_pull_request(repo, branch, message, body)
+    land_pull_request(tap, repo, branch, number, message, body)
     print(f"formula {version} {sha256}")
 
 
@@ -286,7 +528,11 @@ def reinstall(token: str) -> None:
 def main(argv: list[str] | None = None) -> int:
     spec, dry, install, skip_formula = parse_args(sys.argv[1:] if argv is None else argv)
     try:
-        require_clean_main()
+        require_ready_checkout(ROOT)
+        tap = None
+        if not skip_formula:
+            tap = tap_dir()
+            require_ready_checkout(tap)
         current = parse_version(VERSION_FILE.read_text())
         version = bump_version(current, spec)
         require_current_tag(current)
@@ -296,24 +542,46 @@ def main(argv: list[str] | None = None) -> int:
         source = write_version(VERSION_FILE.read_text(), version)
         print(f"release {version}")
         print(notes, end="" if notes.endswith("\n") else "\n")
+        print(f"pull request {release_branch(version)} -> main")
+        if tap is not None:
+            print(f"formula pull request {formula_branch(version)}")
         if dry:
             print("dry run")
             return 0
+        ensure_new_branch(ROOT, release_branch(version))
         CHANGELOG.write_text(changelog)
         VERSION_FILE.write_text(source)
         try:
-            run(["go", "test", "-count=1", "-timeout", "180s", "./..."], cwd=ROOT)
+            env = child_env()
+            run(["go", "test", "-count=1", "-timeout", "180s", "./..."], cwd=ROOT, env=env)
+            run(
+                [
+                    "python3",
+                    "-m",
+                    "unittest",
+                    "scripts/release_test.py",
+                    "scripts/audit_test.py",
+                    "scripts/public_github_test.py",
+                ],
+                cwd=ROOT,
+                env=env,
+            )
+            run(["python3", "scripts/audit.py"], cwd=ROOT, env=env)
         except ReleaseError:
             restore_sources()
             raise
-        git("add", "CHANGELOG.md", "cmd/air9s/main.go")
-        staged = set(git("diff", "--cached", "--name-only").split())
-        if staged != {"CHANGELOG.md", "cmd/air9s/main.go"}:
-            restore_sources()
-            die("release commit would include unexpected files: " + " ".join(sorted(staged)))
-        git("commit", "-m", f"Release {version}.")
+        branch = release_branch(version)
+        title = f"Release {version}."
+        body = release_pr_body(notes)
+        commit_on_new_branch(ROOT, branch, ["CHANGELOG.md", "cmd/air9s/main.go"], title)
+        repo = origin_slug(git("remote", "get-url", "origin").strip())
+        number = open_pull_request(repo, branch, title, body)
+        land_pull_request(ROOT, repo, branch, number, title, body)
+        landed = parse_version(VERSION_FILE.read_text())
+        if landed != version:
+            die(f"main is {landed} after the merge, not {version}")
         git("tag", "-a", f"v{version}", "-m", f"air9s {version}.")
-        git("push", "origin", "main", f"v{version}")
+        git("push", "origin", f"v{version}")
         fd, name = tempfile.mkstemp(prefix="air9s-notes-", suffix=".md")
         os.close(fd)
         notes_path = Path(name)
@@ -338,10 +606,10 @@ def main(argv: list[str] | None = None) -> int:
         finally:
             notes_path.unlink(missing_ok=True)
         print(f"github release v{version}")
-        if skip_formula:
+        if skip_formula or tap is None:
             return 0
         sha = archive_sha(version)
-        publish_formula(version, sha)
+        publish_formula(version, sha, tap)
         if install:
             reinstall(run(["gh", "auth", "token"]).strip())
             print(run(["air9s", "version"]).strip())

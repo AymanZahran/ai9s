@@ -82,6 +82,109 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaises(release.ReleaseError):
             release.parse_args(["minor", "0.3.0"])
 
+    def test_origin_slug(self):
+        self.assertEqual(
+            release.origin_slug("git@github.com:AymanZahran/air9s.git"),
+            "AymanZahran/air9s",
+        )
+        self.assertEqual(
+            release.origin_slug("https://github.com/AymanZahran/homebrew-air9s.git"),
+            "AymanZahran/homebrew-air9s",
+        )
+        with self.assertRaises(release.ReleaseError):
+            release.origin_slug("ssh://example.com/air9s.git")
+
+    def test_branch_names_and_pull_request_text(self):
+        self.assertEqual(release.release_branch("0.2.9"), "release/0.2.9")
+        self.assertEqual(release.formula_branch("0.2.9"), "formula/air9s-0.2.9")
+        body = release.release_pr_body("- Notes.\n")
+        self.assertIn("- Notes.", body)
+        self.assertIn("checks pass", body)
+        formula = release.formula_pr_body("0.2.9", "ab" * 32)
+        self.assertIn("air9s 0.2.9", formula)
+        self.assertIn("ab" * 32, formula)
+
+    def test_checks_merge_only_when_one_passed_and_none_failed(self):
+        self.assertEqual(release.checks_decision([]), "wait")
+        self.assertEqual(
+            release.checks_decision([{"bucket": "skipping"}]),
+            "wait",
+        )
+        self.assertEqual(
+            release.checks_decision(
+                [{"bucket": "pass"}, {"bucket": "skipping"}]
+            ),
+            "pass",
+        )
+        self.assertEqual(
+            release.checks_decision(
+                [{"bucket": "fail", "state": "startup_failure"}, {"bucket": "pending"}]
+            ),
+            "fail",
+        )
+        self.assertEqual(
+            release.checks_decision([{"bucket": "cancel"}]),
+            "fail",
+        )
+        self.assertEqual(
+            release.checks_decision([{"bucket": "pending"}]),
+            "wait",
+        )
+        self.assertEqual(
+            release.checks_decision([{"bucket": "mystery"}]),
+            "fail",
+        )
+
+    def test_wait_stops_on_failure_without_sleeping(self):
+        clock = Clock()
+        with self.assertRaises(release.ReleaseError) as caught:
+            release.wait_for_checks(
+                lambda: [{"name": "go 1.25", "bucket": "fail", "state": "startup_failure"}],
+                clock.sleep,
+                clock.now,
+            )
+        self.assertIn("startup_failure", str(caught.exception))
+        self.assertEqual(clock.t, 0)
+
+    def test_wait_stops_when_no_checks_appear(self):
+        clock = Clock()
+        with self.assertRaises(release.ReleaseError) as caught:
+            release.wait_for_checks(
+                lambda: [],
+                clock.sleep,
+                clock.now,
+                empty_grace_s=30,
+                timeout_s=1200,
+                interval_s=15,
+            )
+        self.assertIn("no checks", str(caught.exception))
+        self.assertLess(clock.t, 1200)
+
+    def test_wait_passes_after_a_pending_check(self):
+        clock = Clock()
+        calls = {"n": 0}
+
+        def fetch():
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return [{"name": "audit", "bucket": "pending", "state": "PENDING"}]
+            return [{"name": "audit", "bucket": "pass", "state": "SUCCESS"}]
+
+        release.wait_for_checks(fetch, clock.sleep, clock.now, interval_s=15)
+        self.assertEqual(calls["n"], 2)
+        self.assertEqual(clock.t, 15)
+
+
+class Clock:
+    def __init__(self):
+        self.t = 0
+
+    def now(self):
+        return self.t
+
+    def sleep(self, seconds):
+        self.t += seconds
+
 
 if __name__ == "__main__":
     unittest.main()
