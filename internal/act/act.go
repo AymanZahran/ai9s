@@ -109,6 +109,50 @@ func Plan(s model.Session, yolo bool) (Command, error) {
 	case "opencode":
 		name = "opencode"
 		args = []string{"--session", s.NativeID}
+	case "hermes":
+		name = "hermes"
+		id := s.NativeID
+		if profile, bare, ok := hermesProfile(s.NativeID); ok {
+			args = append(args, "-p", profile)
+			id = bare
+		}
+		if yolo {
+			args = append(args, "--yolo")
+		}
+		args = append(args, "--resume", id)
+	case "openclaw":
+		name = "openclaw"
+		args = []string{"resume", s.NativeID}
+	case "junie":
+		name = "junie"
+		if yolo {
+			args = append(args, "--brave")
+		}
+		args = append(args, "--resume", "--session-id="+s.NativeID)
+	case "jules":
+		name = "jules"
+		args = []string{"teleport", s.NativeID}
+	case "goose":
+		name = "goose"
+		args = []string{"session", "--resume", "--session-id", s.NativeID}
+	case "cline":
+		name = "cline"
+		args = []string{"task", "open", s.NativeID}
+		if yolo {
+			args = append(args, "--yolo")
+		}
+	case "aider":
+		name = "aider"
+		args = []string{"--restore-chat-history"}
+		if s.SourcePath != "" && filepath.Base(s.SourcePath) != ".aider.chat.history.md" {
+			args = append(args, "--chat-history-file", s.SourcePath)
+		}
+	case "kiro":
+		name = "kiro-cli"
+		if yolo {
+			args = append(args, "--trust-all-tools")
+		}
+		args = append(args, "chat", "--resume-id", s.NativeID)
 	default:
 		return Command{}, fmt.Errorf("resume is not implemented for %s", s.Agent)
 	}
@@ -146,10 +190,26 @@ func Delete(s model.Session) error {
 	case "rewrite":
 		return rewriteAgy(s)
 	case "exec":
-		return deleteOpenCode(s)
+		return deleteExec(s)
+	case "cline":
+		return deleteCline(s)
+	case "aider":
+		return deleteAider(s)
 	default:
 		return fmt.Errorf("deletion is disabled for %s", s.Agent)
 	}
+}
+
+func hermesProfile(native string) (profile, id string, ok bool) {
+	rest, found := strings.CutPrefix(native, "p:")
+	if !found {
+		return "", native, false
+	}
+	profile, id, found = strings.Cut(rest, ":")
+	if !found || profile == "" || profile == "default" || id == "" {
+		return "", native, false
+	}
+	return profile, id, true
 }
 
 func removeTranscript(s model.Session) error {
@@ -188,9 +248,17 @@ func fileRoot(agent string) (string, error) {
 }
 
 func removeSessionDir(s model.Session) error {
-	if s.Agent != "copilot" {
+	switch s.Agent {
+	case "copilot":
+		return removeCopilotDir(s)
+	case "junie":
+		return removeJunieDir(s)
+	default:
 		return fmt.Errorf("directory delete is not enabled for %s", s.Agent)
 	}
+}
+
+func removeCopilotDir(s model.Session) error {
 	path, err := cleanWithin(s.SourcePath, discover.CopilotState())
 	if err != nil {
 		return err
@@ -209,6 +277,35 @@ func removeSessionDir(s model.Session) error {
 		if _, err2 := os.Stat(filepath.Join(path, "workspace.yaml")); err2 != nil {
 			return errors.New("refusing to delete a directory that is not a Copilot session")
 		}
+	}
+	return os.RemoveAll(path)
+}
+
+func removeJunieDir(s model.Session) error {
+	if !strings.HasPrefix(s.NativeID, "session-") || strings.ContainsAny(s.NativeID, `/\`) {
+		return errors.New("refusing to delete a directory that is not a Junie session")
+	}
+	path, err := cleanWithin(s.SourcePath, discover.JunieSessions())
+	if err != nil {
+		return err
+	}
+	if filepath.Base(path) == "transcript.md" {
+		path = filepath.Dir(path)
+	}
+	if filepath.Base(filepath.Dir(path)) != "sessions" || filepath.Base(path) != s.NativeID {
+		return errors.New("refusing to delete outside a Junie sessions directory")
+	}
+	fi, err := os.Lstat(path)
+	if err != nil {
+		return err
+	}
+	if fi.Mode()&os.ModeSymlink != 0 || !fi.IsDir() {
+		return errors.New("refusing to delete a non-directory")
+	}
+	transcript := filepath.Join(path, "transcript.md")
+	st, err := os.Lstat(transcript)
+	if err != nil || st.Mode()&os.ModeSymlink != 0 || !st.Mode().IsRegular() {
+		return errors.New("refusing to delete a directory that is not a Junie session")
 	}
 	return os.RemoveAll(path)
 }
@@ -282,15 +379,35 @@ func rewriteAgy(s model.Session) error {
 	return os.Rename(tmp, path)
 }
 
-func deleteOpenCode(s model.Session) error {
-	if s.Agent != "opencode" {
-		return errors.New("exec delete is only used for OpenCode")
+func deleteExec(s model.Session) error {
+	var name string
+	var args []string
+	switch s.Agent {
+	case "opencode":
+		name = "opencode"
+		args = []string{"session", "delete", s.NativeID}
+	case "hermes":
+		name = "hermes"
+		id := s.NativeID
+		if profile, bare, ok := hermesProfile(s.NativeID); ok {
+			args = append(args, "-p", profile)
+			id = bare
+		}
+		args = append(args, "sessions", "delete", id, "--yes")
+	case "openclaw":
+		name = "openclaw"
+		args = []string{"sessions", "delete", s.NativeID, "--yes"}
+	case "goose":
+		name = "goose"
+		args = []string{"session", "remove", "--session-id", s.NativeID}
+	default:
+		return fmt.Errorf("exec delete is not enabled for %s", s.Agent)
 	}
-	bin, err := LookPath("opencode")
+	bin, err := LookPath(name)
 	if err != nil {
-		return errors.New("opencode is not on PATH")
+		return fmt.Errorf("%s is not on PATH", name)
 	}
-	cmd := exec.Command(bin, "session", "delete", s.NativeID)
+	cmd := exec.Command(bin, args...)
 	if st, err := os.Stat(s.CWD); err == nil && st.IsDir() {
 		cmd.Dir = s.CWD
 	}
@@ -298,7 +415,107 @@ func deleteOpenCode(s model.Session) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("opencode session delete: %w", err)
+		return fmt.Errorf("%s delete: %w", name, err)
+	}
+	return nil
+}
+
+func deleteCline(s model.Session) error {
+	if s.Agent != "cline" || !safeSegment(s.NativeID) {
+		return errors.New("refusing to delete a Cline task without a plain task id")
+	}
+	home := discover.ClineHome()
+	hist := filepath.Join(home, "data", "state", "taskHistory.json")
+	if filepath.Clean(s.SourcePath) != filepath.Clean(hist) {
+		return errors.New("refusing to rewrite a file that is not the Cline task history")
+	}
+	taskDir := filepath.Join(home, "data", "tasks", s.NativeID)
+	removeDir := false
+	if st, err := os.Lstat(taskDir); err == nil {
+		if st.Mode()&os.ModeSymlink != 0 || !st.IsDir() {
+			return errors.New("refusing to delete a Cline task that is not a directory")
+		}
+		if _, err := cleanWithin(taskDir, filepath.Join(home, "data", "tasks")); err != nil {
+			return err
+		}
+		removeDir = true
+	}
+	if err := rewriteClineHistory(hist, s.NativeID); err != nil {
+		return err
+	}
+	if removeDir {
+		return os.RemoveAll(taskDir)
+	}
+	return nil
+}
+
+func rewriteClineHistory(path, id string) error {
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	var rows []json.RawMessage
+	if err := json.Unmarshal(body, &rows); err != nil {
+		return err
+	}
+	kept := make([]json.RawMessage, 0, len(rows))
+	removed := 0
+	for _, raw := range rows {
+		var row struct {
+			ID   string `json:"id"`
+			ULID string `json:"ulid"`
+		}
+		if json.Unmarshal(raw, &row) == nil && (row.ID == id || (row.ID == "" && row.ULID == id)) {
+			removed++
+			continue
+		}
+		kept = append(kept, raw)
+	}
+	if removed == 0 {
+		return errors.New("task id was not in the Cline history")
+	}
+	out, err := json.MarshalIndent(kept, "", "  ")
+	if err != nil {
+		return err
+	}
+	out = append(out, '\n')
+	return writeAtom(path, out)
+}
+
+func deleteAider(s model.Session) error {
+	if s.Agent != "aider" {
+		return errors.New("aider delete is only used for Aider")
+	}
+	path := filepath.Clean(s.SourcePath)
+	if path == "" || path != filepath.Clean(s.NativeID) || filepath.Base(path) != ".aider.chat.history.md" {
+		return errors.New("refusing to delete a file that is not an Aider chat history")
+	}
+	fi, err := os.Lstat(path)
+	if err != nil {
+		return err
+	}
+	if fi.Mode()&os.ModeSymlink != 0 || !fi.Mode().IsRegular() {
+		return errors.New("refusing to delete a non-regular file")
+	}
+	return os.Remove(path)
+}
+
+func safeSegment(id string) bool {
+	return id != "" && id != "." && id != ".." && !strings.ContainsAny(id, `/\`)
+}
+
+func writeAtom(path string, body []byte) error {
+	mode := os.FileMode(0o600)
+	if st, err := os.Stat(path); err == nil {
+		mode = st.Mode().Perm()
+	}
+	tmp := path + ".air9s.tmp"
+	if err := os.WriteFile(tmp, body, mode); err != nil {
+		return err
+	}
+	if err := os.Rename(tmp, path); err != nil {
+		os.Remove(tmp)
+		return err
 	}
 	return nil
 }

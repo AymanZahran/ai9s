@@ -143,7 +143,9 @@ CREATE INDEX IF NOT EXISTS sessions_updated ON sessions(updated);
 	return nil
 }
 
-// Fresh reports whether path was indexed at mtime.
+// Fresh reports whether path was indexed at mtime and still has sessions.
+// A matching mtime with no rows is read again, so a scan that recorded the
+// file and then dropped its sessions does not stay empty.
 func (s *Store) Fresh(path string, mtime int64) bool {
 	if mtime == 0 {
 		return false
@@ -152,7 +154,14 @@ func (s *Store) Fresh(path string, mtime int64) bool {
 	defer s.mu.Unlock()
 	var got int64
 	err := s.db.QueryRow(`SELECT mtime FROM files WHERE path = ?`, path).Scan(&got)
-	return err == nil && got == mtime
+	if err != nil || got != mtime {
+		return false
+	}
+	var n int
+	if err := s.db.QueryRow(`SELECT count(*) FROM sessions WHERE source_path = ?`, path).Scan(&n); err != nil {
+		return false
+	}
+	return n > 0
 }
 
 // Apply merges one agent's scan into the index.

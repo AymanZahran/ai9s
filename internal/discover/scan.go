@@ -38,6 +38,14 @@ func Scanners() []Scanner {
 		{"gemini", scanGemini},
 		{"cursor", scanCursor},
 		{"opencode", scanOpenCode},
+		{"hermes", scanHermes},
+		{"openclaw", scanOpenClaw},
+		{"junie", scanJunie},
+		{"jules", scanJules},
+		{"goose", scanGoose},
+		{"cline", scanCline},
+		{"aider", scanAider},
+		{"kiro", scanKiro},
 	}
 }
 

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"os"
-	"time"
 )
 
 // walkJSONL calls fn for each JSON object. Malformed lines are skipped.
@@ -34,18 +33,6 @@ func walkJSONL(path string, fn func(map[string]any) error) error {
 		return err
 	}
 	return nil
-}
-
-func parseTime(s string) time.Time {
-	if s == "" {
-		return time.Time{}
-	}
-	for _, layout := range []string{time.RFC3339Nano, time.RFC3339, "2006-01-02T15:04:05.000Z"} {
-		if t, err := time.Parse(layout, s); err == nil {
-			return t
-		}
-	}
-	return time.Time{}
 }
 
 func fileMtime(path string) int64 {

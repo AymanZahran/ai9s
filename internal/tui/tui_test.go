@@ -79,6 +79,62 @@ func TestTabScrollsPreview(t *testing.T) {
 	}
 }
 
+func TestViewsCommandAndManual(t *testing.T) {
+	st, err := store.Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	path := filepath.Join(t.TempDir(), "one.jsonl")
+	sess := model.Session{
+		ID: "claude:one", NativeID: "one", Agent: "claude", Title: "one",
+		CWD: "/work/app", Branch: "main", Model: "sonnet", Messages: 2,
+		Updated:    time.Date(2026, 3, 2, 15, 4, 5, 0, time.UTC),
+		SourcePath: path, CanDelete: true, DeleteMode: "file",
+	}
+	if err := st.Apply("claude", []model.Session{sess}, []store.Source{{Path: path, Mtime: 1}}); err != nil {
+		t.Fatal(err)
+	}
+	app := tview.NewApplication()
+	ui := newUI(app, st)
+	ui.reload()
+	app.SetRoot(ui.layout, false)
+	if !strings.Contains(ui.header.GetText(true), "<1>") || !strings.Contains(ui.header.GetText(true), "manual") {
+		t.Fatalf("header %q", ui.header.GetText(true))
+	}
+
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, '2', tcell.ModNone))
+	if ui.table.GetTitle() != " providers " {
+		t.Fatalf("title %q", ui.table.GetTitle())
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
+	if ui.view != viewSessions || !strings.Contains(ui.filter.GetText(), "agent:claude") {
+		t.Fatalf("view %s filter %q", ui.view, ui.filter.GetText())
+	}
+
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, ':', tcell.ModNone))
+	if app.GetFocus() != ui.command {
+		t.Fatal("colon did not open command mode")
+	}
+	send(ui.command, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
+	if ui.view != viewProviders || ui.table.GetTitle() != " providers " {
+		t.Fatalf("cycled view %s title %q", ui.view, ui.table.GetTitle())
+	}
+
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, '?', tcell.ModNone))
+	manual, ok := app.GetFocus().(*tview.TextView)
+	if !ok || manual.GetTitle() != " manual " {
+		t.Fatalf("manual focus %T", app.GetFocus())
+	}
+	if !strings.Contains(manual.GetText(true), "kiro-cli") || !strings.Contains(manual.GetText(true), "AIR9S_JULES_REMOTE") {
+		t.Fatal("manual is missing agent help")
+	}
+	send(manual, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
+	if app.GetFocus() != ui.table {
+		t.Fatal("escape did not leave the manual")
+	}
+}
+
 func send(p tview.Primitive, ev *tcell.EventKey) {
 	if h := p.InputHandler(); h != nil {
 		h(ev, func(tview.Primitive) {})

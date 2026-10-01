@@ -26,21 +26,28 @@ func Run(st *store.Store) (*act.Command, error) {
 }
 
 type ui struct {
-	app      *tview.Application
-	store    *store.Store
-	layout   *tview.Flex
-	header   *tview.TextView
-	filter   *tview.InputField
-	table    *tview.Table
-	preview  *tview.TextView
-	footer   *tview.TextView
-	rows     []model.Session
-	agents   []string
-	warnings []string
-	yolo     bool
-	pending  *act.Command
-	busy     bool
-	focused  string
+	app             *tview.Application
+	store           *store.Store
+	layout          *tview.Flex
+	header          *tview.TextView
+	filter          *tview.InputField
+	table           *tview.Table
+	preview         *tview.TextView
+	footer          *tview.TextView
+	rows            []model.Session
+	agents          []string
+	warnings        []string
+	yolo            bool
+	pending         *act.Command
+	busy            bool
+	focused         string
+	view            string
+	pages           *tview.Pages
+	command         *tview.InputField
+	commandOpen     bool
+	suppressCommand bool
+	groups          []groupRow
+	suggestions     []commandHint
 }
 
 func newUI(app *tview.Application, st *store.Store) *ui {
@@ -66,6 +73,37 @@ func newUI(app *tview.Application, st *store.Store) *ui {
 		ui.paintChrome()
 	})
 
+	ui.command = tview.NewInputField().SetLabel(" : ").SetFieldWidth(0)
+	ui.command.SetLabelColor(tcell.ColorYellow)
+	ui.command.SetChangedFunc(func(text string) {
+		if ui.suppressCommand || !ui.commandOpen {
+			return
+		}
+		ui.paintSuggestions(text)
+	})
+	ui.command.SetDoneFunc(func(key tcell.Key) {
+		switch key {
+		case tcell.KeyEnter:
+			ui.applyCommand(ui.command.GetText())
+		case tcell.KeyEscape:
+			ui.closeCommand()
+		}
+	})
+	ui.command.SetInputCapture(func(ev *tcell.EventKey) *tcell.EventKey {
+		if ev.Key() == tcell.KeyRune && ev.Rune() == ':' {
+			ui.cycleCommandView()
+			return nil
+		}
+		return ev
+	})
+	ui.command.SetFocusFunc(func() {
+		ui.focused = "command"
+		ui.paintChrome()
+	})
+	ui.pages = tview.NewPages().
+		AddPage("filter", ui.filter, true, true).
+		AddPage("command", ui.command, true, false)
+
 	ui.table = tview.NewTable().SetSelectable(true, false).SetFixed(1, 0)
 	ui.table.SetBorder(true).SetTitle(" sessions ")
 	ui.table.SetSelectedStyle(tcell.StyleDefault.Reverse(true))
@@ -89,11 +127,12 @@ func newUI(app *tview.Application, st *store.Store) *ui {
 		AddItem(ui.table, 0, 3, true).
 		AddItem(ui.preview, 0, 2, false)
 	ui.layout = tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(ui.header, 3, 0, false).
-		AddItem(ui.filter, 1, 0, false).
+		AddItem(ui.header, 5, 0, false).
+		AddItem(ui.pages, 1, 0, false).
 		AddItem(body, 0, 1, true).
 		AddItem(ui.footer, 1, 0, false)
 	ui.focused = "table"
+	ui.view = viewSessions
 	ui.paintChrome()
 	return ui
 }
@@ -107,7 +146,11 @@ func (ui *ui) paintChrome() {
 	// Do not call HasFocus here. TextView.Focus holds its lock while this runs.
 	ui.table.SetBorderColor(tcell.ColorWhite)
 	ui.preview.SetBorderColor(tcell.ColorWhite)
-	ui.table.SetTitle(" sessions ")
+	if ui.commandOpen {
+		ui.table.SetTitle(" commands ")
+	} else {
+		ui.table.SetTitle(viewTitle(ui.view))
+	}
 	ui.preview.SetTitle(" preview ")
 	ui.footer.SetText(footerSessions)
 	switch ui.focused {
@@ -115,9 +158,10 @@ func (ui *ui) paintChrome() {
 		ui.preview.SetBorderColor(tcell.ColorYellow)
 		ui.preview.SetTitle(" preview · scroll ")
 		ui.footer.SetText(footerPreview)
-	case "table":
+	case "table", "command":
 		ui.table.SetBorderColor(tcell.ColorYellow)
 	}
+	ui.paintHeader()
 }
 
 func (ui *ui) focusSessions() {
@@ -162,6 +206,8 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 		ui.app.Stop()
 	case '/':
 		ui.app.SetFocus(ui.filter)
+	case ':':
+		ui.openCommand()
 	case 'd':
 		ui.confirmDelete()
 	case 'y':
@@ -178,11 +224,15 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 	case 's':
 		ui.showStats()
 	case '?':
-		ui.showHelp()
+		ui.showManual()
 	case 'j':
 		return tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
 	case 'k':
 		return tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
+	case '1', '2', '3', '4', '5':
+		if spec, ok := viewByKey(string(ev.Rune())); ok {
+			ui.setView(spec.name)
+		}
 	default:
 		return ev
 	}
@@ -211,8 +261,16 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 		case '/':
 			ui.app.SetFocus(ui.filter)
 			return nil
+		case ':':
+			ui.openCommand()
+			return nil
 		case '?':
-			ui.showHelp()
+			ui.showManual()
+			return nil
+		case '1', '2', '3', '4', '5':
+			if spec, ok := viewByKey(string(ev.Rune())); ok {
+				ui.setView(spec.name)
+			}
 			return nil
 		}
 	}
@@ -220,15 +278,16 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 }
 
 func (ui *ui) reload() {
+	if ui.commandOpen {
+		ui.paintSuggestions(ui.command.GetText())
+		ui.paintHeader()
+		return
+	}
 	f := query.Parse(ui.filter.GetText())
 	rows, err := ui.store.Search(f, 400)
 	if err != nil {
 		ui.header.SetText("[red]search failed: " + err.Error() + "[-]")
 		return
-	}
-	prev := ""
-	if row, _ := ui.table.GetSelection(); row > 0 && row-1 < len(ui.rows) {
-		prev = ui.rows[row-1].ID
 	}
 	ui.rows = rows
 	stats, _ := ui.store.Stats()
@@ -237,41 +296,11 @@ func (ui *ui) reload() {
 		ui.agents = append(ui.agents, a.Agent)
 	}
 	ui.paintHeader()
-	ui.table.Clear()
-	headers := []string{"AGE", "", "AGENT", "DIR", "BRANCH", "CTX", "MSGS", "TITLE"}
-	exp := []int{0, 0, 0, 1, 0, 0, 0, 3}
-	for i, h := range headers {
-		cell := tview.NewTableCell(h).SetSelectable(false).SetTextColor(tcell.ColorYellow).SetExpansion(exp[i])
-		ui.table.SetCell(0, i, cell)
-	}
-	sel := 1
-	for i, s := range rows {
-		if s.ID == prev {
-			sel = i + 1
-		}
-		dir := shortPath(s.CWD)
-		branch := s.Branch
-		if branch == "" {
-			branch = "-"
-		}
-		ui.table.SetCell(i+1, 0, tview.NewTableCell(relAge(s.Updated)))
-		ui.table.SetCell(i+1, 1, tview.NewTableCell(Icon(s.Agent)).SetAlign(tview.AlignCenter))
-		ui.table.SetCell(i+1, 2, tview.NewTableCell(s.Agent).SetTextColor(colorOf(s.Agent)))
-		ui.table.SetCell(i+1, 3, tview.NewTableCell(dir).SetMaxWidth(36).SetExpansion(1))
-		ui.table.SetCell(i+1, 4, tview.NewTableCell(branch).SetMaxWidth(18))
-		ui.table.SetCell(i+1, 5, tview.NewTableCell(contextLabel(s.Usage)).SetAlign(tview.AlignRight))
-		ui.table.SetCell(i+1, 6, tview.NewTableCell(fmt.Sprintf("%d", s.Messages)).SetAlign(tview.AlignRight))
-		ui.table.SetCell(i+1, 7, tview.NewTableCell(s.Title).SetExpansion(3))
-	}
-	if len(rows) == 0 {
-		ui.preview.SetText("\n[gray]No sessions match this filter.[-]")
+	if ui.view != "" && ui.view != viewSessions {
+		ui.paintGroups()
 		return
 	}
-	if sel > len(rows) {
-		sel = 1
-	}
-	ui.table.Select(sel, 0)
-	ui.showRow(sel)
+	ui.paintSessions()
 }
 
 func colorOf(agent string) tcell.Color {
@@ -292,6 +321,22 @@ func colorOf(agent string) tcell.Color {
 		return tcell.ColorSilver
 	case "opencode":
 		return tcell.ColorFuchsia
+	case "hermes":
+		return tcell.NewHexColor(0xFFD700)
+	case "openclaw":
+		return tcell.NewHexColor(0x2DD4BF)
+	case "junie":
+		return tcell.NewHexColor(0x7DD3FC)
+	case "jules":
+		return tcell.NewHexColor(0x5A009D)
+	case "goose":
+		return tcell.NewHexColor(0xF59E0B)
+	case "cline":
+		return tcell.NewHexColor(0x22C55E)
+	case "aider":
+		return tcell.NewHexColor(0xFB7185)
+	case "kiro":
+		return tcell.NewHexColor(0xA78BFA)
 	default:
 		return tcell.ColorWhite
 	}
@@ -300,6 +345,7 @@ func colorOf(agent string) tcell.Color {
 func (ui *ui) paintHeader() {
 	stats, _ := ui.store.Stats()
 	var b strings.Builder
+	fmt.Fprintf(&b, " %s\n %s\n", hotkeyViews(ui.view), hotkeyActions(ui.focused, ui.view))
 	fmt.Fprintf(&b, "[::b] air9s [-]  %d sessions   %d messages", stats.Sessions, stats.Messages)
 	if ui.yolo {
 		b.WriteString("   [yellow]yolo[-]")
@@ -308,6 +354,9 @@ func (ui *ui) paintHeader() {
 		b.WriteString("   indexing…")
 	}
 	b.WriteByte('\n')
+	if len(stats.Agents) == 0 {
+		b.WriteString(" ")
+	}
 	for i, a := range stats.Agents {
 		if i > 0 {
 			b.WriteString("   ")
@@ -323,6 +372,19 @@ func (ui *ui) paintHeader() {
 }
 
 func (ui *ui) showRow(row int) {
+	if ui.commandOpen {
+		if row <= 0 || row-1 >= len(ui.suggestions) {
+			return
+		}
+		hint := ui.suggestions[row-1]
+		ui.preview.SetText(fmt.Sprintf("[::b]%s[-]\n%s\n", hint.insert, hint.hint))
+		ui.preview.ScrollToBeginning()
+		return
+	}
+	if ui.view != "" && ui.view != viewSessions {
+		ui.showGroup(row)
+		return
+	}
 	if row <= 0 || row-1 >= len(ui.rows) {
 		return
 	}
@@ -350,6 +412,10 @@ func (ui *ui) selected() (model.Session, bool) {
 }
 
 func (ui *ui) resumeSelected() {
+	if ui.view != "" && ui.view != viewSessions {
+		ui.activateGroup()
+		return
+	}
 	s, ok := ui.selected()
 	if !ok {
 		return
@@ -364,6 +430,10 @@ func (ui *ui) resumeSelected() {
 }
 
 func (ui *ui) confirmDelete() {
+	if ui.view != "" && ui.view != viewSessions {
+		ui.alert("Switch to sessions before deleting.")
+		return
+	}
 	s, ok := ui.selected()
 	if !ok {
 		return
@@ -406,28 +476,6 @@ func (ui *ui) alert(msg string) {
 		ui.focusSessions()
 	})
 	ui.app.SetRoot(modal, false).SetFocus(modal)
-}
-
-func (ui *ui) showHelp() {
-	text := `enter     resume in the session directory
-tab       open the preview and scroll it
-          j/k or arrows move a line, ctrl-b/f or page keys move a page
-          g jumps to the top, G to the end
-          tab or esc returns to the session list
-d, ctrl-d delete, after confirmation
-/         edit the filter
-a         cycle the agent filter
-p         add a dir: filter
-o         cycle sort (recent, oldest, messages, title)
-y         toggle extra approval flags where the agent has one
-r         reindex
-s         stats
-q         quit
-
-The mouse wheel scrolls the preview while the pointer is over it.
-Filter words are matched in the title and transcript.
-agent:  dir:  branch:  model:  date:<7d  date:>30d  date:YYYY-MM-DD  sort:recent`
-	ui.alert(text)
 }
 
 func (ui *ui) showStats() {

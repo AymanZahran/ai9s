@@ -13,16 +13,27 @@ import (
 )
 
 // Icon is the mark drawn beside an agent. Every icon occupies two columns.
+// Glyphs are taken from what that product prints. Cursor's logo is a cube
+// image, so its cell is blank. Jules, Goose, Cline, and Aider print a name
+// and no glyph, so those cells are the first two letters of the name.
 func Icon(agent string) string {
 	icon := map[string]string{
-		"claude":   "🌟",
-		"codex":    "💻",
-		"copilot":  "🐙",
-		"grok":     "⚡",
-		"agy":      "🪐",
-		"gemini":   "✨",
-		"cursor":   "🖱️",
-		"opencode": "📂",
+		"claude":   "✻",  // Claude Code status glyph, U+273B
+		"codex":    ">_", // Codex banner: ">_ OpenAI Codex"
+		"copilot":  "╭╮", // eyes of the Copilot CLI mascot
+		"grok":     "⣠⣾", // opening cells of Grok's braille logo
+		"agy":      "▄▀", // opening cells of the Antigravity CLI logo
+		"gemini":   "✦",  // Gemini CLI prompt glyph, U+2726
+		"cursor":   "  ",
+		"opencode": "█▀", // opening cells of the OpenCode wordmark
+		"hermes":   "██", // opening cells of the Hermes banner
+		"openclaw": "🦞",  // OpenClaw's own README mark
+		"junie":    "//", // Junie help banner
+		"jules":    "Ju",
+		"goose":    "Go",
+		"cline":    "Cl",
+		"aider":    "Ai",
+		"kiro":     "╭─", // Kiro CLI menu frame
 	}[agent]
 	if icon == "" {
 		icon = "⚪"
@@ -92,6 +103,22 @@ func agentColor(name string) string {
 		return "silver"
 	case "opencode":
 		return "fuchsia"
+	case "hermes":
+		return "#ffd700"
+	case "openclaw":
+		return "#2dd4bf"
+	case "junie":
+		return "#7dd3fc"
+	case "jules":
+		return "#5a009d"
+	case "goose":
+		return "#f59e0b"
+	case "cline":
+		return "#22c55e"
+	case "aider":
+		return "#fb7185"
+	case "kiro":
+		return "#a78bfa"
 	default:
 		return "white"
 	}

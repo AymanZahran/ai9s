@@ -9,3 +9,7 @@ updates:
       go-modules:
         patterns:
           - "*"
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

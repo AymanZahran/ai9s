@@ -28,3 +28,9 @@ func CursorProjects() string {
 func AgyFile() string { return agyHistoryPath() }
 
 func OpenCodeFile() string { return opencodeDB() }
+
+func JunieSessions() string {
+	return filepath.Join(junieHome(), "sessions")
+}
+
+func ClineHome() string { return clineHome() }
