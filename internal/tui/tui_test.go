@@ -711,3 +711,211 @@ func send(p tview.Primitive, ev *tcell.EventKey) {
 		h(ev, func(tview.Primitive) {})
 	}
 }
+
+func startApp(t *testing.T, ui *ui) (tcell.SimulationScreen, <-chan struct{}) {
+	t.Helper()
+	screen := tcell.NewSimulationScreen("UTF-8")
+	ui.app.SetScreen(screen)
+	screen.SetSize(120, 40)
+	ui.app.SetRoot(ui.layout, true)
+	finished := make(chan struct{})
+	go func() {
+		_ = ui.app.Run()
+		close(finished)
+	}()
+	ready := make(chan struct{})
+	go func() {
+		ui.app.QueueUpdate(func() { close(ready) })
+	}()
+	select {
+	case <-ready:
+	case <-finished:
+		t.Fatal("application stopped before it was ready")
+	case <-time.After(5 * time.Second):
+		t.Fatal("event loop did not start")
+	}
+	t.Cleanup(func() {
+		ui.app.Stop()
+		select {
+		case <-finished:
+		case <-time.After(3 * time.Second):
+			t.Errorf("application did not stop")
+		}
+	})
+	return screen, finished
+}
+
+func waitUI(t *testing.T, app *tview.Application, cond func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		var ok bool
+		app.QueueUpdate(func() { ok = cond() })
+		if ok {
+			return
+		}
+		time.Sleep(15 * time.Millisecond)
+	}
+	t.Fatal("timed out waiting for the interface")
+}
+
+func screenText(screen tcell.SimulationScreen) string {
+	w, h := screen.Size()
+	var b strings.Builder
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			r, _, _, _ := screen.GetContent(x, y)
+			if r == 0 {
+				r = ' '
+			}
+			b.WriteRune(r)
+		}
+		b.WriteByte('\n')
+	}
+	return b.String()
+}
+
+func TestDeleteStaysOnScreen(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("CLAUDE_CONFIG_DIR", root)
+	path := filepath.Join(root, "projects", "demo", "abc.jsonl")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("{}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	sess := model.Session{
+		ID: "claude:abc", NativeID: "abc", Agent: "claude", Title: "keep me posted",
+		Updated: time.Date(2026, 3, 2, 15, 4, 5, 0, time.UTC), Messages: 1,
+		SourcePath: path, CanDelete: true, DeleteMode: "file",
+	}
+	if err := st.Apply("claude", []model.Session{sess}, []store.Source{{Path: path, Mtime: 1}}); err != nil {
+		t.Fatal(err)
+	}
+
+	app := tview.NewApplication()
+	ui := newUI(app, st, config.Defaults())
+	ui.reload()
+	screen, _ := startApp(t, ui)
+
+	ui.app.QueueEvent(tcell.NewEventKey(tcell.KeyRune, 'd', tcell.ModNone))
+	waitUI(t, ui.app, func() bool { return ui.describing() })
+	ui.app.QueueEvent(tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone))
+	waitUI(t, ui.app, func() bool { return confirmVisible(ui.app) && ui.describing() })
+	ui.app.QueueEvent(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
+	waitUI(t, ui.app, func() bool {
+		return !ui.busy && !ui.describing() && len(ui.rows) == 0 && ui.app.GetFocus() == ui.table
+	})
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Fatal("transcript still exists")
+	}
+	var painted string
+	ui.app.QueueUpdate(func() { painted = screenText(screen) })
+	if strings.Contains(painted, "deleting") {
+		t.Fatal("delete status stayed on screen")
+	}
+}
+
+func TestDeleteErrorAndPanicStayOnScreen(t *testing.T) {
+	orig := deleteSession
+	t.Cleanup(func() { deleteSession = orig })
+	for _, tc := range []struct {
+		name string
+		fn   func(model.Session) error
+		want string
+	}{
+		{name: "error", fn: func(model.Session) error { return fmt.Errorf("disk full") }, want: "disk full"},
+		{name: "panic", fn: func(model.Session) error { panic("delete exploded") }, want: "exploded"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			st, err := store.Open(filepath.Join(t.TempDir(), "index.db"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer st.Close()
+			path := filepath.Join(t.TempDir(), "one.jsonl")
+			sess := model.Session{
+				ID: "claude:one", NativeID: "one", Agent: "claude", Title: "one",
+				Updated: time.Date(2026, 3, 2, 15, 4, 5, 0, time.UTC), Messages: 1,
+				SourcePath: path, CanDelete: true, DeleteMode: "file",
+			}
+			if err := st.Apply("claude", []model.Session{sess}, []store.Source{{Path: path, Mtime: 1}}); err != nil {
+				t.Fatal(err)
+			}
+			deleteSession = tc.fn
+			app := tview.NewApplication()
+			ui := newUI(app, st, config.Defaults())
+			ui.reload()
+			screen, _ := startApp(t, ui)
+			ui.app.QueueEvent(tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone))
+			waitUI(t, ui.app, func() bool { return confirmVisible(ui.app) })
+			ui.app.QueueEvent(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
+			waitUI(t, ui.app, func() bool {
+				return !ui.busy && len(ui.rows) == 1 && strings.Contains(screenText(screen), tc.want)
+			})
+		})
+	}
+}
+
+func TestDeleteCtrlCLeavesTheSession(t *testing.T) {
+	orig := deleteSession
+	release := make(chan struct{})
+	started := make(chan struct{})
+	deleteSession = func(model.Session) error {
+		close(started)
+		<-release
+		return nil
+	}
+	t.Cleanup(func() {
+		deleteSession = orig
+		select {
+		case <-release:
+		default:
+			close(release)
+		}
+	})
+
+	st, err := store.Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	path := filepath.Join(t.TempDir(), "one.jsonl")
+	sess := model.Session{
+		ID: "claude:one", NativeID: "one", Agent: "claude", Title: "one",
+		Updated: time.Date(2026, 3, 2, 15, 4, 5, 0, time.UTC), Messages: 1,
+		SourcePath: path, CanDelete: true, DeleteMode: "file",
+	}
+	if err := st.Apply("claude", []model.Session{sess}, []store.Source{{Path: path, Mtime: 1}}); err != nil {
+		t.Fatal(err)
+	}
+	app := tview.NewApplication()
+	ui := newUI(app, st, config.Defaults())
+	ui.reload()
+	_, finished := startApp(t, ui)
+	ui.app.QueueEvent(tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone))
+	waitUI(t, ui.app, func() bool { return confirmVisible(ui.app) })
+	ui.app.QueueEvent(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
+	select {
+	case <-started:
+	case <-time.After(5 * time.Second):
+		t.Fatal("delete did not start")
+	}
+	var note string
+	ui.app.QueueUpdate(func() { note = ui.crumbs.GetText(true) })
+	if !strings.Contains(note, "deleting") {
+		t.Fatalf("crumbs %q", note)
+	}
+	ui.app.QueueEvent(tcell.NewEventKey(tcell.KeyCtrlC, 0, tcell.ModNone))
+	select {
+	case <-finished:
+	case <-time.After(5 * time.Second):
+		t.Fatal("ctrl-c did not leave air9s while delete was running")
+	}
+}

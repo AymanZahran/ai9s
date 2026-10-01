@@ -547,3 +547,63 @@ func TestDeleteSymlinkEscape(t *testing.T) {
 		t.Fatalf("outside history changed: %s", body)
 	}
 }
+
+func TestDeleteExecDetached(t *testing.T) {
+	if _, err := exec.LookPath("sh"); err != nil {
+		t.Skip(err)
+	}
+	dir := t.TempDir()
+	stamp := filepath.Join(dir, "stdin")
+	t.Setenv("AIR9S_DELETE_STAMP", stamp)
+	script := filepath.Join(dir, "opencode")
+	body := `#!/bin/sh
+if stat -f '%d:%i' /dev/fd/0 >/dev/null 2>&1; then
+  in=$(stat -f '%d:%i' /dev/fd/0)
+  null=$(stat -f '%d:%i' /dev/null)
+else
+  in=$(stat -c '%d:%i' /dev/fd/0)
+  null=$(stat -c '%d:%i' /dev/null)
+fi
+if [ "$in" = "$null" ]; then
+  printf 'null\n' > "$AIR9S_DELETE_STAMP"
+else
+  printf 'other %s\n' "$in" > "$AIR9S_DELETE_STAMP"
+fi
+exit 0
+`
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	orig := LookPath
+	t.Cleanup(func() { LookPath = orig })
+	LookPath = func(string) (string, error) { return script, nil }
+	err := Delete(model.Session{Agent: "opencode", NativeID: "ses1", CanDelete: true, DeleteMode: "exec"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(stamp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(got), "null") {
+		t.Fatalf("delete command inherited stdin %q", got)
+	}
+
+	fail := filepath.Join(dir, "opencode-fail")
+	failBody := "#!/bin/sh\necho refused >&2\necho also-stdout\nexit 3\n"
+	if err := os.WriteFile(fail, []byte(failBody), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	LookPath = func(string) (string, error) { return fail, nil }
+	err = Delete(model.Session{Agent: "opencode", NativeID: "ses1", CanDelete: true, DeleteMode: "exec"})
+	if err == nil || !strings.Contains(err.Error(), "refused") || !strings.Contains(err.Error(), "also-stdout") {
+		t.Fatalf("error %v", err)
+	}
+}
+
+func TestTrimOutput(t *testing.T) {
+	got := trimOutput([]byte("  " + strings.Repeat("x", 500) + "\n"))
+	if len([]rune(got)) != 401 || !strings.HasSuffix(got, "…") {
+		t.Fatalf("trimmed %d %q", len([]rune(got)), got[:20])
+	}
+}

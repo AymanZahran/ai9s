@@ -17,6 +17,9 @@ import (
 	"github.com/rivo/tview"
 )
 
+// deleteSession removes one session. Tests replace it.
+var deleteSession = act.Delete
+
 // Run draws the session list. It returns a resume command when the user
 // picks a session, or nil when they quit.
 func Run(st *store.Store) (*act.Command, error) {
@@ -80,6 +83,7 @@ type ui struct {
 	yolo            bool
 	pending         *act.Command
 	busy            bool
+	busyNote        string
 	focused         string
 	menuMeasured    int
 	view            string
@@ -625,7 +629,11 @@ func (ui *ui) paintCrumbs() {
 		extra += "  yolo"
 	}
 	if ui.busy {
-		extra += "  indexing…"
+		note := ui.busyNote
+		if note == "" {
+			note = "indexing…"
+		}
+		extra += "  " + note
 	}
 	ui.crumbs.SetText(fmt.Sprintf(" air9s › [%s::b]%s[-] › %s    %d sessions · %d messages%s    %s",
 		active, label, filter, stats.Sessions, stats.Messages, extra, ui.counter()))
@@ -786,15 +794,42 @@ func (ui *ui) confirmDelete() {
 			ui.restoreBodyFocus()
 			return
 		}
-		var err error
-		ui.app.Suspend(func() {
-			err = act.Delete(s)
-		})
+		if ui.busy {
+			ui.restoreBodyFocus()
+			return
+		}
+		// Stay on the event loop. Suspending here waits for terminal input
+		// that this handler is not reading, and the terminal stays raw, so
+		// the screen goes blank and Ctrl-C never reaches the process.
+		ui.busy = true
+		ui.busyNote = "deleting…"
+		ui.paintHeader()
+		ui.restoreBodyFocus()
+		go ui.finishDelete(s)
+	})
+	ui.app.SetRoot(modal, true)
+}
+
+func (ui *ui) finishDelete(s model.Session) {
+	var err error
+	func() {
+		defer func() {
+			if rec := recover(); rec != nil {
+				err = fmt.Errorf("delete failed: %v", rec)
+			}
+		}()
+		err = deleteSession(s)
+	}()
+	ui.app.QueueUpdateDraw(func() {
+		ui.busy = false
+		ui.busyNote = ""
 		if err != nil {
+			ui.paintHeader()
 			ui.alert(err.Error())
 			return
 		}
 		if err := ui.store.Forget(s.ID); err != nil {
+			ui.paintHeader()
 			ui.alert(err.Error())
 			return
 		}
@@ -803,7 +838,6 @@ func (ui *ui) confirmDelete() {
 		}
 		ui.reload()
 	})
-	ui.app.SetRoot(modal, true)
 }
 
 func (ui *ui) alert(msg string) {
@@ -888,11 +922,13 @@ func (ui *ui) reindex() {
 		return
 	}
 	ui.busy = true
+	ui.busyNote = "indexing…"
 	ui.paintHeader()
 	go func() {
 		_, warnings, err := index.Rebuild(ui.store)
 		ui.app.QueueUpdateDraw(func() {
 			ui.busy = false
+			ui.busyNote = ""
 			ui.warnings = warnings
 			if err != nil {
 				ui.warnings = append(ui.warnings, err.Error())
