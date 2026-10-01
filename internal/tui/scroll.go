@@ -256,9 +256,15 @@ func (ui *ui) onMouse(ev *tcell.EventMouse, action tview.MouseAction) (*tcell.Ev
 		return nil, action
 	}
 	x, y := ev.Position()
+	// Only the visible window owns the pointer. The hidden one keeps its old rect.
+	describe := ui.describing()
 	switch action {
 	case tview.MouseLeftUp, tview.MouseLeftClick:
-		if ui.scrollDrag != "" || ui.listBar.hit(x, y) || ui.previewBar.hit(x, y) {
+		onBar := ui.listBar.hit(x, y)
+		if describe {
+			onBar = ui.previewBar.hit(x, y)
+		}
+		if ui.scrollDrag != "" || onBar {
 			ui.scrollDrag = ""
 			return nil, action
 		}
@@ -268,14 +274,14 @@ func (ui *ui) onMouse(ev *tcell.EventMouse, action tview.MouseAction) (*tcell.Ev
 			return nil, action
 		}
 	case tview.MouseLeftDown:
-		if ui.listBar.hit(x, y) {
+		if !describe && ui.listBar.hit(x, y) {
 			ui.beginDrag("list", ui.listBar, y)
 			ui.focusSessions()
 			return nil, action
 		}
-		if ui.previewBar.hit(x, y) {
+		if describe && ui.previewBar.hit(x, y) {
 			ui.beginDrag("preview", ui.previewBar, y)
-			ui.focusPreview()
+			ui.app.SetFocus(ui.preview)
 			return nil, action
 		}
 	case tview.MouseScrollUp, tview.MouseScrollDown:
@@ -283,11 +289,11 @@ func (ui *ui) onMouse(ev *tcell.EventMouse, action tview.MouseAction) (*tcell.Ev
 		if action == tview.MouseScrollUp {
 			step = -wheelRows
 		}
-		if ui.table.InRect(x, y) {
+		if !describe && ui.table.InRect(x, y) {
 			ui.moveSelection(step)
 			return nil, action
 		}
-		if ui.preview.InRect(x, y) {
+		if describe && ui.preview.InRect(x, y) {
 			ui.scrollPreview(step)
 			return nil, action
 		}

@@ -84,6 +84,7 @@ type ui struct {
 	menuMeasured    int
 	view            string
 	pages           *tview.Pages
+	body            *tview.Pages
 	command         *tview.InputField
 	commandOpen     bool
 	commandMoved    bool
@@ -170,7 +171,7 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 	})
 
 	ui.preview = tview.NewTextView().SetDynamicColors(true).SetWrap(true).SetScrollable(true)
-	ui.preview.SetBorder(true).SetTitle(" preview ")
+	ui.preview.SetBorder(true).SetTitle(" describe ")
 	ui.preview.SetInputCapture(ui.previewKeys)
 	ui.preview.SetDoneFunc(ui.previewDone)
 	ui.preview.SetFocusFunc(func() {
@@ -178,9 +179,10 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 		ui.paintChrome()
 	})
 
-	body := tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(ui.table, 0, 3, true).
-		AddItem(ui.preview, 0, 2, false)
+	// The list is the only window. Describe replaces it until Esc.
+	ui.body = tview.NewPages().
+		AddPage("list", ui.table, true, true).
+		AddPage("describe", ui.preview, true, false)
 	menuH, crumbsH, infoH, logoW := 2, 1, 2, 10
 	if cfg.Body.UI.Headless {
 		menuH, crumbsH, infoH, logoW = 0, 0, 0, 0
@@ -196,7 +198,7 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 		AddItem(ui.crumbs, crumbsH, 0, false).
 		AddItem(ui.info, infoH, 0, false).
 		AddItem(ui.pages, 1, 0, false).
-		AddItem(body, 0, 1, true).
+		AddItem(ui.body, 0, 1, true).
 		AddItem(ui.footer, 1, 0, false)
 	ui.focused = "table"
 	ui.view = viewSessions
@@ -233,8 +235,8 @@ func (ui *ui) clearFilter() {
 }
 
 const (
-	footerSessions = `[yellow]tab[-] preview   [yellow]pgup/pgdn[-] page   [yellow]enter[-] resume   [yellow]d[-] delete   [yellow]/[-] filter   [yellow]a[-] agent   [yellow]p[-] directory   [yellow]o[-] sort   [yellow]y[-] yolo   [yellow]r[-] reindex   [yellow]s[-] stats   [yellow]?[-] help   [yellow]q[-] quit`
-	footerPreview  = `[yellow]j/k[-] line   [yellow]pgup/pgdn[-] page   [yellow]g/G[-] top/end   [yellow]wheel[-] scroll   [yellow]tab[-] [yellow]esc[-] sessions   [yellow]enter[-] resume   [yellow]q[-] quit`
+	footerSessions = `[yellow]d[-] describe   [yellow]ctrl-d[-] delete   [yellow]pgup/pgdn[-] page   [yellow]enter[-] resume   [yellow]/[-] filter   [yellow]a[-] agent   [yellow]p[-] directory   [yellow]o[-] sort   [yellow]y[-] yolo   [yellow]r[-] reindex   [yellow]s[-] stats   [yellow]?[-] help   [yellow]q[-] quit`
+	footerPreview  = `[yellow]j/k[-] line   [yellow]pgup/pgdn[-] page   [yellow]g/G[-] top/end   [yellow]wheel[-] scroll   [yellow]esc[-] list   [yellow]ctrl-d[-] delete   [yellow]enter[-] resume   [yellow]q[-] quit`
 )
 
 func (ui *ui) paintChrome() {
@@ -245,13 +247,13 @@ func (ui *ui) paintChrome() {
 	} else {
 		ui.table.SetTitle(viewTitle(ui.view))
 	}
-	ui.preview.SetTitle(" preview ")
+	ui.preview.SetTitle(" describe ")
 	footer := footerSessions
 	switch ui.focused {
 	case "preview":
 		ui.preview.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "aqua"))
 		ui.preview.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "fuchsia"))
-		ui.preview.SetTitle(" preview · scroll ")
+		ui.preview.SetTitle(" describe · scroll ")
 		footer = footerPreview
 	case "table", "filter", "command":
 		ui.table.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "aqua"))
@@ -295,16 +297,55 @@ func (ui *ui) focusSessions() {
 	ui.app.SetFocus(ui.table)
 }
 
+func (ui *ui) describing() bool {
+	if ui.body == nil {
+		return false
+	}
+	name, _ := ui.body.GetFrontPage()
+	return name == "describe"
+}
+
 func (ui *ui) focusPreview() {
+	ui.openDescribe()
+}
+
+// openDescribe replaces the list with the preview for the selected row.
+func (ui *ui) openDescribe() {
+	if ui.table.GetRowCount() <= 1 {
+		return
+	}
+	row, _ := ui.table.GetSelection()
+	if row <= 0 {
+		return
+	}
+	ui.showRow(row)
+	ui.preview.ScrollToBeginning()
+	ui.body.SwitchToPage("describe")
 	ui.app.SetFocus(ui.preview)
+}
+
+func (ui *ui) restoreBodyFocus() {
+	if ui.describing() {
+		ui.app.SetFocus(ui.preview)
+		return
+	}
+	ui.focusSessions()
+}
+
+func (ui *ui) closeDescribe() {
+	if ui.body != nil {
+		ui.body.SwitchToPage("list")
+	}
+	ui.focusSessions()
 }
 
 func (ui *ui) previewDone(key tcell.Key) {
 	if key == tcell.KeyEnter {
+		ui.closeDescribe()
 		ui.resumeSelected()
 		return
 	}
-	ui.focusSessions()
+	ui.closeDescribe()
 }
 
 func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
@@ -322,7 +363,7 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 		ui.confirmDelete()
 		return nil
 	case tcell.KeyTab, tcell.KeyBacktab:
-		ui.focusPreview()
+		ui.openDescribe()
 		return nil
 	case tcell.KeyEscape:
 		ui.clearFilter()
@@ -356,7 +397,7 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 	case ':':
 		ui.openCommand()
 	case 'd':
-		ui.confirmDelete()
+		ui.openDescribe()
 	case 'y':
 		ui.yolo = !ui.yolo
 		ui.paintHeader()
@@ -423,14 +464,15 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 		case 'q':
 			ui.app.Stop()
 			return nil
-		case 'd':
-			ui.confirmDelete()
-			return nil
 		case '/':
+			ui.closeDescribe()
 			ui.app.SetFocus(ui.filter)
 			return nil
 		case ':':
+			ui.closeDescribe()
 			ui.openCommand()
+			return nil
+		case 'd':
 			return nil
 		case '?':
 			ui.showManual()
@@ -712,8 +754,8 @@ func (ui *ui) confirmDelete() {
 	text := fmt.Sprintf("Delete this %s session?\n\n%s\n%s", Label(s.Agent), s.Title, shortPath(s.SourcePath))
 	modal := ui.modal(text, []string{"Delete", "Cancel"}, func(_ int, label string) {
 		ui.app.SetRoot(ui.layout, true)
-		ui.focusSessions()
 		if label != "Delete" {
+			ui.restoreBodyFocus()
 			return
 		}
 		var err error
@@ -728,6 +770,9 @@ func (ui *ui) confirmDelete() {
 			ui.alert(err.Error())
 			return
 		}
+		if ui.describing() {
+			ui.closeDescribe()
+		}
 		ui.reload()
 	})
 	ui.app.SetRoot(modal, true)
@@ -736,7 +781,7 @@ func (ui *ui) confirmDelete() {
 func (ui *ui) alert(msg string) {
 	modal := ui.modal(msg, []string{"OK"}, func(int, string) {
 		ui.app.SetRoot(ui.layout, true)
-		ui.focusSessions()
+		ui.restoreBodyFocus()
 	})
 	ui.app.SetRoot(modal, false).SetFocus(modal)
 }

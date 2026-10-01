@@ -76,6 +76,9 @@ func (ui *ui) setView(name string) {
 	if _, ok := viewByName(name); !ok {
 		name = viewSessions
 	}
+	if ui.describing() {
+		ui.closeDescribe()
+	}
 	ui.view = name
 	ui.reload()
 }

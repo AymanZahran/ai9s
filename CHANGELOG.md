@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.2.4
+
+- The session list is the only window. `d` replaces it with a describe view of the selected row. Esc returns to the list.
+- Delete moves to Ctrl-D. `d` no longer deletes.
+
 ## 0.2.3
 
 - The session list and the preview each show a scrollbar on the right. The mouse wheel scrolls the pane under the pointer. Drag or click a scrollbar to jump.

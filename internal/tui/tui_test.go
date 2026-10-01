@@ -44,19 +44,40 @@ func TestTabScrollsPreview(t *testing.T) {
 	if app.GetFocus() != ui.table {
 		t.Fatalf("focus started on %T", app.GetFocus())
 	}
-	if !strings.Contains(ui.footer.GetText(true), "tab") {
+	if !strings.Contains(ui.footer.GetText(true), "describe") {
 		t.Fatalf("session footer %q", ui.footer.GetText(true))
 	}
-
-	send(ui.table, tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone))
-	if app.GetFocus() != ui.preview {
-		t.Fatal("tab did not focus the preview")
+	if name, _ := ui.body.GetFrontPage(); name != "list" {
+		t.Fatalf("front page %s", name)
 	}
-	if ui.preview.GetTitle() != " preview · scroll " {
+
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, 'd', tcell.ModNone))
+	if app.GetFocus() != ui.preview {
+		t.Fatal("d did not open describe")
+	}
+	if name, _ := ui.body.GetFrontPage(); name != "describe" {
+		t.Fatalf("describe page %s", name)
+	}
+	if ui.preview.GetTitle() != " describe · scroll " {
 		t.Fatalf("title %q", ui.preview.GetTitle())
 	}
 	if !strings.Contains(ui.footer.GetText(true), "scroll") {
 		t.Fatalf("preview footer %q", ui.footer.GetText(true))
+	}
+
+	send(ui.preview, tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone))
+	if !confirmVisible(app) {
+		t.Fatalf("ctrl-d from describe focus %T", app.GetFocus())
+	}
+	if !ui.describing() {
+		t.Fatal("ctrl-d closed describe before confirmation")
+	}
+	send(app.GetFocus(), tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
+	if app.GetFocus() != ui.preview {
+		t.Fatalf("cancel delete focus %T", app.GetFocus())
+	}
+	if !ui.describing() {
+		t.Fatal("cancel left describe")
 	}
 	row, _ := ui.preview.GetScrollOffset()
 	if row != 0 {
@@ -79,6 +100,26 @@ func TestTabScrollsPreview(t *testing.T) {
 	send(ui.preview, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
 	if app.GetFocus() != ui.table {
 		t.Fatal("esc did not return to the session list")
+	}
+	if name, _ := ui.body.GetFrontPage(); name != "list" {
+		t.Fatalf("after esc page %s", name)
+	}
+
+	send(ui.table, tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone))
+	if !confirmVisible(app) {
+		t.Fatalf("ctrl-d focus %T", app.GetFocus())
+	}
+	if ui.describing() {
+		t.Fatal("ctrl-d from the list opened describe")
+	}
+}
+
+func confirmVisible(app *tview.Application) bool {
+	switch app.GetFocus().(type) {
+	case *tview.Modal, *tview.Button:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -419,6 +460,7 @@ func TestPageAndScrollbar(t *testing.T) {
 		lines = append(lines, "preview line stays on one row")
 	}
 	ui.preview.SetText(strings.Join(lines, "\n"))
+	ui.body.SwitchToPage("describe")
 	ui.preview.SetRect(70, 0, 30, 16)
 	ui.preview.Draw(screen)
 	if ui.previewBar.h < 2 {

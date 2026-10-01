@@ -5,7 +5,7 @@ const defaultConfigYAML = `# air9s config. Created once; later edits are kept.
 air9s:
   # Seconds between automatic reindexes. 0 reindexes only when you press r.
   refreshRate: 0
-  # When true, d and ctrl-d do not delete.
+  # When true, ctrl-d does not delete. d still opens describe.
   readOnly: false
   # sessions, providers, directories, branches, or models.
   defaultView: sessions

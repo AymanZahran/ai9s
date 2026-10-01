@@ -12,7 +12,7 @@ func (ui *ui) showManual() {
 	tv.ScrollToBeginning()
 	back := func() {
 		ui.app.SetRoot(ui.layout, true)
-		ui.focusSessions()
+		ui.restoreBodyFocus()
 	}
 	tv.SetDoneFunc(func(tcell.Key) { back() })
 	tv.SetInputCapture(func(ev *tcell.EventKey) *tcell.EventKey {
@@ -47,7 +47,7 @@ func (ui *ui) showManual() {
 const manualText = `[::b]air9s manual[-]
 
 [::b]Views[-]
-  [yellow]<1>[-] sessions      the conversation list. Enter resumes. d deletes.
+  [yellow]<1>[-] sessions      the conversation list. Enter resumes. d describes. ctrl-d deletes.
   [yellow]<2>[-] providers     group the current filter by agent
   [yellow]<3>[-] directories   group by working directory
   [yellow]<4>[-] branches      group by git branch
@@ -70,14 +70,13 @@ agent:, dir:, branch:, and model: match a substring, so agent:clau finds claude 
 A leading ~ in dir: or in free text expands to your home directory.
 A token with no value, such as dir:, is ignored until you finish it. Pressing p still drops you into the filter.
 Quote a phrase to keep it together: "auth bug".
-Esc on the list or in the filter clears the filter. Esc in the preview, the manual, or command mode does not.
+Esc on the list or in the filter clears the filter. Esc in describe, the manual, or command mode does not.
 
 [::b]Other keys[-]
   enter       resume in the session directory. Quitting the agent returns here. On a group, apply that filter
-  tab         focus the preview. j/k or arrows scroll a line, page up/down or ctrl-b/f scroll a page, g/G jump
-  tab, esc    return from the preview to the list
-  esc         on the list or in the filter, clear the filter
-  d, ctrl-d   delete, after confirmation. Only from the sessions view.
+  d           describe. The list is replaced by the preview. j/k or arrows scroll a line, page up/down or ctrl-b/f scroll a page, g/G jump
+  esc         return from describe to the list. On the list or in the filter, esc clears the filter
+  ctrl-d      delete, after confirmation. Only from the sessions view. d does not delete
   a           cycle the agent: filter
   p           add a dir: filter
   o           cycle sort
@@ -91,9 +90,10 @@ Esc on the list or in the filter clears the filter. Esc in the preview, the manu
   pgup / pgdn move a page in the focused pane. The list moves its selection. The preview scrolls its text
   ctrl-b / f  the same page motion, in the list and in the preview
 
-The list and the preview each draw a scrollbar on the right.
-The mouse wheel scrolls whichever pane is under the pointer: the list moves several rows, the preview scrolls several lines.
-Drag the scrollbar, or click it, to jump. Page keys follow the focused pane. The wheel follows the pointer.
+The list fills the window. Describe uses that same window until you press esc.
+Each of those views draws a scrollbar on the right.
+The mouse wheel scrolls the view on screen: the list moves several rows, describe scrolls several lines.
+Drag the scrollbar, or click it, to jump.
 
 [::b]Resume[-]
 Resume runs that agent's own CLI in the session directory when the directory still exists.

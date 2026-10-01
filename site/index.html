@@ -34,7 +34,7 @@
   <main>
     <h1><span class="mark" aria-hidden="true">⌘</span> Who left the agents running?</h1>
     <p>air9s is a terminal UI for the AI coding sessions already on your machine. It indexes them locally, then lets you search, preview, filter, resume, and — where it is safe — delete them.</p>
-    <p>The list works like a cluster browser: a hotkey menu, a crumbs bar, a framed table, and a preview you can scroll. Colors and plugins live in a config file, the same way k9s does. Each agent keeps the mark it actually prints. Nothing is uploaded.</p>
+    <p>The list works like a cluster browser: a hotkey menu, a crumbs bar, and one framed table. <code>d</code> describes the selected row. Ctrl-D deletes. Colors and plugins live in a config file, the same way k9s does. Each agent keeps the mark it actually prints. Nothing is uploaded.</p>
 
     <pre><code>brew tap AymanZahran/air9s
 brew trust aymanzahran/air9s
@@ -60,7 +60,7 @@ brew install air9s</code></pre>
       </li>
       <li>Preview you can actually read
         <ul>
-          <li>Tab moves into the excerpt. <code>j</code> and <code>k</code> scroll it. Tab or Esc returns to the list.</li>
+          <li><code>d</code> replaces the list with the excerpt. <code>j</code> and <code>k</code> scroll it. Esc returns to the list. Ctrl-D deletes.</li>
         </ul>
       </li>
       <li>Resume in the original directory
@@ -100,7 +100,7 @@ brew install air9s</code></pre>
     <p>A sketch of the session list. The rows below are examples, not a recording of anyone's sessions.</p>
     <div class="term" role="img" aria-label="Example air9s session list">
       <div class="row"><span class="num">&lt;1&gt;</span> <span class="b">sessions</span>  <span class="num">&lt;2&gt;</span> providers  <span class="num">&lt;3&gt;</span> directories  <span class="num">&lt;4&gt;</span> branches  <span class="num">&lt;5&gt;</span> models</div>
-      <div class="row"><span class="key">&lt;/&gt;</span> filter  <span class="key">&lt;:&gt;</span> views  <span class="key">&lt;enter&gt;</span> resume  <span class="key">&lt;d&gt;</span> delete  <span class="key">&lt;esc&gt;</span> clear  <span class="key">&lt;?&gt;</span> manual  <span class="key">&lt;q&gt;</span> quit</div>
+      <div class="row"><span class="key">&lt;/&gt;</span> filter  <span class="key">&lt;d&gt;</span> describe  <span class="key">&lt;ctrl-d&gt;</span> delete  <span class="key">&lt;enter&gt;</span> resume  <span class="key">&lt;esc&gt;</span> clear  <span class="key">&lt;q&gt;</span> quit</div>
       <div class="row crumbs"> air9s › Sessions › all    4 sessions · 48 messages    1/4</div>
       <div class="row"><span class="claude">✻  claude 1</span>   <span class="codex">&gt;_ codex 1</span>   <span class="hermes">██ hermes 1</span>   <span class="kiro">╭─ kiro 1</span></div>
       <div class="row dim">agent: dir: branch: model: date:&lt;7d sort:recent</div>
@@ -109,12 +109,6 @@ brew install air9s</code></pre>
       <div class="row"> 5h   &gt;_    codex    cli    main     8k    22    rename the command</div>
       <div class="row"> 1d   ██    hermes   ops    release  —     6     check the deploy</div>
       <div class="row"> 3d   ╭─    kiro     app    main     —     6     rename the button</div>
-      <div class="pane">
-        <div class="row"><span class="b"> preview · scroll </span></div>
-        <div class="row">claude · sketch the readme</div>
-        <div class="row dim">/work/demo · main · 14 messages</div>
-        <div class="row">user: sketch the readme for the session finder</div>
-      </div>
     </div>
 
     <h2><span class="mark" aria-hidden="true">✉</span> Get in touch</h2>

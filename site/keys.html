@@ -40,11 +40,11 @@
           <tr><td><code>j</code> / <code>k</code></td><td>Move one line when the list or the preview is focused. In the manual, scroll a line. In the filter and command fields they are typed letters.</td></tr>
           <tr><td>Page Up / Page Down</td><td>Move a page in the focused pane. The list moves its selection. The preview scrolls its text. Ctrl-B and Ctrl-F do the same, including while the filter or command field is open.</td></tr>
           <tr><td>Mouse</td><td>The wheel scrolls the pane under the pointer. The list and the preview each have a scrollbar on the right. Drag it or click it to jump.</td></tr>
-          <tr><td>Tab</td><td>Focus the preview. Tab or Esc returns to the list.</td></tr>
+          <tr><td><code>d</code></td><td>Describe the selected row. The list is replaced by the preview. Esc returns to the list. Tab opens and closes the same view.</td></tr>
           <tr><td><code>/</code></td><td>Edit the filter text. Up and down move the list while the field is open. Page Up and Page Down do too. Left and right stay in the field.</td></tr>
           <tr><td>Esc</td><td>Clear the filter from the list or the filter line. In the preview, the manual, or command mode, Esc goes back and leaves the filter alone.</td></tr>
           <tr><td><code>:</code></td><td>Command mode. Type a view name or a filter token. Up and down select a row. Enter applies the highlighted row. Enter on an empty command cycles the view. Another <code>:</code> cycles the view name in the field. Esc closes it.</td></tr>
-          <tr><td><code>d</code>, Ctrl-D</td><td>Delete, after confirmation. Sessions view only.</td></tr>
+          <tr><td>Ctrl-D</td><td>Delete, after confirmation. Sessions view only.</td></tr>
           <tr><td><code>a</code></td><td>Cycle the <code>agent:</code> filter.</td></tr>
           <tr><td><code>p</code></td><td>Add a <code>dir:</code> filter and focus the filter line so you can finish it.</td></tr>
           <tr><td><code>o</code></td><td>Cycle sort: recent, oldest, messages, title.</td></tr>
@@ -58,7 +58,7 @@
     </div>
 
     <h2>Preview</h2>
-    <p>While the preview is focused, <code>j</code> and <code>k</code> or the arrows scroll a line. Page Up, Page Down, Ctrl-B, and Ctrl-F scroll a page. <code>g</code> and <code>G</code> jump to the top or the end. The same page keys move the list when the list is focused. The wheel scrolls whichever pane is under the pointer, and each pane has a scrollbar you can drag or click.</p>
+    <p>The list is the only window until you press <code>d</code>. Describe replaces it with the preview. <code>j</code> and <code>k</code> or the arrows scroll a line. Page Up, Page Down, Ctrl-B, and Ctrl-F scroll a page. <code>g</code> and <code>G</code> jump to the top or the end. Esc returns to the list. The wheel scrolls the view on screen, and that view has a scrollbar you can drag or click.</p>
 
     <h2>Group views</h2>
     <p>Providers, directories, branches, and models group the current filtered list. Enter on a row sets the matching token and returns to sessions. A row labeled <code>(none)</code> has an empty value, so Enter leaves the filter alone. Resume and delete stay on the sessions view. From a group view, delete tells you to switch back first.</p>

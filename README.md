@@ -14,7 +14,7 @@
 
 air9s is a keyboard-first finder for local AI coding sessions. It indexes the session files already on your machine, then lets you search, preview, filter, resume, and — where it is safe — delete them.
 
-The interface follows the k9s screen: a menu of hotkeys, a crumbs bar (`air9s › Sessions › all`), a framed table with a cursor row, a filter prompt, and a preview. Each agent has its own icon. `1` through `5` switch the table between sessions, providers, directories, branches, and models. `/` edits the filter and `:` opens a command line for those views and for filter tokens. Esc clears the filter from the list and from the filter line. `?` opens a scrollable manual. Tab moves into the preview so the excerpt can be scrolled; Tab or Esc returns to the list. The CTX column, the preview, and `air9s show` include context size and token counts when the agent recorded them.
+The interface follows the k9s screen: a menu of hotkeys, a crumbs bar (`air9s › Sessions › all`), and one framed table. Each agent has its own icon. `1` through `5` switch the table between sessions, providers, directories, branches, and models. `/` edits the filter and `:` opens a command line for those views and for filter tokens. Esc clears the filter from the list and from the filter line. `?` opens a scrollable manual. `d` replaces the list with a describe view of the selected row; Esc returns to the list. Ctrl-D deletes. The CTX column, describe, and `air9s show` include context size and token counts when the agent recorded them.
 
 Colors, the mouse, icons, read-only mode, the starting view, and plugins come from `~/.config/air9s/config.yaml` (or `$AIR9S_CONFIG_DIR`, or `$XDG_CONFIG_HOME/air9s`). `air9s info` prints the paths.
 
@@ -79,8 +79,8 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 | --- | --- |
 | `1`–`5` | Sessions, providers, directories, branches, models. The active view is bold in the top hotkey bar. |
 | Enter | Resume the selected session. Quitting that session returns to air9s. On a group view, apply that group as a filter and return to sessions. |
-| Tab | Focus the preview. `j`/`k` or the arrows scroll a line. Page Up/Down or Ctrl-B/Ctrl-F scroll a page. `g`/`G` jump to the top or the end. Tab or Esc returns to the list. |
-| `d`, Ctrl-D | Delete, after confirmation. Sessions view only. |
+| `d` | Describe the selected row. The list is replaced by the preview. `j`/`k` or the arrows scroll a line. Page Up/Down or Ctrl-B/Ctrl-F scroll a page. `g`/`G` jump to the top or the end. Esc returns to the list. Tab opens and closes the same view. |
+| Ctrl-D | Delete, after confirmation. Sessions view only. |
 | `/` | Edit the filter. Up and down move the list while the field is open. Page Up and Page Down do too. Left and right stay in the field. |
 | Esc | Clear the filter from the list or the filter line. In the preview, the manual, or command mode, Esc goes back and leaves the filter alone. |
 | `:` | Command mode. Type a view name or a filter token. Up and down select a row. Enter applies the highlighted row. Enter on an empty command cycles the view. Another `:` cycles the view name in the field. Esc closes it. |
@@ -94,7 +94,7 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 | `q` | Quit |
 | `j` / `k` | Move one line when the list or the preview is focused. In the filter and command fields they are typed letters. |
 | Page Up / Page Down | Move a page in the focused pane. The list moves its selection. The preview scrolls its text. Ctrl-B and Ctrl-F do the same. This also works while `/` or `:` is open. |
-| Mouse | The wheel scrolls the pane under the pointer. Each pane has a scrollbar on the right; drag it or click it to jump. |
+| Mouse | The wheel scrolls the view on screen. The list and describe each have a scrollbar on the right; drag it or click it to jump. |
 
 ## Filters
 

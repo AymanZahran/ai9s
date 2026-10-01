@@ -138,8 +138,8 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 			item("pgup/pgdn", "page"),
 			item("g/G", "top/end"),
 			item("wheel", "scroll"),
-			item("tab", "sessions"),
-			item("esc", "sessions"),
+			item("esc", "list"),
+			item("ctrl-d", "delete"),
 			item("enter", "resume"),
 			item("?", "manual"),
 			item("q", "quit"),
@@ -150,7 +150,7 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 			item("pgup/pgdn", "page"),
 			item("enter", "list"),
 			item("esc", "clear"),
-			item("tab", "preview"),
+			item("tab", "describe"),
 		}
 	case "command":
 		return []menuHint{
@@ -169,12 +169,12 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 		return []menuHint{
 			item("/", "filter"),
 			item(":", "command"),
+			item("d", "describe"),
+			item("ctrl-d", "delete"),
 			item("enter", enter),
-			item("tab", "preview"),
 			item("pgup/pgdn", "page"),
 			item("wheel", "scroll"),
 			item("esc", "clear"),
-			item("d", "delete"),
 			item("y", "yolo"),
 			item("a", "agent"),
 			item("p", "directory"),
