@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -549,47 +550,66 @@ func TestDeleteSymlinkEscape(t *testing.T) {
 }
 
 func TestDeleteExecDetached(t *testing.T) {
+	dir := t.TempDir()
+	bin := filepath.Join(dir, "opencode")
+	if runtime.GOOS == "windows" {
+		bin += ".exe"
+	}
+	src := filepath.Join(dir, "src")
+	if err := os.MkdirAll(src, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(src, "go.mod"), []byte("module helper\n\ngo 1.25.0\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	helper := []byte(`package main
+import (
+	"fmt"
+	"io"
+	"os"
+)
+func main() {
+	b, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if len(b) != 0 {
+		fmt.Fprintf(os.Stderr, "stdin %q\n", b)
+		os.Exit(3)
+	}
+}
+`)
+	if err := os.WriteFile(filepath.Join(src, "main.go"), helper, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	build := exec.Command("go", "build", "-o", bin, ".")
+	build.Dir = src
+	if out, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("build helper: %v\n%s", err, out)
+	}
+
+	unique, err := os.Open(writeTemp(t, dir, "secret-stdin\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	origStdin := os.Stdin
+	os.Stdin = unique
+	t.Cleanup(func() {
+		os.Stdin = origStdin
+		unique.Close()
+	})
+
+	orig := LookPath
+	t.Cleanup(func() { LookPath = orig })
+	LookPath = func(string) (string, error) { return bin, nil }
+	if err := Delete(model.Session{Agent: "opencode", NativeID: "ses1", CanDelete: true, DeleteMode: "exec"}); err != nil {
+		t.Fatal(err)
+	}
+
 	if _, err := exec.LookPath("sh"); err != nil {
 		t.Skip(err)
 	}
-	dir := t.TempDir()
-	stamp := filepath.Join(dir, "stdin")
-	t.Setenv("AIR9S_DELETE_STAMP", stamp)
-	script := filepath.Join(dir, "opencode")
-	body := `#!/bin/sh
-# GNU stat accepts -c. BSD stat accepts -f and rejects -c.
-if stat -c '%d:%i' /dev/null >/dev/null 2>&1; then
-  in=$(stat -c '%d:%i' /dev/fd/0)
-  null=$(stat -c '%d:%i' /dev/null)
-else
-  in=$(stat -f '%d:%i' /dev/fd/0)
-  null=$(stat -f '%d:%i' /dev/null)
-fi
-if [ "$in" = "$null" ]; then
-  printf 'null\n' > "$AIR9S_DELETE_STAMP"
-else
-  printf 'other %s\n' "$in" > "$AIR9S_DELETE_STAMP"
-fi
-exit 0
-`
-	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	orig := LookPath
-	t.Cleanup(func() { LookPath = orig })
-	LookPath = func(string) (string, error) { return script, nil }
-	err := Delete(model.Session{Agent: "opencode", NativeID: "ses1", CanDelete: true, DeleteMode: "exec"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	got, err := os.ReadFile(stamp)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(got), "null") {
-		t.Fatalf("delete command inherited stdin %q", got)
-	}
-
 	fail := filepath.Join(dir, "opencode-fail")
 	failBody := "#!/bin/sh\necho refused >&2\necho also-stdout\nexit 3\n"
 	if err := os.WriteFile(fail, []byte(failBody), 0o755); err != nil {
@@ -600,6 +620,15 @@ exit 0
 	if err == nil || !strings.Contains(err.Error(), "refused") || !strings.Contains(err.Error(), "also-stdout") {
 		t.Fatalf("error %v", err)
 	}
+}
+
+func writeTemp(t *testing.T, dir, body string) string {
+	t.Helper()
+	path := filepath.Join(dir, "stdin.txt")
+	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return path
 }
 
 func TestTrimOutput(t *testing.T) {
