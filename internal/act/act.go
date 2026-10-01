@@ -58,8 +58,8 @@ func (c Command) Run() error {
 
 // Plan builds the agent's own resume command.
 func Plan(s model.Session, yolo bool) (Command, error) {
-	if s.NativeID == "" {
-		return Command{}, errors.New("session has no id")
+	if err := userArg("session id", s.NativeID); err != nil {
+		return Command{}, err
 	}
 	var name string
 	var args []string
@@ -95,6 +95,9 @@ func Plan(s model.Session, yolo bool) (Command, error) {
 		if s.SourcePath == "" {
 			return Command{}, errors.New("gemini session file is missing")
 		}
+		if err := userArg("session file", s.SourcePath); err != nil {
+			return Command{}, err
+		}
 		name = "gemini"
 		args = []string{"--session-file", s.SourcePath}
 	case "cursor":
@@ -113,6 +116,12 @@ func Plan(s model.Session, yolo bool) (Command, error) {
 		name = "hermes"
 		id := s.NativeID
 		if profile, bare, ok := hermesProfile(s.NativeID); ok {
+			if err := userArg("hermes profile", profile); err != nil {
+				return Command{}, err
+			}
+			if err := userArg("session id", bare); err != nil {
+				return Command{}, err
+			}
 			args = append(args, "-p", profile)
 			id = bare
 		}
@@ -145,6 +154,9 @@ func Plan(s model.Session, yolo bool) (Command, error) {
 		name = "aider"
 		args = []string{"--restore-chat-history"}
 		if s.SourcePath != "" && filepath.Base(s.SourcePath) != ".aider.chat.history.md" {
+			if err := userArg("chat history file", s.SourcePath); err != nil {
+				return Command{}, err
+			}
 			args = append(args, "--chat-history-file", s.SourcePath)
 		}
 	case "kiro":
@@ -319,6 +331,10 @@ func rewriteAgy(s model.Session) error {
 	if path != want || filepath.Base(path) != "history.jsonl" {
 		return errors.New("refusing to rewrite a file that is not the Antigravity history")
 	}
+	path, err := sameRegularFile(path, want)
+	if err != nil {
+		return err
+	}
 	in, err := os.Open(path)
 	if err != nil {
 		return err
@@ -380,6 +396,9 @@ func rewriteAgy(s model.Session) error {
 }
 
 func deleteExec(s model.Session) error {
+	if err := userArg("session id", s.NativeID); err != nil {
+		return err
+	}
 	var name string
 	var args []string
 	switch s.Agent {
@@ -390,6 +409,12 @@ func deleteExec(s model.Session) error {
 		name = "hermes"
 		id := s.NativeID
 		if profile, bare, ok := hermesProfile(s.NativeID); ok {
+			if err := userArg("hermes profile", profile); err != nil {
+				return err
+			}
+			if err := userArg("session id", bare); err != nil {
+				return err
+			}
 			args = append(args, "-p", profile)
 			id = bare
 		}
@@ -428,6 +453,9 @@ func deleteCline(s model.Session) error {
 	hist := filepath.Join(home, "data", "state", "taskHistory.json")
 	if filepath.Clean(s.SourcePath) != filepath.Clean(hist) {
 		return errors.New("refusing to rewrite a file that is not the Cline task history")
+	}
+	if _, err := sameRegularFile(s.SourcePath, hist); err != nil {
+		return err
 	}
 	taskDir := filepath.Join(home, "data", "tasks", s.NativeID)
 	removeDir := false
@@ -501,7 +529,51 @@ func deleteAider(s model.Session) error {
 }
 
 func safeSegment(id string) bool {
-	return id != "" && id != "." && id != ".." && !strings.ContainsAny(id, `/\`)
+	return userArg("task id", id) == nil && !strings.ContainsAny(id, `/\`)
+}
+
+// userArg rejects values that an agent CLI would parse as a flag or that
+// could truncate an argument at a NUL.
+func userArg(label, value string) error {
+	if value == "" || value == "." || value == ".." || strings.HasPrefix(value, "-") || strings.ContainsRune(value, 0) {
+		return fmt.Errorf("%s cannot be passed to the agent CLI", label)
+	}
+	return nil
+}
+
+// sameRegularFile reports the real path when path and want are the same
+// regular file. A symlink, including one reached through a parent directory,
+// is refused so a rewrite cannot land outside the agent file.
+func sameRegularFile(path, want string) (string, error) {
+	path = filepath.Clean(path)
+	want = filepath.Clean(want)
+	info, err := os.Lstat(path)
+	if err != nil {
+		return "", err
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() {
+		return "", errors.New("refusing to rewrite a file that is not a regular file")
+	}
+	resolved, err := resolveFile(path)
+	if err != nil {
+		return "", err
+	}
+	resolvedWant, err := resolveFile(want)
+	if err != nil {
+		return "", err
+	}
+	if resolved != resolvedWant {
+		return "", errors.New("refusing to rewrite a file outside the agent directory")
+	}
+	return resolved, nil
+}
+
+func resolveFile(path string) (string, error) {
+	parent, err := filepath.EvalSymlinks(filepath.Dir(path))
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(parent, filepath.Base(path)), nil
 }
 
 func writeAtom(path string, body []byte) error {
@@ -526,9 +598,35 @@ func cleanWithin(path, root string) (string, error) {
 	}
 	path = filepath.Clean(path)
 	root = filepath.Clean(root)
-	rel, err := filepath.Rel(root, path)
-	if err != nil || rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+	if !inside(root, path) {
 		return "", errors.New("refusing to delete outside the agent session directory")
 	}
-	return path, nil
+	info, err := os.Lstat(path)
+	if err != nil {
+		return "", err
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return "", errors.New("refusing to delete a symlink")
+	}
+	resolvedRoot, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return "", err
+	}
+	resolvedParent, err := filepath.EvalSymlinks(filepath.Dir(path))
+	if err != nil {
+		return "", err
+	}
+	resolved := filepath.Join(resolvedParent, filepath.Base(path))
+	if !inside(resolvedRoot, resolved) {
+		return "", errors.New("refusing to delete outside the agent session directory")
+	}
+	return resolved, nil
+}
+
+func inside(root, path string) bool {
+	rel, err := filepath.Rel(root, path)
+	if err != nil {
+		return false
+	}
+	return rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator))
 }

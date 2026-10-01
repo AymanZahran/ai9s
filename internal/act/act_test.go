@@ -200,3 +200,85 @@ func TestDeleteJunieClineAider(t *testing.T) {
 		t.Fatal("deleted a file that is not an Aider history")
 	}
 }
+
+func TestPlanRejectsFlagArgs(t *testing.T) {
+	orig := LookPath
+	t.Cleanup(func() { LookPath = orig })
+	LookPath = func(name string) (string, error) { return "/usr/bin/" + name, nil }
+	dir := t.TempDir()
+	cases := []model.Session{
+		{Agent: "claude", NativeID: "--dangerously-skip-permissions", CWD: dir},
+		{Agent: "hermes", NativeID: "p:--yolo:abc", CWD: dir},
+		{Agent: "gemini", NativeID: "abc", SourcePath: "--session-file", CWD: dir},
+	}
+	for _, sess := range cases {
+		if _, err := Plan(sess, false); err == nil {
+			t.Fatalf("%s accepted %q", sess.Agent, sess.NativeID)
+		}
+	}
+}
+
+func TestDeleteSymlinkEscape(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("CLAUDE_CONFIG_DIR", root)
+	outside := t.TempDir()
+	target := filepath.Join(outside, "secret.jsonl")
+	if err := os.WriteFile(target, []byte("{}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "projects"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(root, "projects", "demo")); err != nil {
+		t.Fatal(err)
+	}
+	via := filepath.Join(root, "projects", "demo", "secret.jsonl")
+	sess := model.Session{Agent: "claude", NativeID: "secret", CanDelete: true, DeleteMode: "file", SourcePath: via}
+	if err := Delete(sess); err == nil {
+		t.Fatal("deleted a transcript through a symlink directory")
+	}
+	if _, err := os.Stat(target); err != nil {
+		t.Fatal(err)
+	}
+
+	proj := filepath.Join(root, "projects", "real")
+	if err := os.MkdirAll(proj, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(proj, "abc.jsonl")
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+	sess.SourcePath = link
+	if err := Delete(sess); err == nil {
+		t.Fatal("deleted a symlinked transcript")
+	}
+	if _, err := os.Stat(target); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("GEMINI_HOME", root)
+	dir := filepath.Join(root, "antigravity-cli")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	history := filepath.Join(dir, "history.jsonl")
+	other := filepath.Join(outside, "history.jsonl")
+	if err := os.WriteFile(other, []byte("{\"conversationId\":\"keep\"}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(other, history); err != nil {
+		t.Fatal(err)
+	}
+	err := Delete(model.Session{Agent: "agy", NativeID: "keep", CanDelete: true, DeleteMode: "rewrite", SourcePath: history})
+	if err == nil {
+		t.Fatal("rewrote a symlinked Antigravity history")
+	}
+	body, err := os.ReadFile(other)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(body), "keep") {
+		t.Fatalf("outside history changed: %s", body)
+	}
+}

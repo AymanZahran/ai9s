@@ -39,7 +39,7 @@ brew install air9s
 
 ### From source
 
-Requires Go 1.23 or newer.
+Requires Go 1.25 or newer.
 
 ```sh
 git clone https://github.com/AymanZahran/air9s.git
