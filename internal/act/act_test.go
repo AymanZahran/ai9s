@@ -557,12 +557,13 @@ func TestDeleteExecDetached(t *testing.T) {
 	t.Setenv("AIR9S_DELETE_STAMP", stamp)
 	script := filepath.Join(dir, "opencode")
 	body := `#!/bin/sh
-if stat -f '%d:%i' /dev/fd/0 >/dev/null 2>&1; then
-  in=$(stat -f '%d:%i' /dev/fd/0)
-  null=$(stat -f '%d:%i' /dev/null)
-else
+# GNU stat accepts -c. BSD stat accepts -f and rejects -c.
+if stat -c '%d:%i' /dev/null >/dev/null 2>&1; then
   in=$(stat -c '%d:%i' /dev/fd/0)
   null=$(stat -c '%d:%i' /dev/null)
+else
+  in=$(stat -f '%d:%i' /dev/fd/0)
+  null=$(stat -f '%d:%i' /dev/null)
 fi
 if [ "$in" = "$null" ]; then
   printf 'null\n' > "$AIR9S_DELETE_STAMP"
