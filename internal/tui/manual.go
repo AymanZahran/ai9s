@@ -74,7 +74,7 @@ Esc on the list or in the filter clears the filter. Esc in the preview, the manu
 
 [::b]Other keys[-]
   enter       resume in the session directory. Quitting the agent returns here. On a group, apply that filter
-  tab         focus the preview. j/k scroll a line, ctrl-b/f or page keys scroll a page, g/G jump
+  tab         focus the preview. j/k or arrows scroll a line, page up/down or ctrl-b/f scroll a page, g/G jump
   tab, esc    return from the preview to the list
   esc         on the list or in the filter, clear the filter
   d, ctrl-d   delete, after confirmation. Only from the sessions view.
@@ -86,10 +86,14 @@ Esc on the list or in the filter clears the filter. Esc in the preview, the manu
   s           stats
   ?           this manual
   q           quit
-  j / k       move down / up when the list is focused. In / and : they are letters
-  up / down   move the list, including while / or : is open
+  j / k       move down / up one line when the list or the preview is focused. In / and : they are letters
+  up / down   move one line in the focused pane, including the list while / or : is open
+  pgup / pgdn move a page in the focused pane. The list moves its selection. The preview scrolls its text
+  ctrl-b / f  the same page motion, in the list and in the preview
 
-The mouse wheel scrolls the preview while the pointer is over it.
+The list and the preview each draw a scrollbar on the right.
+The mouse wheel scrolls whichever pane is under the pointer: the list moves several rows, the preview scrolls several lines.
+Drag the scrollbar, or click it, to jump. Page keys follow the focused pane. The wheel follows the pointer.
 
 [::b]Resume[-]
 Resume runs that agent's own CLI in the session directory when the directory still exists.

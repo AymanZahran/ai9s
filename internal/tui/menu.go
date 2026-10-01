@@ -134,9 +134,10 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 	switch ui.focused {
 	case "preview":
 		return []menuHint{
-			item("j/k", "scroll"),
-			item("ctrl-b/f", "page"),
+			item("j/k", "line"),
+			item("pgup/pgdn", "page"),
 			item("g/G", "top/end"),
+			item("wheel", "scroll"),
 			item("tab", "sessions"),
 			item("esc", "sessions"),
 			item("enter", "resume"),
@@ -146,6 +147,7 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 	case "filter":
 		return []menuHint{
 			item("up/down", "select"),
+			item("pgup/pgdn", "page"),
 			item("enter", "list"),
 			item("esc", "clear"),
 			item("tab", "preview"),
@@ -153,6 +155,7 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 	case "command":
 		return []menuHint{
 			item("up/down", "select"),
+			item("pgup/pgdn", "page"),
 			item("enter", "apply"),
 			item(":", "next"),
 			item("esc", "cancel"),
@@ -168,6 +171,8 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 			item(":", "command"),
 			item("enter", enter),
 			item("tab", "preview"),
+			item("pgup/pgdn", "page"),
+			item("wheel", "scroll"),
 			item("esc", "clear"),
 			item("d", "delete"),
 			item("y", "yolo"),

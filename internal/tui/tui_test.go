@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -324,6 +325,128 @@ func TestEnterPlansResumeWithoutAScreen(t *testing.T) {
 	send(ui.table, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
 	if ui.pending == nil || len(ui.pending.Args) < 2 || ui.pending.Args[0] != "--resume" || ui.pending.Args[1] != "one" {
 		t.Fatalf("pending %#v", ui.pending)
+	}
+}
+
+func TestPageAndScrollbar(t *testing.T) {
+	st, err := store.Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	const n = 40
+	sessions := make([]model.Session, n)
+	sources := make([]store.Source, n)
+	dir := t.TempDir()
+	for i := 0; i < n; i++ {
+		id := fmt.Sprintf("s%02d", i)
+		path := filepath.Join(dir, id+".jsonl")
+		sessions[i] = model.Session{
+			ID: "claude:" + id, NativeID: id, Agent: "claude", Title: "session",
+			Updated: time.Date(2026, 3, 1, 0, 0, n-i, 0, time.UTC), Messages: 1,
+			SourcePath: path, CanDelete: true, DeleteMode: "file",
+		}
+		sources[i] = store.Source{Path: path, Mtime: 1}
+	}
+	if err := st.Apply("claude", sessions, sources); err != nil {
+		t.Fatal(err)
+	}
+
+	app := tview.NewApplication()
+	ui := newUI(app, st, config.Defaults())
+	ui.reload()
+	screen := tcell.NewSimulationScreen("UTF-8")
+	if err := screen.Init(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(screen.Fini)
+	screen.SetSize(100, 40)
+	ui.table.SetRect(0, 0, 60, 20)
+	ui.table.Draw(screen)
+
+	_, _, width, _ := ui.table.GetInnerRect()
+	if width != 57 {
+		t.Fatalf("list inner width %d", width)
+	}
+	if ui.listBar.h < 2 {
+		t.Fatalf("list bar %+v", ui.listBar)
+	}
+	r, _, _, _ := screen.GetContent(ui.listBar.x, ui.listBar.y)
+	if r != '┃' && r != '│' {
+		t.Fatalf("list bar rune %q", r)
+	}
+
+	start, _ := ui.table.GetSelection()
+	if start != 1 {
+		t.Fatalf("start row %d", start)
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyPgDn, 0, tcell.ModNone))
+	row, _ := ui.table.GetSelection()
+	if row != start+ui.listPage() {
+		t.Fatalf("page down row %d page %d", row, ui.listPage())
+	}
+	if ui.listPage() < 2 {
+		t.Fatalf("page size %d", ui.listPage())
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyPgUp, 0, tcell.ModNone))
+	row, _ = ui.table.GetSelection()
+	if row != start {
+		t.Fatalf("page up row %d", row)
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyCtrlF, 0, tcell.ModNone))
+	row, _ = ui.table.GetSelection()
+	if row != start+ui.listPage() {
+		t.Fatalf("ctrl-f row %d", row)
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyCtrlB, 0, tcell.ModNone))
+
+	ui.onMouse(tcell.NewEventMouse(4, 4, tcell.WheelDown, tcell.ModNone), tview.MouseScrollDown)
+	row, _ = ui.table.GetSelection()
+	if row != start+wheelRows {
+		t.Fatalf("wheel row %d", row)
+	}
+
+	ui.table.Draw(screen)
+	y := ui.listBar.y + ui.listBar.h - 1
+	ui.onMouse(tcell.NewEventMouse(ui.listBar.x, y, tcell.Button1, tcell.ModNone), tview.MouseLeftDown)
+	row, _ = ui.table.GetSelection()
+	if row < n/2 {
+		t.Fatalf("scrollbar click row %d", row)
+	}
+
+	var lines []string
+	for i := 0; i < 40; i++ {
+		lines = append(lines, "preview line stays on one row")
+	}
+	ui.preview.SetText(strings.Join(lines, "\n"))
+	ui.preview.SetRect(70, 0, 30, 16)
+	ui.preview.Draw(screen)
+	if ui.previewBar.h < 2 {
+		t.Fatalf("preview bar %+v", ui.previewBar)
+	}
+	_, _, pw, ph := ui.preview.GetInnerRect()
+	if pw != 27 || ph != 14 {
+		t.Fatalf("preview inner %d x %d", pw, ph)
+	}
+	send(ui.preview, tcell.NewEventKey(tcell.KeyPgDn, 0, tcell.ModNone))
+	prow, _ := ui.preview.GetScrollOffset()
+	if prow != ph {
+		t.Fatalf("preview page row %d height %d", prow, ph)
+	}
+	send(ui.preview, tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone))
+	prow, _ = ui.preview.GetScrollOffset()
+	if prow != ph+1 {
+		t.Fatalf("preview arrow row %d", prow)
+	}
+	ui.onMouse(tcell.NewEventMouse(72, 2, tcell.WheelDown, tcell.ModNone), tview.MouseScrollDown)
+	prow, _ = ui.preview.GetScrollOffset()
+	if prow != ph+1+wheelRows {
+		t.Fatalf("preview wheel row %d", prow)
+	}
+	send(ui.preview, tcell.NewEventKey(tcell.KeyPgUp, 0, tcell.ModNone))
+	prow, _ = ui.preview.GetScrollOffset()
+	if prow != ph+1+wheelRows-ph {
+		t.Fatalf("preview page up row %d", prow)
 	}
 }
 

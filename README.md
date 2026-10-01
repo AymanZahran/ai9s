@@ -79,7 +79,7 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 | --- | --- |
 | `1`–`5` | Sessions, providers, directories, branches, models. The active view is bold in the top hotkey bar. |
 | Enter | Resume the selected session. Quitting that session returns to air9s. On a group view, apply that group as a filter and return to sessions. |
-| Tab | Focus the preview. `j`/`k` or the arrows scroll a line, Page Up/Down or Ctrl-B/Ctrl-F scroll a page, `g`/`G` jump to the top or the end. Tab or Esc returns to the list. The mouse wheel scrolls the preview when the pointer is over it. |
+| Tab | Focus the preview. `j`/`k` or the arrows scroll a line. Page Up/Down or Ctrl-B/Ctrl-F scroll a page. `g`/`G` jump to the top or the end. Tab or Esc returns to the list. |
 | `d`, Ctrl-D | Delete, after confirmation. Sessions view only. |
 | `/` | Edit the filter. Up and down move the list while the field is open. Page Up and Page Down do too. Left and right stay in the field. |
 | Esc | Clear the filter from the list or the filter line. In the preview, the manual, or command mode, Esc goes back and leaves the filter alone. |
@@ -92,7 +92,9 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 | `s` | Stats |
 | `?` | Scrollable manual. `j`/`k` scroll, `g`/`G` jump, Esc or `q` returns to the list. |
 | `q` | Quit |
-| `j` / `k` | Move down / up when the list or the preview is focused. In the filter and command fields they are typed letters. |
+| `j` / `k` | Move one line when the list or the preview is focused. In the filter and command fields they are typed letters. |
+| Page Up / Page Down | Move a page in the focused pane. The list moves its selection. The preview scrolls its text. Ctrl-B and Ctrl-F do the same. This also works while `/` or `:` is open. |
+| Mouse | The wheel scrolls the pane under the pointer. Each pane has a scrollbar on the right; drag it or click it to jump. |
 
 ## Filters
 

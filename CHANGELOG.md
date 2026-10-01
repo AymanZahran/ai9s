@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.2.3
+
+- The session list and the preview each show a scrollbar on the right. The mouse wheel scrolls the pane under the pointer. Drag or click a scrollbar to jump.
+- Page Up and Page Down move a page in the focused pane. Ctrl-B and Ctrl-F do the same. Arrows and `j`/`k` still move one line.
+
 ## 0.2.2
 
 - Quitting a resumed session returns to air9s. Ctrl-C stays with the agent.

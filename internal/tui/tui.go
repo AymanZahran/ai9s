@@ -94,6 +94,10 @@ type ui struct {
 	crumbs          *tview.TextView
 	info            *tview.TextView
 	logo            *tview.TextView
+	listBar         scrollBar
+	previewBar      scrollBar
+	scrollDrag      string
+	scrollGrab      int
 }
 
 func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
@@ -199,6 +203,7 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 	if spec, ok := viewByName(cfg.Body.DefaultView); ok {
 		ui.view = spec.name
 	}
+	ui.installScroll()
 	ui.paintChrome()
 	return ui
 }
@@ -228,8 +233,8 @@ func (ui *ui) clearFilter() {
 }
 
 const (
-	footerSessions = `[yellow]tab[-] preview   [yellow]enter[-] resume   [yellow]d[-] delete   [yellow]/[-] filter   [yellow]a[-] agent   [yellow]p[-] directory   [yellow]o[-] sort   [yellow]y[-] yolo   [yellow]r[-] reindex   [yellow]s[-] stats   [yellow]?[-] help   [yellow]q[-] quit`
-	footerPreview  = `[yellow]j/k[-] ↑↓ scroll   [yellow]ctrl-b/f[-] page   [yellow]g/G[-] top/end   [yellow]tab[-] [yellow]esc[-] sessions   [yellow]enter[-] resume   [yellow]q[-] quit`
+	footerSessions = `[yellow]tab[-] preview   [yellow]pgup/pgdn[-] page   [yellow]enter[-] resume   [yellow]d[-] delete   [yellow]/[-] filter   [yellow]a[-] agent   [yellow]p[-] directory   [yellow]o[-] sort   [yellow]y[-] yolo   [yellow]r[-] reindex   [yellow]s[-] stats   [yellow]?[-] help   [yellow]q[-] quit`
+	footerPreview  = `[yellow]j/k[-] line   [yellow]pgup/pgdn[-] page   [yellow]g/G[-] top/end   [yellow]wheel[-] scroll   [yellow]tab[-] [yellow]esc[-] sessions   [yellow]enter[-] resume   [yellow]q[-] quit`
 )
 
 func (ui *ui) paintChrome() {
@@ -260,7 +265,19 @@ func (ui *ui) paintChrome() {
 // Letters, including j and k, and left/right/home/end stay in the field.
 func (ui *ui) forwardListMotion(ev *tcell.EventKey) *tcell.EventKey {
 	switch ev.Key() {
-	case tcell.KeyUp, tcell.KeyDown, tcell.KeyPgUp, tcell.KeyPgDn:
+	case tcell.KeyUp, tcell.KeyDown:
+	case tcell.KeyPgUp, tcell.KeyCtrlB:
+		if ui.commandOpen {
+			ui.commandMoved = true
+		}
+		ui.moveSelection(-ui.listPage())
+		return nil
+	case tcell.KeyPgDn, tcell.KeyCtrlF:
+		if ui.commandOpen {
+			ui.commandMoved = true
+		}
+		ui.moveSelection(ui.listPage())
+		return nil
 	default:
 		return ev
 	}
@@ -310,9 +327,23 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyEscape:
 		ui.clearFilter()
 		return nil
+	case tcell.KeyPgUp:
+		ui.moveSelection(-ui.listPage())
+		return nil
+	case tcell.KeyPgDn:
+		ui.moveSelection(ui.listPage())
+		return nil
 	}
 	if ev.Key() != tcell.KeyRune {
 		if ui.tryPlugin(ev) {
+			return nil
+		}
+		if ev.Key() == tcell.KeyCtrlB {
+			ui.moveSelection(-ui.listPage())
+			return nil
+		}
+		if ev.Key() == tcell.KeyCtrlF {
+			ui.moveSelection(ui.listPage())
 			return nil
 		}
 		return ev
@@ -367,6 +398,24 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 	}
 	if ev.Key() == tcell.KeyCtrlD {
 		ui.confirmDelete()
+		return nil
+	}
+	switch ev.Key() {
+	case tcell.KeyPgUp:
+		ui.scrollPreview(-ui.previewPage())
+		return nil
+	case tcell.KeyPgDn:
+		ui.scrollPreview(ui.previewPage())
+		return nil
+	case tcell.KeyCtrlB, tcell.KeyCtrlF:
+		if ui.tryPlugin(ev) {
+			return nil
+		}
+		delta := ui.previewPage()
+		if ev.Key() == tcell.KeyCtrlB {
+			delta = -delta
+		}
+		ui.scrollPreview(delta)
 		return nil
 	}
 	if ev.Key() == tcell.KeyRune {
