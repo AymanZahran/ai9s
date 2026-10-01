@@ -19,13 +19,14 @@
       <a href="keys.html">Keys</a>
       <a href="agents.html">Agents</a>
       <a href="filters.html" aria-current="page">Filters</a>
+      <a href="config.html">Config</a>
       <a href="contributing.html">Contributing</a>
       <a href="https://github.com/AymanZahran/air9s">GitHub</a>
     </nav>
   </header>
   <main>
     <h1><span class="mark" aria-hidden="true">/</span> Filters</h1>
-    <p>Free text matches the title and a capped excerpt of the transcript. Quote a phrase to keep it together: <code>"auth bug"</code>. Tokens and free text combine.</p>
+    <p>Each free-text word is a substring of the title, summary, directory, branch, model, agent, or excerpt. Quote a phrase to keep it together: <code>"auth bug"</code>. Tokens and free text combine. A leading <code>~</code> expands to the home directory.</p>
     <pre><code>air9s search 'agent:claude dir:my-repo date:&lt;7d "auth bug"'</code></pre>
     <div class="table-wrap">
       <table>
@@ -33,8 +34,8 @@
           <tr><th>Token</th><th>Meaning</th></tr>
         </thead>
         <tbody>
-          <tr><td><code>agent:claude</code></td><td>Agent id. Also <code>a:</code>.</td></tr>
-          <tr><td><code>dir:repo</code></td><td>Working directory contains the text. Also <code>cwd:</code> and <code>directory:</code>.</td></tr>
+          <tr><td><code>agent:claude</code></td><td>Agent id, or a substring of it. <code>agent:clau</code> matches while you type. Also <code>a:</code>. An empty <code>agent:</code> is ignored.</td></tr>
+          <tr><td><code>dir:repo</code></td><td>Working directory contains the text. Also <code>cwd:</code> and <code>directory:</code>. <code>dir:~/repo</code> expands <code>~</code>.</td></tr>
           <tr><td><code>branch:main</code></td><td>Git branch contains the text.</td></tr>
           <tr><td><code>model:sonnet</code></td><td>Model name contains the text.</td></tr>
           <tr><td><code>date:&lt;7d</code></td><td>Updated in the last 7 days. Units: <code>m</code>, <code>h</code>, <code>d</code>, <code>w</code>.</td></tr>
@@ -46,7 +47,7 @@
     </div>
 
     <h2>In the UI</h2>
-    <p><code>/</code> edits the filter text directly. <code>:</code> opens command mode, where the same tokens are listed and Enter writes one of them into the filter. Setting a token replaces the previous value of that token. A value with a space is quoted.</p>
+    <p><code>/</code> edits the filter text directly. The list updates as you type. Esc on the list or in the filter clears the text. Esc in the preview, the manual, or command mode leaves the filter alone. <code>:</code> opens command mode, where the same tokens are listed and Enter writes one of them into the filter. Setting a token replaces the previous value of that token. A value with a space is quoted.</p>
     <p>The header shows the token names as a hint: <code>agent: dir: branch: model: date:&lt;7d sort:recent</code>.</p>
 
     <h2>Metadata</h2>

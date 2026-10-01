@@ -69,3 +69,41 @@ func TestSearchAndPrune(t *testing.T) {
 		t.Fatalf("prune left %+v", got)
 	}
 }
+
+func TestSearchSubstrings(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	st, err := Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	path := filepath.Join(t.TempDir(), "abc.jsonl")
+	cwd := filepath.Join(home, "work", "demo")
+	sess := model.Session{
+		ID: "claude:abc", NativeID: "abc", Agent: "claude", Title: "ship the feature",
+		CWD: cwd, Branch: "main", Model: "sonnet",
+		Updated: time.Date(2026, 3, 2, 15, 4, 5, 0, time.UTC), Messages: 2,
+		SourcePath: path, CanDelete: true, DeleteMode: "file",
+		Snippets: []model.Snippet{{Role: "user", Body: "please fix the auth bug"}},
+	}
+	if err := st.Apply("claude", []model.Session{sess}, []Source{{Path: path, Mtime: 10}}); err != nil {
+		t.Fatal(err)
+	}
+	for _, q := range []string{"fea", "agent:clau", "dir:~/work", "main", "sonn", "agent:"} {
+		got, err := st.Search(query.Parse(q), 10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 1 || got[0].ID != "claude:abc" {
+			t.Fatalf("%s -> %+v", q, got)
+		}
+	}
+	got, err := st.Search(query.Parse("agent:grok"), 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("agent prefix matched %+v", got)
+	}
+}

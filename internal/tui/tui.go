@@ -3,8 +3,10 @@ package tui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/AymanZahran/air9s/internal/act"
+	"github.com/AymanZahran/air9s/internal/config"
 	"github.com/AymanZahran/air9s/internal/index"
 	"github.com/AymanZahran/air9s/internal/model"
 	"github.com/AymanZahran/air9s/internal/query"
@@ -16,11 +18,29 @@ import (
 // Run draws the session list. It returns a resume command when the user
 // picks a session, or nil when they quit.
 func Run(st *store.Store) (*act.Command, error) {
+	cfg, err := config.Load()
+	if err != nil {
+		cfg.Warnings = append(cfg.Warnings, err.Error())
+	}
 	app := tview.NewApplication()
-	ui := newUI(app, st)
+	ui := newUI(app, st, cfg)
 	ui.reload()
-	if err := app.SetRoot(ui.layout, true).EnableMouse(true).Run(); err != nil {
-		return nil, err
+	if cfg.Body.NoExitOnCtrlC {
+		app.SetInputCapture(func(ev *tcell.EventKey) *tcell.EventKey {
+			if ev.Key() == tcell.KeyCtrlC {
+				return nil
+			}
+			return ev
+		})
+	}
+	stopRefresh := func() {}
+	if cfg.Body.RefreshRate > 0 {
+		stopRefresh = ui.startRefresh(time.Duration(cfg.Body.RefreshRate) * time.Second)
+	}
+	runErr := app.SetRoot(ui.layout, true).EnableMouse(cfg.Mouse()).Run()
+	stopRefresh()
+	if runErr != nil {
+		return nil, runErr
 	}
 	return ui.pending, nil
 }
@@ -48,23 +68,30 @@ type ui struct {
 	suppressCommand bool
 	groups          []groupRow
 	suggestions     []commandHint
+	cfg             config.Loaded
+	crumbs          *tview.TextView
+	info            *tview.TextView
+	logo            *tview.TextView
 }
 
-func newUI(app *tview.Application, st *store.Store) *ui {
-	ui := &ui{app: app, store: st}
-	ui.header = tview.NewTextView().SetDynamicColors(true)
-	ui.header.SetBackgroundColor(tcell.ColorDarkBlue)
-	ui.footer = tview.NewTextView().SetDynamicColors(true)
-	ui.footer.SetBackgroundColor(tcell.ColorDarkSlateGray)
+func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
+	ui := &ui{app: app, store: st, cfg: cfg, warnings: append([]string(nil), cfg.Warnings...)}
+	ui.header = tview.NewTextView().SetDynamicColors(true).SetWrap(false)
+	ui.logo = tview.NewTextView().SetDynamicColors(true).SetWrap(false)
+	ui.crumbs = tview.NewTextView().SetDynamicColors(true).SetWrap(false)
+	ui.info = tview.NewTextView().SetDynamicColors(true).SetWrap(true)
+	ui.footer = tview.NewTextView().SetDynamicColors(true).SetWrap(false)
 
-	ui.filter = tview.NewInputField().SetLabel(" filter ").SetFieldWidth(0)
-	ui.filter.SetLabelColor(tcell.ColorYellow)
+	ui.filter = tview.NewInputField().SetLabel(" / ").SetFieldWidth(0)
 	ui.filter.SetChangedFunc(func(string) { ui.reload() })
 	ui.filter.SetDoneFunc(func(key tcell.Key) {
 		switch key {
 		case tcell.KeyTab:
 			ui.focusPreview()
-		case tcell.KeyEnter, tcell.KeyEscape, tcell.KeyBacktab:
+		case tcell.KeyEscape:
+			ui.clearFilter()
+			ui.focusSessions()
+		case tcell.KeyEnter, tcell.KeyBacktab:
 			ui.focusSessions()
 		}
 	})
@@ -126,15 +153,54 @@ func newUI(app *tview.Application, st *store.Store) *ui {
 	body := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(ui.table, 0, 3, true).
 		AddItem(ui.preview, 0, 2, false)
+	menuH, crumbsH, infoH, logoW := 2, 1, 2, 10
+	if cfg.Body.UI.Headless {
+		menuH, crumbsH, infoH, logoW = 0, 0, 0, 0
+	}
+	if cfg.Body.UI.Logoless {
+		logoW = 0
+	}
+	top := tview.NewFlex().SetDirection(tview.FlexColumn).
+		AddItem(ui.header, 0, 1, false).
+		AddItem(ui.logo, logoW, 0, false)
 	ui.layout = tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(ui.header, 5, 0, false).
+		AddItem(top, menuH, 0, false).
+		AddItem(ui.crumbs, crumbsH, 0, false).
+		AddItem(ui.info, infoH, 0, false).
 		AddItem(ui.pages, 1, 0, false).
 		AddItem(body, 0, 1, true).
 		AddItem(ui.footer, 1, 0, false)
 	ui.focused = "table"
 	ui.view = viewSessions
+	if spec, ok := viewByName(cfg.Body.DefaultView); ok {
+		ui.view = spec.name
+	}
 	ui.paintChrome()
 	return ui
+}
+
+func (ui *ui) startRefresh(d time.Duration) func() {
+	stop := make(chan struct{})
+	go func() {
+		t := time.NewTicker(d)
+		defer t.Stop()
+		for {
+			select {
+			case <-stop:
+				return
+			case <-t.C:
+				ui.app.QueueUpdateDraw(func() { ui.reindex() })
+			}
+		}
+	}()
+	return func() { close(stop) }
+}
+
+func (ui *ui) clearFilter() {
+	if ui.filter.GetText() == "" {
+		return
+	}
+	ui.filter.SetText("")
 }
 
 const (
@@ -144,23 +210,25 @@ const (
 
 func (ui *ui) paintChrome() {
 	// Do not call HasFocus here. TextView.Focus holds its lock while this runs.
-	ui.table.SetBorderColor(tcell.ColorWhite)
-	ui.preview.SetBorderColor(tcell.ColorWhite)
+	ui.applySkin()
 	if ui.commandOpen {
 		ui.table.SetTitle(" commands ")
 	} else {
 		ui.table.SetTitle(viewTitle(ui.view))
 	}
 	ui.preview.SetTitle(" preview ")
-	ui.footer.SetText(footerSessions)
+	footer := footerSessions
 	switch ui.focused {
 	case "preview":
-		ui.preview.SetBorderColor(tcell.ColorYellow)
+		ui.preview.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "yellow"))
+		ui.preview.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "yellow"))
 		ui.preview.SetTitle(" preview · scroll ")
-		ui.footer.SetText(footerPreview)
+		footer = footerPreview
 	case "table", "command":
-		ui.table.SetBorderColor(tcell.ColorYellow)
+		ui.table.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "yellow"))
+		ui.table.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "yellow"))
 	}
+	ui.footer.SetText(footer + "   " + ui.counter())
 	ui.paintHeader()
 }
 
@@ -197,8 +265,14 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyTab, tcell.KeyBacktab:
 		ui.focusPreview()
 		return nil
+	case tcell.KeyEscape:
+		ui.clearFilter()
+		return nil
 	}
 	if ev.Key() != tcell.KeyRune {
+		if ui.tryPlugin(ev) {
+			return nil
+		}
 		return ev
 	}
 	switch ev.Rune() {
@@ -234,6 +308,9 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 			ui.setView(spec.name)
 		}
 	default:
+		if ui.tryPlugin(ev) {
+			return nil
+		}
 		return ev
 	}
 	return nil
@@ -274,6 +351,9 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 			return nil
 		}
 	}
+	if ui.tryPlugin(ev) {
+		return nil
+	}
 	return ev
 }
 
@@ -284,7 +364,7 @@ func (ui *ui) reload() {
 		return
 	}
 	f := query.Parse(ui.filter.GetText())
-	rows, err := ui.store.Search(f, 400)
+	rows, err := ui.store.Search(f, ui.cfg.Limit())
 	if err != nil {
 		ui.header.SetText("[red]search failed: " + err.Error() + "[-]")
 		return
@@ -295,12 +375,12 @@ func (ui *ui) reload() {
 	for _, a := range stats.Agents {
 		ui.agents = append(ui.agents, a.Agent)
 	}
-	ui.paintHeader()
 	if ui.view != "" && ui.view != viewSessions {
 		ui.paintGroups()
-		return
+	} else {
+		ui.paintSessions()
 	}
-	ui.paintSessions()
+	ui.paintHeader()
 }
 
 func colorOf(agent string) tcell.Color {
@@ -343,17 +423,64 @@ func colorOf(agent string) tcell.Color {
 }
 
 func (ui *ui) paintHeader() {
+	if ui.cfg.Body.UI.Headless {
+		return
+	}
+	num := ui.cfg.Skin.Frame.Menu.NumKey
+	key := ui.cfg.Skin.Frame.Menu.Key
+	fg := ui.cfg.Skin.Frame.Menu.Fg
+	hi := ui.cfg.Skin.Frame.Title.Highlight
+	ui.header.SetText(" " + hotkeyViews(ui.view, num, fg, hi) + "\n " + hotkeyActions(ui.focused, ui.view, key, fg))
+	if ui.cfg.Body.UI.Logoless {
+		ui.logo.SetText("")
+	} else {
+		logo := ui.cfg.Skin.Body.Logo
+		ui.logo.SetText(fmt.Sprintf("[%s]╭──╮╭──╮[-]\n[%s]╰──┴┴──╯[-]", logo, logo))
+	}
+	ui.paintCrumbs()
+	ui.paintInfo()
+}
+
+func (ui *ui) paintCrumbs() {
+	view := ui.view
+	if view == "" {
+		view = viewSessions
+	}
+	if ui.commandOpen {
+		view = "command"
+	}
+	label := strings.ToUpper(view[:1]) + view[1:]
+	filter := strings.TrimSpace(ui.filter.GetText())
+	if filter == "" {
+		filter = "all"
+	}
+	if len(filter) > 42 {
+		filter = filter[:41] + "…"
+	}
 	stats, _ := ui.store.Stats()
-	var b strings.Builder
-	fmt.Fprintf(&b, " %s\n %s\n", hotkeyViews(ui.view), hotkeyActions(ui.focused, ui.view))
-	fmt.Fprintf(&b, "[::b] air9s [-]  %d sessions   %d messages", stats.Sessions, stats.Messages)
+	active := ui.cfg.Skin.Frame.Crumbs.Active
+	var extra string
 	if ui.yolo {
-		b.WriteString("   [yellow]yolo[-]")
+		extra += "  yolo"
 	}
 	if ui.busy {
-		b.WriteString("   indexing…")
+		extra += "  indexing…"
 	}
-	b.WriteByte('\n')
+	ui.crumbs.SetText(fmt.Sprintf(" air9s › [%s::b]%s[-] › %s    %d sessions · %d messages%s    %s",
+		active, label, filter, stats.Sessions, stats.Messages, extra, ui.counter()))
+	footer := footerSessions
+	if ui.focused == "preview" {
+		footer = footerPreview
+	}
+	ui.footer.SetText(footer + "   " + ui.counter())
+}
+
+func (ui *ui) paintInfo() {
+	stats, _ := ui.store.Stats()
+	var b strings.Builder
+	if len(ui.warnings) > 0 {
+		fmt.Fprintf(&b, "[red]%s[-]\n", ui.warnings[0])
+	}
 	if len(stats.Agents) == 0 {
 		b.WriteString(" ")
 	}
@@ -361,14 +488,33 @@ func (ui *ui) paintHeader() {
 		if i > 0 {
 			b.WriteString("   ")
 		}
-		fmt.Fprintf(&b, "%s [%s]%s %d[-]", Icon(a.Agent), agentColor(a.Agent), a.Agent, a.Sessions)
+		fmt.Fprintf(&b, "%s [%s]%s %d[-]", ui.mark(a.Agent), ui.agentTag(a.Agent), a.Agent, a.Sessions)
 	}
-	if len(ui.warnings) > 0 {
-		fmt.Fprintf(&b, "\n[red]%s[-]", ui.warnings[0])
-	} else {
+	if len(ui.warnings) == 0 {
 		b.WriteString("\n[gray]agent: dir: branch: model: date:<7d sort:recent[-]")
 	}
-	ui.header.SetText(b.String())
+	ui.info.SetText(b.String())
+}
+
+func (ui *ui) counter() string {
+	total := len(ui.rows)
+	if ui.commandOpen {
+		total = len(ui.suggestions)
+	} else if ui.view != "" && ui.view != viewSessions {
+		total = len(ui.groups)
+	}
+	row, _ := ui.table.GetSelection()
+	if row < 1 || total == 0 {
+		return fmt.Sprintf("0/%d", total)
+	}
+	if row > total {
+		row = total
+	}
+	color := ui.cfg.Skin.Frame.Title.Counter
+	if color == "" {
+		color = "yellow"
+	}
+	return fmt.Sprintf("[%s]%d/%d[-]", color, row, total)
 }
 
 func (ui *ui) showRow(row int) {
@@ -394,7 +540,7 @@ func (ui *ui) showRow(row int) {
 		ui.preview.SetText(err.Error())
 		return
 	}
-	ui.preview.SetText(preview(full))
+	ui.preview.SetText(ui.previewBody(full))
 	ui.preview.ScrollToBeginning()
 }
 
@@ -434,6 +580,10 @@ func (ui *ui) confirmDelete() {
 		ui.alert("Switch to sessions before deleting.")
 		return
 	}
+	if ui.cfg.Body.ReadOnly {
+		ui.alert("Delete is off. readOnly is set in the config.")
+		return
+	}
 	s, ok := ui.selected()
 	if !ok {
 		return
@@ -447,7 +597,7 @@ func (ui *ui) confirmDelete() {
 		return
 	}
 	text := fmt.Sprintf("Delete this %s session?\n\n%s\n%s", Label(s.Agent), s.Title, shortPath(s.SourcePath))
-	modal := tview.NewModal().SetText(text).AddButtons([]string{"Delete", "Cancel"}).SetDoneFunc(func(_ int, label string) {
+	modal := ui.modal(text, []string{"Delete", "Cancel"}, func(_ int, label string) {
 		ui.app.SetRoot(ui.layout, true)
 		ui.focusSessions()
 		if label != "Delete" {
@@ -471,7 +621,7 @@ func (ui *ui) confirmDelete() {
 }
 
 func (ui *ui) alert(msg string) {
-	modal := tview.NewModal().SetText(msg).AddButtons([]string{"OK"}).SetDoneFunc(func(int, string) {
+	modal := ui.modal(msg, []string{"OK"}, func(int, string) {
 		ui.app.SetRoot(ui.layout, true)
 		ui.focusSessions()
 	})
@@ -487,7 +637,7 @@ func (ui *ui) showStats() {
 	var b strings.Builder
 	fmt.Fprintf(&b, "%d sessions, %d messages\n\n", stats.Sessions, stats.Messages)
 	for _, a := range stats.Agents {
-		fmt.Fprintf(&b, "%s %-10s %5d sessions   %6d messages\n", Icon(a.Agent), a.Agent, a.Sessions, a.Messages)
+		fmt.Fprintf(&b, "%s %-10s %5d sessions   %6d messages\n", ui.mark(a.Agent), a.Agent, a.Sessions, a.Messages)
 	}
 	if len(ui.warnings) > 0 {
 		b.WriteString("\n")

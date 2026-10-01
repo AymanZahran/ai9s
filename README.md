@@ -14,7 +14,9 @@
 
 air9s is a keyboard-first finder for local AI coding sessions. It indexes the session files already on your machine, then lets you search, preview, filter, resume, and — where it is safe — delete them.
 
-The interface is a terminal list: a header with the hotkeys on top, a filter line, a session table, a preview pane, and a footer of key hints. Each agent has its own icon in the header, the table, and the preview. `1` through `5` switch the table between sessions, providers, directories, branches, and models. `/` edits the filter and `:` opens a command line for those views and for filter tokens. `?` opens a scrollable manual. Tab moves into the preview so the excerpt can be scrolled; Tab or Esc returns to the list. The CTX column, the preview, and `air9s show` include context size and token counts when the agent recorded them.
+The interface follows the k9s screen: a menu of hotkeys, a crumbs bar (`air9s › Sessions › all`), a framed table with a cursor row, a filter prompt, and a preview. Each agent has its own icon. `1` through `5` switch the table between sessions, providers, directories, branches, and models. `/` edits the filter and `:` opens a command line for those views and for filter tokens. Esc clears the filter from the list and from the filter line. `?` opens a scrollable manual. Tab moves into the preview so the excerpt can be scrolled; Tab or Esc returns to the list. The CTX column, the preview, and `air9s show` include context size and token counts when the agent recorded them.
+
+Colors, the mouse, icons, read-only mode, the starting view, and plugins come from `~/.config/air9s/config.yaml` (or `$AIR9S_CONFIG_DIR`, or `$XDG_CONFIG_HOME/air9s`). `air9s info` prints the paths.
 
 ## Install
 
@@ -59,7 +61,8 @@ go install github.com/AymanZahran/air9s/cmd/air9s@latest
 air9s                 # open the list
 air9s index           # refresh the local index
 air9s stats
-air9s search 'agent:claude dir:my-repo date:<7d auth'
+air9s search 'agent:clau dir:~/my-repo date:<7d auth'
+air9s info
 air9s show claude:<session-id>
 air9s resume claude:<session-id>
 air9s resume codex:<session-id> --print   # show the command, do not run it
@@ -79,6 +82,7 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 | Tab | Focus the preview. `j`/`k` or the arrows scroll a line, Page Up/Down or Ctrl-B/Ctrl-F scroll a page, `g`/`G` jump to the top or the end. Tab or Esc returns to the list. The mouse wheel scrolls the preview when the pointer is over it. |
 | `d`, Ctrl-D | Delete, after confirmation. Sessions view only. |
 | `/` | Edit the filter |
+| Esc | Clear the filter from the list or the filter line. In the preview, the manual, or command mode, Esc goes back and leaves the filter alone. |
 | `:` | Command mode. Type a view name or a filter token. Enter applies it. Enter on an empty command cycles the view. Another `:` cycles the view name in the field. Esc closes it. |
 | `a` | Cycle the `agent:` filter |
 | `p` | Add a `dir:` filter |
@@ -92,12 +96,12 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 
 ## Filters
 
-Free text is matched against the title and a capped excerpt of the transcript. These tokens are filters:
+Each free-text word is a substring of the title, summary, directory, branch, model, agent, or excerpt. A leading `~` expands to the home directory. These tokens are filters:
 
 | Token | Meaning |
 | --- | --- |
-| `agent:claude` | Agent id. Also `a:`. |
-| `dir:repo` | Working directory contains the text. Also `cwd:` and `directory:`. |
+| `agent:claude` | Agent id, or a substring of it, so `agent:clau` matches while you type. Also `a:`. An empty `agent:` is ignored. |
+| `dir:repo` | Working directory contains the text. Also `cwd:` and `directory:`. `dir:~/repo` expands `~`. |
 | `branch:main` | Git branch contains the text. |
 | `model:sonnet` | Model name contains the text. |
 | `date:<7d` | Updated in the last 7 days. Units: `m`, `h`, `d`, `w`. |
@@ -105,7 +109,13 @@ Free text is matched against the title and a capped excerpt of the transcript. T
 | `date:2026-03-02` | That calendar day. `date:2026-03` is the whole month. |
 | `sort:messages` | `recent` (default), `oldest`, `messages`, or `title`. |
 
-Quote a phrase to keep it together: `"auth bug"`.
+Quote a phrase to keep it together: `"auth bug"`. Esc on the session list clears the line.
+
+## Config
+
+air9s writes `config.yaml` the first time it starts, when the file is missing. Skins go in `skins/<name>.yaml`. Plugins go in `plugins.yaml` or in `plugins/`. A plugin shortcut that uses `q`, `/`, `:`, `d`, `y`, `r`, `s`, `?`, `a`, `p`, `o`, `j`, `k`, `g`, `G`, `1`–`5`, Enter, Tab, Esc, or Ctrl-D is ignored. The command is a program name, not a shell. The selected row provides `$ID`, `$NATIVE_ID`, `$AGENT`, `$CWD`, `$TITLE`, `$BRANCH`, `$MODEL`, `$FILTER`, and `$NAME`.
+
+`ui.skin` names a file in `skins/` without `.yaml`. `AIR9S_SKIN` overrides it. An empty skin uses the built-in colors: a black screen, a steel-blue crumbs bar, dodger-blue keys, and a cadet-blue cursor. `readOnly: true` blocks delete. `refreshRate` is seconds between reindexes; `0` waits for `r`.
 
 ## Metadata
 

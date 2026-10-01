@@ -384,27 +384,18 @@ func (s *Store) Search(f query.Filter, limit int) ([]model.Session, error) {
 	defer s.mu.Unlock()
 	var b strings.Builder
 	args := []any{}
-	match := query.FTS(f.Text)
-	if s.fts && match != "" {
-		b.WriteString(`SELECT ` + cols + ` FROM sessions s JOIN fts ON fts.session_id = s.id WHERE fts MATCH ?`)
-		args = append(args, match)
-	} else {
-		b.WriteString(`SELECT ` + cols + ` FROM sessions s WHERE 1=1`)
-		if strings.TrimSpace(f.Text) != "" && match == "" {
-			return []model.Session{}, nil
+	b.WriteString(`SELECT ` + cols + ` FROM sessions s WHERE 1=1`)
+	for _, w := range query.Tokens(f.Text) {
+		if strings.TrimSpace(w) == "" {
+			continue
 		}
-		for _, w := range query.Tokens(f.Text) {
-			if strings.TrimSpace(w) == "" {
-				continue
-			}
-			p := "%" + escapeLike(w) + "%"
-			b.WriteString(` AND (s.title LIKE ? ESCAPE '\' OR s.summary LIKE ? ESCAPE '\' OR s.cwd LIKE ? ESCAPE '\' OR s.id IN (SELECT session_id FROM snippets WHERE body LIKE ? ESCAPE '\'))`)
-			args = append(args, p, p, p, p)
-		}
+		p := "%" + escapeLike(w) + "%"
+		b.WriteString(` AND (s.title LIKE ? ESCAPE '\' OR s.summary LIKE ? ESCAPE '\' OR s.cwd LIKE ? ESCAPE '\' OR s.branch LIKE ? ESCAPE '\' OR s.model LIKE ? ESCAPE '\' OR s.agent LIKE ? ESCAPE '\' OR s.id IN (SELECT session_id FROM snippets WHERE body LIKE ? ESCAPE '\'))`)
+		args = append(args, p, p, p, p, p, p, p)
 	}
 	if f.Agent != "" {
-		b.WriteString(` AND s.agent = ?`)
-		args = append(args, f.Agent)
+		b.WriteString(` AND s.agent LIKE ? ESCAPE '\'`)
+		args = append(args, "%"+escapeLike(f.Agent)+"%")
 	}
 	if f.Dir != "" {
 		b.WriteString(` AND s.cwd LIKE ? ESCAPE '\'`)

@@ -19,6 +19,7 @@
       <a href="keys.html">Keys</a>
       <a href="agents.html">Agents</a>
       <a href="filters.html">Filters</a>
+      <a href="config.html">Config</a>
       <a href="contributing.html">Contributing</a>
       <a href="https://github.com/AymanZahran/air9s">GitHub</a>
     </nav>
@@ -32,6 +33,7 @@ air9s search [query] [--json] [--limit N]
 air9s show &lt;id&gt; [--json]
 air9s resume &lt;id&gt; [--yolo] [--print]
 air9s delete &lt;id&gt; [--yes]
+air9s info
 air9s version
 air9s help</code></pre>
 
@@ -43,9 +45,12 @@ air9s help</code></pre>
     <p><code>air9s stats</code> prints counts from the index. It does not scan again. Agents with zero sessions are omitted. <code>--json</code> prints the same counts as objects.</p>
 
     <h2>search</h2>
-    <p>Free text matches the title and a capped excerpt. Tokens such as <code>agent:</code> and <code>dir:</code> narrow the list. See <a href="filters.html">Filters</a>.</p>
+    <p>Each word is a substring of the title, summary, directory, branch, model, agent, or excerpt. Tokens such as <code>agent:</code> and <code>dir:</code> narrow the list the same way. A leading <code>~</code> expands. See <a href="filters.html">Filters</a>.</p>
     <pre><code>air9s search 'agent:claude dir:my-repo date:&lt;7d auth'</code></pre>
-    <p><code>--json</code> prints sessions without excerpts. <code>--limit</code> caps the rows. The UI itself caps a search at 400 sessions.</p>
+    <p><code>--json</code> prints sessions without excerpts. <code>--limit</code> caps the rows. The UI caps a search at <code>ui.limit</code> in the config, which defaults to 400.</p>
+
+    <h2>info</h2>
+    <p><code>air9s info</code> prints the config file, the index database, the active skin, and how many plugins loaded. The first run creates <code>config.yaml</code>, <code>skins/stock.yaml</code>, and <code>plugins.yaml</code> when they are missing. See <a href="config.html">Config</a>.</p>
 
     <h2>show</h2>
     <p><code>air9s show claude:&lt;id&gt;</code> prints one session, including the excerpt and any recorded context or token counts. <code>--json</code> includes snippets.</p>

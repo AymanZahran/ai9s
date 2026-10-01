@@ -23,6 +23,7 @@
       <a href="keys.html">Keys</a>
       <a href="agents.html">Agents</a>
       <a href="filters.html">Filters</a>
+      <a href="config.html">Config</a>
       <a href="contributing.html">Contributing</a>
       <a href="https://github.com/AymanZahran/air9s">GitHub</a>
     </nav>
@@ -33,7 +34,7 @@
   <main>
     <h1><span class="mark" aria-hidden="true">⌘</span> Who left the agents running?</h1>
     <p>air9s is a terminal UI for the AI coding sessions already on your machine. It indexes them locally, then lets you search, preview, filter, resume, and — where it is safe — delete them.</p>
-    <p>The list works like a cluster browser: hotkeys across the top, a filter line, a table, and a preview you can scroll. Each agent keeps the mark it actually prints. Nothing is uploaded.</p>
+    <p>The list works like a cluster browser: a hotkey menu, a crumbs bar, a framed table, and a preview you can scroll. Colors and plugins live in a config file, the same way k9s does. Each agent keeps the mark it actually prints. Nothing is uploaded.</p>
 
     <pre><code>brew tap AymanZahran/air9s
 brew trust aymanzahran/air9s
@@ -91,18 +92,19 @@ brew install air9s</code></pre>
       <li><a href="keys.html">Keys</a> — the list, the preview, and command mode</li>
       <li><a href="agents.html">Agents</a> — where each session lives, and which deletes are refused</li>
       <li><a href="filters.html">Filters</a> — agent, directory, branch, model, date, and sort</li>
+      <li><a href="config.html">Config</a> — colors, skins, mouse, read-only, and plugins</li>
       <li><a href="contributing.html">Contributing</a> — tests, formatting, and how to add an agent</li>
     </ul>
 
     <h2><span class="mark" aria-hidden="true">▤</span> Preview</h2>
     <p>A sketch of the session list. The rows below are examples, not a recording of anyone's sessions.</p>
     <div class="term" role="img" aria-label="Example air9s session list">
-      <div class="row"><span class="y">&lt;1&gt;</span> <span class="b">sessions</span>  <span class="y">&lt;2&gt;</span> providers  <span class="y">&lt;3&gt;</span> directories  <span class="y">&lt;4&gt;</span> branches  <span class="y">&lt;5&gt;</span> models</div>
-      <div class="row"><span class="y">&lt;/&gt;</span> filter  <span class="y">&lt;:&gt;</span> views  <span class="y">&lt;enter&gt;</span> resume  <span class="y">&lt;d&gt;</span> delete  <span class="y">&lt;tab&gt;</span> preview  <span class="y">&lt;?&gt;</span> manual  <span class="y">&lt;q&gt;</span> quit</div>
-      <div class="row"><span class="b"> air9s </span>  4 sessions   48 messages</div>
+      <div class="row"><span class="num">&lt;1&gt;</span> <span class="b">sessions</span>  <span class="num">&lt;2&gt;</span> providers  <span class="num">&lt;3&gt;</span> directories  <span class="num">&lt;4&gt;</span> branches  <span class="num">&lt;5&gt;</span> models</div>
+      <div class="row"><span class="key">&lt;/&gt;</span> filter  <span class="key">&lt;:&gt;</span> views  <span class="key">&lt;enter&gt;</span> resume  <span class="key">&lt;d&gt;</span> delete  <span class="key">&lt;esc&gt;</span> clear  <span class="key">&lt;?&gt;</span> manual  <span class="key">&lt;q&gt;</span> quit</div>
+      <div class="row crumbs"> air9s › Sessions › all    4 sessions · 48 messages    1/4</div>
       <div class="row"><span class="claude">✻  claude 1</span>   <span class="codex">&gt;_ codex 1</span>   <span class="hermes">██ hermes 1</span>   <span class="kiro">╭─ kiro 1</span></div>
       <div class="row dim">agent: dir: branch: model: date:&lt;7d sort:recent</div>
-      <div class="row dim"> AGE  ICON  AGENT    DIR    BRANCH   CTX   MSGS  TITLE</div>
+      <div class="row dim"> AGE↓        AGENT    DIR    BRANCH   CTX   MSGS  TITLE</div>
       <div class="row sel"> 2h   ✻     claude   demo   main     12k   14    sketch the readme</div>
       <div class="row"> 5h   &gt;_    codex    cli    main     8k    22    rename the command</div>
       <div class="row"> 1d   ██    hermes   ops    release  —     6     check the deploy</div>

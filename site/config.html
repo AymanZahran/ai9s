@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Config — air9s</title>
+  <meta name="description" content="air9s config.yaml, skins, and plugins.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://aymanzahran.github.io/air9s/config.html">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="index.html">air9s</a>
+    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <nav class="site-nav" aria-label="Documentation">
+      <a href="install.html">Install</a>
+      <a href="commands.html">Commands</a>
+      <a href="keys.html">Keys</a>
+      <a href="agents.html">Agents</a>
+      <a href="filters.html">Filters</a>
+      <a href="config.html" aria-current="page">Config</a>
+      <a href="contributing.html">Contributing</a>
+      <a href="https://github.com/AymanZahran/air9s">GitHub</a>
+    </nav>
+  </header>
+  <main>
+    <h1><span class="mark" aria-hidden="true">⚙</span> Config</h1>
+    <p>The config directory is <code>$AIR9S_CONFIG_DIR</code>, or <code>$XDG_CONFIG_HOME/air9s</code>, or <code>~/.config/air9s</code>. The first <code>air9s</code> or <code>air9s info</code> creates <code>config.yaml</code>, <code>skins/stock.yaml</code>, and <code>plugins.yaml</code> when they are missing, and does not overwrite them later. <code>air9s info</code> prints the paths.</p>
+
+    <pre><code>air9s:
+  refreshRate: 0
+  readOnly: false
+  defaultView: sessions
+  noExitOnCtrlC: false
+  ui:
+    enableMouse: true
+    headless: false
+    logoless: false
+    noIcons: false
+    skin: ""
+    limit: 400</code></pre>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Key</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>refreshRate</code></td><td>Seconds between reindexes. <code>0</code> reindexes only when you press <code>r</code>.</td></tr>
+          <tr><td><code>readOnly</code></td><td>When true, <code>d</code> and Ctrl-D do not delete.</td></tr>
+          <tr><td><code>defaultView</code></td><td><code>sessions</code>, <code>providers</code>, <code>directories</code>, <code>branches</code>, or <code>models</code>.</td></tr>
+          <tr><td><code>noExitOnCtrlC</code></td><td>When true, Ctrl-C does not quit.</td></tr>
+          <tr><td><code>ui.enableMouse</code></td><td>The mouse is on unless this is false.</td></tr>
+          <tr><td><code>ui.headless</code></td><td>Hide the menu, the crumbs, and the logo.</td></tr>
+          <tr><td><code>ui.logoless</code></td><td>Hide the logo beside the menu.</td></tr>
+          <tr><td><code>ui.noIcons</code></td><td>Hide agent icons. The column keeps its width.</td></tr>
+          <tr><td><code>ui.skin</code></td><td>A file in <code>skins/</code>, without <code>.yaml</code>. Empty uses the built-in skin. <code>AIR9S_SKIN</code> overrides this.</td></tr>
+          <tr><td><code>ui.limit</code></td><td>Maximum rows in the table. The ceiling is 2000. The default is 400.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Skins</h2>
+    <p>A skin file uses the same shape as the stock skin: body, frame, and table colors. Values are tcell names such as <code>dodgerblue</code>, or <code>#RRGGBB</code>. The name <code>default</code> keeps the terminal color. <code>agents</code> maps an agent id to a color and overrides the built-in mark.</p>
+    <p>The built-in screen is black, with aqua view keys, dodger-blue action keys, a steel-blue crumbs bar, a dodger-blue frame, and a cadet-blue cursor. Focus turns the frame yellow.</p>
+
+    <h2>Plugins</h2>
+    <p>A plugin runs a program. It does not get a shell. Put the list in <code>plugins.yaml</code>, or one plugin in each file under <code>plugins/</code>. <code>background: true</code> starts it without leaving the UI and discards its output. Otherwise air9s suspends the screen, the way resume does.</p>
+    <pre><code>plugins:
+  edit:
+    shortCut: Ctrl-E
+    description: open the directory
+    scopes: [sessions]
+    command: code
+    args:
+      - $CWD</code></pre>
+    <p>The selected row provides <code>$ID</code>, <code>$NATIVE_ID</code>, <code>$AGENT</code>, <code>$CWD</code>, <code>$TITLE</code>, <code>$BRANCH</code>, <code>$MODEL</code>, <code>$FILTER</code>, and <code>$NAME</code>. Scopes are <code>sessions</code>, <code>providers</code>, <code>directories</code>, <code>branches</code>, <code>models</code>, or <code>all</code>. An empty scope list means every view.</p>
+    <p>These shortcuts are reserved and ignored: <code>q</code>, <code>/</code>, <code>:</code>, <code>d</code>, <code>y</code>, <code>r</code>, <code>s</code>, <code>?</code>, <code>a</code>, <code>p</code>, <code>o</code>, <code>j</code>, <code>k</code>, <code>g</code>, <code>G</code>, <code>1</code>–<code>5</code>, Enter, Tab, Esc, and Ctrl-D. A repeated shortcut is ignored too. air9s prints the reason on startup and in the header.</p>
+    <p>Do not put tokens or other secrets in these files. A new <code>config.yaml</code> is mode <code>0600</code>.</p>
+  </main>
+  <footer class="site-footer">
+    <p><a href="https://github.com/AymanZahran/air9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/AymanZahran/air9s/blob/main/LICENSE">MIT</a></p>
+    <p>© 2026 The air9s authors.</p>
+  </footer>
+</body>
+</html>

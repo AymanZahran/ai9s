@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gdamore/tcell/v2"
+	"github.com/AymanZahran/air9s/internal/query"
 	"github.com/rivo/tview"
 )
 
@@ -247,11 +247,11 @@ func (ui *ui) paintSuggestions(text string) {
 	ui.suggestions = filterHints(text, ui.agents)
 	ui.table.Clear()
 	ui.table.SetTitle(" commands ")
-	ui.table.SetCell(0, 0, tview.NewTableCell("COMMAND").SetSelectable(false).SetTextColor(tcell.ColorYellow))
-	ui.table.SetCell(0, 1, tview.NewTableCell("DETAIL").SetSelectable(false).SetTextColor(tcell.ColorYellow).SetExpansion(1))
+	ui.table.SetCell(0, 0, ui.headerCell("COMMAND", 0))
+	ui.table.SetCell(0, 1, ui.headerCell("DETAIL", 1))
 	for i, hint := range ui.suggestions {
-		ui.table.SetCell(i+1, 0, tview.NewTableCell(hint.insert))
-		ui.table.SetCell(i+1, 1, tview.NewTableCell(hint.hint).SetExpansion(1))
+		ui.table.SetCell(i+1, 0, ui.cell(hint.insert))
+		ui.table.SetCell(i+1, 1, ui.cell(hint.hint).SetExpansion(1))
 	}
 	if len(ui.suggestions) == 0 {
 		ui.preview.SetText("\n[gray]No command matches.[-]")
@@ -268,11 +268,11 @@ func (ui *ui) paintSessions() {
 	ui.groups = nil
 	ui.table.Clear()
 	ui.table.SetTitle(viewTitle(viewSessions))
-	headers := []string{"AGE", "", "AGENT", "DIR", "BRANCH", "CTX", "MSGS", "TITLE"}
+	sortName := querySort(ui.filter.GetText())
+	headers := []string{sorted("AGE", sortName, "recent", "oldest"), "", "AGENT", "DIR", "BRANCH", "CTX", sorted("MSGS", sortName, "messages", ""), sorted("TITLE", sortName, "", "title")}
 	exp := []int{0, 0, 0, 1, 0, 0, 0, 3}
 	for i, h := range headers {
-		cell := tview.NewTableCell(h).SetSelectable(false).SetTextColor(tcell.ColorYellow).SetExpansion(exp[i])
-		ui.table.SetCell(0, i, cell)
+		ui.table.SetCell(0, i, ui.headerCell(h, exp[i]))
 	}
 	sel := 1
 	for i, s := range ui.rows {
@@ -283,14 +283,14 @@ func (ui *ui) paintSessions() {
 		if branch == "" {
 			branch = "-"
 		}
-		ui.table.SetCell(i+1, 0, tview.NewTableCell(relAge(s.Updated)))
-		ui.table.SetCell(i+1, 1, tview.NewTableCell(Icon(s.Agent)).SetAlign(tview.AlignCenter))
-		ui.table.SetCell(i+1, 2, tview.NewTableCell(s.Agent).SetTextColor(colorOf(s.Agent)))
-		ui.table.SetCell(i+1, 3, tview.NewTableCell(shortPath(s.CWD)).SetMaxWidth(36).SetExpansion(1))
-		ui.table.SetCell(i+1, 4, tview.NewTableCell(branch).SetMaxWidth(18))
-		ui.table.SetCell(i+1, 5, tview.NewTableCell(contextLabel(s.Usage)).SetAlign(tview.AlignRight))
-		ui.table.SetCell(i+1, 6, tview.NewTableCell(fmt.Sprintf("%d", s.Messages)).SetAlign(tview.AlignRight))
-		ui.table.SetCell(i+1, 7, tview.NewTableCell(s.Title).SetExpansion(3))
+		ui.table.SetCell(i+1, 0, ui.cell(relAge(s.Updated)))
+		ui.table.SetCell(i+1, 1, ui.cell(ui.mark(s.Agent)).SetAlign(tview.AlignCenter))
+		ui.table.SetCell(i+1, 2, ui.cell(s.Agent).SetTextColor(ui.colorOfAgent(s.Agent)))
+		ui.table.SetCell(i+1, 3, ui.cell(shortPath(s.CWD)).SetMaxWidth(36).SetExpansion(1))
+		ui.table.SetCell(i+1, 4, ui.cell(branch).SetMaxWidth(18))
+		ui.table.SetCell(i+1, 5, ui.cell(contextLabel(s.Usage)).SetAlign(tview.AlignRight))
+		ui.table.SetCell(i+1, 6, ui.cell(fmt.Sprintf("%d", s.Messages)).SetAlign(tview.AlignRight))
+		ui.table.SetCell(i+1, 7, ui.cell(s.Title).SetExpansion(3))
 	}
 	if len(ui.rows) == 0 {
 		ui.preview.SetText("\n[gray]No sessions match this filter.[-]")
@@ -380,7 +380,7 @@ func (ui *ui) paintGroups() {
 		if i == 1 {
 			exp = 1
 		}
-		ui.table.SetCell(0, i, tview.NewTableCell(h).SetSelectable(false).SetTextColor(tcell.ColorYellow).SetExpansion(exp))
+		ui.table.SetCell(0, i, ui.headerCell(h, exp))
 	}
 	sel := 1
 	for i, g := range ui.groups {
@@ -389,19 +389,19 @@ func (ui *ui) paintGroups() {
 		}
 		mark := "  "
 		name := g.key
-		color := tcell.ColorWhite
+		color := paintColor(ui.cfg.Skin.Views.Table.Fg, "cadetblue")
 		if ui.view == viewProviders {
-			mark = Icon(g.key)
-			color = colorOf(g.key)
+			mark = ui.mark(g.key)
+			color = ui.colorOfAgent(g.key)
 		}
 		if ui.view == viewDirectories && g.key != "(none)" {
 			name = shortPath(g.key)
 		}
-		ui.table.SetCell(i+1, 0, tview.NewTableCell(mark).SetAlign(tview.AlignCenter))
-		ui.table.SetCell(i+1, 1, tview.NewTableCell(name).SetTextColor(color).SetExpansion(1))
-		ui.table.SetCell(i+1, 2, tview.NewTableCell(fmt.Sprintf("%d", g.sessions)).SetAlign(tview.AlignRight))
-		ui.table.SetCell(i+1, 3, tview.NewTableCell(fmt.Sprintf("%d", g.messages)).SetAlign(tview.AlignRight))
-		ui.table.SetCell(i+1, 4, tview.NewTableCell(relAge(g.updated)))
+		ui.table.SetCell(i+1, 0, ui.cell(mark).SetAlign(tview.AlignCenter))
+		ui.table.SetCell(i+1, 1, ui.cell(name).SetTextColor(color).SetExpansion(1))
+		ui.table.SetCell(i+1, 2, ui.cell(fmt.Sprintf("%d", g.sessions)).SetAlign(tview.AlignRight))
+		ui.table.SetCell(i+1, 3, ui.cell(fmt.Sprintf("%d", g.messages)).SetAlign(tview.AlignRight))
+		ui.table.SetCell(i+1, 4, ui.cell(relAge(g.updated)))
 	}
 	if len(ui.groups) == 0 {
 		ui.preview.SetText("\n[gray]No sessions match this filter.[-]")
@@ -429,7 +429,7 @@ func (ui *ui) showGroup(row int) {
 	if g.sampleID != "" {
 		if full, err := ui.store.Get(g.sampleID); err == nil {
 			b.WriteString("\n")
-			b.WriteString(preview(full))
+			b.WriteString(ui.previewBody(full))
 		}
 	}
 	ui.preview.SetText(b.String())
@@ -456,32 +456,64 @@ func (ui *ui) activateGroup() {
 	ui.reload()
 }
 
-func hotkeyViews(active string) string {
+func querySort(raw string) string {
+	return query.Parse(raw).Sort
+}
+
+func sorted(label, current, down, up string) string {
+	switch {
+	case current == down || (current == "" && down == "recent" && label == "AGE"):
+		return label + "↓"
+	case up != "" && current == up:
+		return label + "↑"
+	default:
+		return label
+	}
+}
+
+func menuItem(keyColor, textColor, hi, key, label string, active bool) string {
+	if keyColor == "" {
+		keyColor = "dodgerblue"
+	}
+	if textColor == "" {
+		textColor = "white"
+	}
+	if active && hi != "" {
+		textColor = hi
+	}
+	spec := textColor
+	if active {
+		spec += "::b"
+	}
+	return fmt.Sprintf("[%s]<%s>[-] [%s]%s[-]", keyColor, key, spec, label)
+}
+
+func hotkeyViews(active, num, fg, hi string) string {
 	var b strings.Builder
 	for i, spec := range viewSpecs {
 		if i > 0 {
 			b.WriteString("  ")
 		}
-		name := spec.name
-		if spec.name == active || (active == "" && spec.name == viewSessions) {
-			name = "[::b]" + spec.name + "[-]"
-		}
-		fmt.Fprintf(&b, "[yellow]<%s>[-] %s", spec.key, name)
+		on := spec.name == active || (active == "" && spec.name == viewSessions)
+		b.WriteString(menuItem(num, fg, hi, spec.key, spec.name, on))
 	}
 	return b.String()
 }
 
-func hotkeyActions(focused, view string) string {
+func hotkeyActions(focused, view, key, fg string) string {
+	item := func(k, label string) string {
+		return menuItem(key, fg, "", k, label, false)
+	}
 	switch focused {
 	case "preview":
-		return "[yellow]<j/k>[-] scroll  [yellow]<ctrl-b/f>[-] page  [yellow]<g/G>[-] top/end  [yellow]<tab>[-] sessions  [yellow]<esc>[-] sessions  [yellow]<?>[-] manual  [yellow]<q>[-] quit"
+		return item("j/k", "scroll") + "  " + item("ctrl-b/f", "page") + "  " + item("g/G", "top/end") + "  " + item("tab", "sessions") + "  " + item("esc", "sessions") + "  " + item("?", "manual") + "  " + item("q", "quit")
 	case "command":
-		return "[yellow]<enter>[-] apply  [yellow]<:>[-] next view  [yellow]<esc>[-] cancel  [yellow]<?>[-] manual"
+		return item("enter", "apply") + "  " + item(":", "next view") + "  " + item("esc", "cancel") + "  " + item("?", "manual")
 	default:
 		enter := "resume"
 		if view != "" && view != viewSessions {
 			enter = "filter"
 		}
-		return fmt.Sprintf("[yellow]</>[-] filter  [yellow]<:>[-] views  [yellow]<enter>[-] %s  [yellow]<d>[-] delete  [yellow]<tab>[-] preview  [yellow]<?>[-] manual  [yellow]<q>[-] quit", enter)
+		return item("/", "filter") + "  " + item(":", "views") + "  " + item("enter", enter) + "  " + item("d", "delete") + "  " + item("tab", "preview") + "  " + item("esc", "clear") + "  " + item("?", "manual") + "  " + item("q", "quit")
 	}
 }

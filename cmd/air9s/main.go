@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/AymanZahran/air9s/internal/act"
+	"github.com/AymanZahran/air9s/internal/config"
 	"github.com/AymanZahran/air9s/internal/index"
 	"github.com/AymanZahran/air9s/internal/model"
 	"github.com/AymanZahran/air9s/internal/query"
@@ -16,7 +17,7 @@ import (
 	"github.com/AymanZahran/air9s/internal/tui"
 )
 
-const version = "0.1.0"
+const version = "0.2.0"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -35,6 +36,8 @@ func main() {
 		os.Exit(cmdResume(os.Args[2:]))
 	case "delete":
 		os.Exit(cmdDelete(os.Args[2:]))
+	case "info":
+		os.Exit(cmdInfo())
 	case "version", "--version", "-v":
 		fmt.Println("air9s", version)
 	case "help", "--help", "-h":
@@ -56,11 +59,14 @@ Usage:
   air9s show <id> [--json]
   air9s resume <id> [--yolo] [--print]
   air9s delete <id> [--yes]
+  air9s info                    config directory, index path, skin, plugins
 
 Queries can mix free text with agent:, dir:, branch:, model:,
 date:<7d, date:>30d, date:YYYY-MM-DD, and sort:recent|oldest|messages|title.
+Free text and agent:, dir:, branch:, and model: match substrings. A leading ~ expands.
 
 The index is cached under $AIR9S_CACHE_DIR, $XDG_CACHE_HOME/air9s, or ~/.cache/air9s.
+Config is $AIR9S_CONFIG_DIR, $XDG_CONFIG_HOME/air9s, or ~/.config/air9s.
 `, version)
 }
 
@@ -103,6 +109,38 @@ func runTUI() int {
 	if err := cmd.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "air9s:", err)
 		return 1
+	}
+	return 0
+}
+
+func cmdInfo() int {
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "air9s:", err)
+		return 1
+	}
+	cache, err := store.DefaultPath()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "air9s:", err)
+		return 1
+	}
+	mouse := "on"
+	if !cfg.Mouse() {
+		mouse = "off"
+	}
+	readOnly := "no"
+	if cfg.Body.ReadOnly {
+		readOnly = "yes"
+	}
+	fmt.Printf("config    %s\n", cfg.Path)
+	fmt.Printf("cache     %s\n", cache)
+	fmt.Printf("skin      %s\n", cfg.SkinName)
+	fmt.Printf("plugins   %d\n", len(cfg.Plugins))
+	fmt.Printf("mouse     %s\n", mouse)
+	fmt.Printf("readOnly  %s\n", readOnly)
+	fmt.Printf("view      %s\n", cfg.Body.DefaultView)
+	for _, w := range cfg.Warnings {
+		fmt.Fprintln(os.Stderr, "air9s:", w)
 	}
 	return 0
 }

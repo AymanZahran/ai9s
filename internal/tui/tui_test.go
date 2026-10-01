@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/AymanZahran/air9s/internal/config"
 	"github.com/AymanZahran/air9s/internal/model"
 	"github.com/AymanZahran/air9s/internal/store"
 	"github.com/gdamore/tcell/v2"
@@ -34,7 +35,7 @@ func TestTabScrollsPreview(t *testing.T) {
 	}
 
 	app := tview.NewApplication()
-	ui := newUI(app, st)
+	ui := newUI(app, st, config.Defaults())
 	ui.reload()
 	app.SetRoot(ui.layout, false)
 
@@ -96,7 +97,7 @@ func TestViewsCommandAndManual(t *testing.T) {
 		t.Fatal(err)
 	}
 	app := tview.NewApplication()
-	ui := newUI(app, st)
+	ui := newUI(app, st, config.Defaults())
 	ui.reload()
 	app.SetRoot(ui.layout, false)
 	if !strings.Contains(ui.header.GetText(true), "<1>") || !strings.Contains(ui.header.GetText(true), "manual") {
@@ -132,6 +133,56 @@ func TestViewsCommandAndManual(t *testing.T) {
 	send(manual, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
 	if app.GetFocus() != ui.table {
 		t.Fatal("escape did not leave the manual")
+	}
+}
+
+func TestEscapeClearsFilter(t *testing.T) {
+	st, err := store.Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	path := filepath.Join(t.TempDir(), "one.jsonl")
+	sess := model.Session{
+		ID: "claude:one", NativeID: "one", Agent: "claude", Title: "ship the feature",
+		CWD: "/work/app", Updated: time.Date(2026, 3, 2, 15, 4, 5, 0, time.UTC),
+		SourcePath: path, CanDelete: true, DeleteMode: "file",
+	}
+	if err := st.Apply("claude", []model.Session{sess}, []store.Source{{Path: path, Mtime: 1}}); err != nil {
+		t.Fatal(err)
+	}
+	app := tview.NewApplication()
+	ui := newUI(app, st, config.Defaults())
+	ui.reload()
+	app.SetRoot(ui.layout, false)
+
+	ui.filter.SetText("agent:claude")
+	send(ui.table, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
+	if ui.filter.GetText() != "" {
+		t.Fatalf("table esc left %q", ui.filter.GetText())
+	}
+	if len(ui.rows) != 1 {
+		t.Fatalf("rows %d", len(ui.rows))
+	}
+
+	ui.filter.SetText("missing-title")
+	app.SetFocus(ui.filter)
+	send(ui.filter, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
+	if ui.filter.GetText() != "" || app.GetFocus() != ui.table {
+		t.Fatalf("filter esc text %q focus %T", ui.filter.GetText(), app.GetFocus())
+	}
+
+	ui.filter.SetText("agent:claude")
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, ':', tcell.ModNone))
+	send(ui.command, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
+	if ui.filter.GetText() != "agent:claude" || app.GetFocus() != ui.table {
+		t.Fatalf("command esc filter %q focus %T", ui.filter.GetText(), app.GetFocus())
+	}
+
+	send(ui.table, tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone))
+	send(ui.preview, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
+	if ui.filter.GetText() != "agent:claude" || app.GetFocus() != ui.table {
+		t.Fatalf("preview esc filter %q focus %T", ui.filter.GetText(), app.GetFocus())
 	}
 }
 

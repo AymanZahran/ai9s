@@ -56,21 +56,25 @@ const manualText = `[::b]air9s manual[-]
 Enter on a group applies that filter and returns to sessions. A group labeled (none) has an empty value, so enter leaves the filter alone.
 
 [::b]Command line[-]
-  [yellow]/[-]   edits the filter. Free text matches the title and a short excerpt.
+  [yellow]/[-]   edits the filter. Each word is a substring of the title, summary, directory, branch, model, agent, or excerpt.
   [yellow]:[-]   opens command mode. The table lists views and filter tokens.
          Type to narrow that list. Enter applies the command.
          Enter on an empty command cycles the view.
          Another : cycles the view name in the field.
-         Esc closes command mode.
+         Esc closes command mode and leaves the filter as it is.
 
 Tokens: agent:  dir:  branch:  model:  date:<7d  date:>30d  date:YYYY-MM-DD  sort:recent|oldest|messages|title
-A token with no value, such as dir:, drops you into the filter so you can finish it.
+agent:, dir:, branch:, and model: match a substring, so agent:clau finds claude while you type.
+A leading ~ in dir: or in free text expands to your home directory.
+A token with no value, such as dir:, is ignored until you finish it. Pressing p still drops you into the filter.
 Quote a phrase to keep it together: "auth bug".
+Esc on the list or in the filter clears the filter. Esc in the preview, the manual, or command mode does not.
 
 [::b]Other keys[-]
   enter       resume in the session directory, or apply a group filter
   tab         focus the preview. j/k scroll a line, ctrl-b/f or page keys scroll a page, g/G jump
   tab, esc    return from the preview to the list
+  esc         on the list or in the filter, clear the filter
   d, ctrl-d   delete, after confirmation. Only from the sessions view.
   a           cycle the agent: filter
   p           add a dir: filter
@@ -153,4 +157,11 @@ Each path can be moved with the environment variable after it. A missing directo
   kiro       KIRO_CLI_DB or KIRO_HOME
 
 The index is $AIR9S_CACHE_DIR/index.db, or $XDG_CACHE_HOME/air9s/index.db, or ~/.cache/air9s/index.db.
+
+[::b]Config[-]
+  $AIR9S_CONFIG_DIR, or $XDG_CONFIG_HOME/air9s, or ~/.config/air9s/config.yaml.
+  The file sets the mouse, the skin, icons, read-only mode, the starting view, refresh, and plugins.
+  Colors live in skins/. Plugins live in plugins.yaml and plugins/.
+  air9s info prints the config path, the index path, the skin, and the plugin count.
+  A plugin runs a program, not a shell. Core keys always win.
 `

@@ -2,6 +2,7 @@
 package query
 
 import (
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -26,7 +27,14 @@ func Parse(raw string) Filter {
 	var words []string
 	for _, tok := range Tokens(raw) {
 		key, val, ok := strings.Cut(tok, ":")
-		if !ok || val == "" {
+		if !ok {
+			words = append(words, expandHome(tok))
+			continue
+		}
+		if val == "" {
+			if knownKey(key) {
+				continue
+			}
 			words = append(words, tok)
 			continue
 		}
@@ -34,7 +42,7 @@ func Parse(raw string) Filter {
 		case "agent", "a":
 			f.Agent = strings.ToLower(val)
 		case "dir", "directory", "cwd", "d":
-			f.Dir = val
+			f.Dir = expandHome(val)
 		case "branch", "b":
 			f.Branch = val
 		case "model", "m":
@@ -52,6 +60,30 @@ func Parse(raw string) Filter {
 	}
 	f.Text = strings.Join(words, " ")
 	return f
+}
+
+func knownKey(key string) bool {
+	switch strings.ToLower(key) {
+	case "agent", "a", "dir", "directory", "cwd", "d", "branch", "b", "model", "m", "sort", "date":
+		return true
+	default:
+		return false
+	}
+}
+
+// expandHome replaces a leading ~ with the user home directory.
+func expandHome(s string) string {
+	if s != "~" && !strings.HasPrefix(s, "~/") && !strings.HasPrefix(s, `~\`) {
+		return s
+	}
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return s
+	}
+	if s == "~" {
+		return home
+	}
+	return home + s[1:]
 }
 
 func applyDate(f *Filter, val string) {
