@@ -57,6 +57,11 @@ gofmt -w .</code></pre>
       <li>Update the agents table in the README and on this website.</li>
     </ol>
 
+    <h2>Releases</h2>
+    <p>Write the notes under <code>## Unreleased</code> in <code>CHANGELOG.md</code> and commit them. From a clean <code>main</code>:</p>
+    <pre><code>make release</code></pre>
+    <p><code>make release</code> bumps the version, moves those notes under the new version, runs the tests, pushes an annotated tag, and creates the GitHub Release. It then points the Homebrew formula at that tag's archive. <code>make release VERSION=1.2.3</code> chooses the version. <code>PART=minor</code> or <code>PART=major</code> bumps that component. <code>DRY=1</code> prints the plan. <code>INSTALL=1</code> reinstalls the formula. The version constant is what <code>air9s version</code> prints.</p>
+
     <h2>Pull requests</h2>
     <p>Keep the change focused. Run <code>gofmt</code> and <code>go test ./...</code>. Update the docs when a command, path, or delete rule changes. Commit subjects in this repository are sentence case and end with a period.</p>
     <p>Report vulnerabilities privately. See <a href="https://github.com/AymanZahran/air9s/blob/main/SECURITY.md">SECURITY.md</a>.</p>

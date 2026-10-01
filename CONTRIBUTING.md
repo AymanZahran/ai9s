@@ -49,7 +49,17 @@ Behavior changes belong in `README.md` and on the matching page under `site/`. T
 
 ## Releases
 
-Tag `vX.Y.Z` to match `version` in `cmd/air9s/main.go`. The Homebrew formula in [AymanZahran/homebrew-air9s](https://github.com/AymanZahran/homebrew-air9s) needs that tag's archive URL and sha256.
+Write the notes under `## Unreleased` in `CHANGELOG.md` and commit them. From a clean `main` that is not behind origin:
+
+```sh
+make release
+```
+
+`make release` bumps `version` in `cmd/air9s/main.go`, moves those notes under the new version, runs the tests, and pushes an annotated tag. It creates the GitHub Release from those notes, then sets the Homebrew formula in [AymanZahran/homebrew-air9s](https://github.com/AymanZahran/homebrew-air9s) to that tag's archive and sha256. The formula builds the tagged source. `air9s version` prints the version constant. Do not override it with `-X`.
+
+`make release VERSION=1.2.3` chooses that version. `make release PART=minor` or `PART=major` bumps that component. The default bump is the patch number. `make release DRY=1` prints the version and notes and changes nothing. `make release INSTALL=1` fast-forwards the tapped formula and reinstalls it. `AIR9S_TAP` selects the tap checkout when it is not the sibling `homebrew-air9s` directory.
+
+GitHub Actions on this private repository stop at startup, so this command publishes the release with `gh` from the maintainer's machine.
 
 ## Pull requests
 

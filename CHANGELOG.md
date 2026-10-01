@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `make release` publishes the next version as a GitHub Release and points the Homebrew formula at that tag. Write the notes under Unreleased first.
+
 ## 0.2.8
 
 - Antigravity sessions use the name antigravity. Resume still runs the `agy` command.
