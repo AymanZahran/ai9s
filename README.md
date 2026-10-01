@@ -188,7 +188,7 @@ GitHub Actions runs that test suite on Ubuntu for the Go version in `go.mod` and
 
 The documentation site lives in [`site/`](site/) and is published with GitHub Pages from [`.github/workflows/pages.yml`](.github/workflows/pages.yml). See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request, and [SECURITY.md](SECURITY.md) for private vulnerability reports.
 
-Write release notes under `## Unreleased` in [CHANGELOG.md](CHANGELOG.md), then run `make release`. That publishes a GitHub Release and points the Homebrew formula at the new tag. `make release VERSION=1.2.3` chooses the version. `PART=minor` or `PART=major` bumps that component.
+Write release notes under `## Unreleased` in [CHANGELOG.md](CHANGELOG.md) and merge them first. `make release` opens a pull request for the version bump, merges it after checks pass, publishes the GitHub Release, and opens a pull request for the Homebrew formula. `make release VERSION=1.2.3` chooses the version. `PART=minor` or `PART=major` bumps that component.
 
 ## License
 

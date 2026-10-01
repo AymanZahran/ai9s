@@ -12,7 +12,7 @@ body:
     attributes:
       label: air9s version
       description: Output of `air9s version`
-      placeholder: air9s 0.1.0
+      placeholder: air9s 0.2.8
     validations:
       required: true
   - type: input

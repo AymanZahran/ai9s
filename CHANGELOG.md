@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- `make release` publishes the next version as a GitHub Release and points the Homebrew formula at that tag. Write the notes under Unreleased first.
+- `make release` opens a pull request for the next version, merges it after checks pass, publishes the GitHub Release, and opens a pull request that points the Homebrew formula at that tag. Write the notes under Unreleased first.
 
 ## 0.2.8
 
