@@ -26,9 +26,9 @@ brew trust aymanzahran/air9s
 brew install air9s
 ```
 
-The formula is in [AymanZahran/homebrew-air9s](https://github.com/AymanZahran/homebrew-air9s). `brew install --HEAD air9s` builds the latest `main`.
+The formula is in [AymanZahran/homebrew-air9s](https://github.com/AymanZahran/homebrew-air9s). `brew install --HEAD air9s` builds the latest `main` once that repository can be cloned over HTTPS.
 
-While those repositories are private, tap over SSH and export a GitHub token so Homebrew can download the release archive:
+While those repositories are private, tap over SSH, trust the tap, and export a GitHub token so Homebrew can download the release archive. Install that tagged formula. `--HEAD` cannot clone the private source repository over HTTPS.
 
 ```sh
 brew tap AymanZahran/air9s git@github.com:AymanZahran/homebrew-air9s.git
