@@ -62,8 +62,8 @@
     </div>
 
     <h2>Skins</h2>
-    <p>A skin file uses the same shape as the stock skin: body, frame, and table colors. Values are tcell names such as <code>dodgerblue</code>, or <code>#RRGGBB</code>. The name <code>default</code> keeps the terminal color. <code>agents</code> maps an agent id to a color and overrides the built-in mark.</p>
-    <p>With <code>ui.skin</code> empty, the screen uses the k9s stock palette: black background, dodger-blue text and action keys, fuchsia view keys, a steel-blue crumbs bar, an aqua cursor, and an orange logo. Focus turns the frame aqua. A skin file replaces any field it sets, and the rest stay on that palette. The shortcut bar is a grid: view keys on the first row, actions beneath them, and a further row for each group of plugin keys you have installed.</p>
+    <p>A skin file uses the same shape as the stock skin: body, frame, and table colors. Values are tcell names such as <code>white</code>, or <code>#RRGGBB</code>. The name <code>default</code> keeps the terminal color. <code>agents</code> maps an agent id to a color and overrides the built-in mark.</p>
+    <p>With <code>ui.skin</code> empty, the screen is black, the same way the k9s black skin is: white text and borders, warm view keys, a gray column header, and a white selection bar. A skin file replaces any field it sets, and the rest stay on that palette. The shortcut bar is a grid: view keys on the first row, actions beneath them, and a further row for each group of plugin keys you have installed.</p>
 
     <h2>Plugins</h2>
     <p>A plugin runs a program. It does not get a shell. Put the list in <code>plugins.yaml</code>, or one plugin in each file under <code>plugins/</code>. <code>background: true</code> starts it without leaving the UI and discards its output. Otherwise air9s suspends the screen, the way resume does.</p>

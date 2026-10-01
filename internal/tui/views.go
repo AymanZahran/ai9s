@@ -487,7 +487,7 @@ func sorted(label, current, down, up string) string {
 
 func menuItem(keyColor, textColor, hi, key, label string, active bool) string {
 	if keyColor == "" {
-		keyColor = "dodgerblue"
+		keyColor = "white"
 	}
 	if textColor == "" {
 		textColor = "white"

@@ -27,42 +27,42 @@ air9s:
     limit: 400
 `
 
-const stockSkinYAML = `# Stock skin, the same palette as k9s stock.
+const stockSkinYAML = `# Stock skin. Same black screen as the k9s black-and-wtf skin.
 # Point ui.skin at "stock", or set AIR9S_SKIN=stock.
 # An empty ui.skin uses these colors as the built-in theme.
-# Color values are tcell names (dodgerblue, fuchsia) or #RRGGBB.
+# Color values are tcell names (white, navajowhite) or #RRGGBB.
 # The name default keeps the terminal's own color.
 air9s:
   body:
-    fgColor: dodgerblue
+    fgColor: white
     bgColor: black
-    logoColor: orange
+    logoColor: white
   frame:
     border:
-      fgColor: dodgerblue
-      focusColor: aqua
+      fgColor: white
+      focusColor: white
     menu:
       fgColor: white
-      keyColor: dodgerblue
-      numKeyColor: fuchsia
+      keyColor: white
+      numKeyColor: navajowhite
     crumbs:
-      fgColor: black
-      bgColor: steelblue
-      activeColor: orange
-    title:
-      fgColor: aqua
+      fgColor: white
       bgColor: black
-      highlightColor: fuchsia
-      counterColor: papayawhip
-      filterColor: steelblue
+      activeColor: white
+    title:
+      fgColor: white
+      bgColor: black
+      highlightColor: white
+      counterColor: navajowhite
+      filterColor: slategray
   views:
     table:
-      fgColor: blue
+      fgColor: white
       bgColor: black
       cursorFgColor: black
-      cursorBgColor: aqua
+      cursorBgColor: white
       header:
-        fgColor: white
+        fgColor: gray
         bgColor: black
   # Optional per-agent colors. These override the built-in marks.
   agents: {}

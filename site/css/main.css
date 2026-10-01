@@ -163,8 +163,8 @@ tr:nth-child(even) td { background: #fafafa; }
 }
 
 .term {
-  background: #161616;
-  color: #d6d6d6;
+  background: #000;
+  color: #fff;
   border-radius: 8px;
   margin: 8px 0 16px;
   padding: 14px 16px 12px;
@@ -177,12 +177,12 @@ tr:nth-child(even) td { background: #fafafa; }
 
 .term .row { white-space: pre; }
 .term .y { color: #e6c200; }
-.term .num { color: #ff00ff; }
-.term .key { color: #1e90ff; }
-.term .crumbs { background: #4682b4; color: #111; }
-.term .dim { color: #8d8d8d; }
+.term .num { color: #ffdead; }
+.term .key { color: #fff; }
+.term .crumbs { background: #000; color: #fff; }
+.term .dim { color: #808080; }
 .term .b { color: #fff; font-weight: 700; }
-.term .sel { background: #243044; }
+.term .sel { background: #fff; color: #000; }
 .term .pane {
   margin-top: 8px;
   border-top: 1px solid #333;

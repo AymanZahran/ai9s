@@ -119,7 +119,7 @@ air9s writes `config.yaml` the first time it starts, when the file is missing. S
 
 `examples/plugins` has four plugins you copy in to turn on. `e` opens the directory in `AIR9S_EDITOR`. `c` copies the fields you list to the clipboard. `l` shows git status and recent commits (`AIR9S_GIT_LOG`). `t` opens a terminal there (`AIR9S_TERMINAL`). Enabled keys are drawn on the menu. See `examples/plugins/README.md`.
 
-`ui.skin` names a file in `skins/` without `.yaml`. `AIR9S_SKIN` overrides it. An empty skin uses the k9s stock palette: a black screen, dodger-blue text and action keys, fuchsia view keys, a steel-blue crumbs bar, an aqua cursor, and an orange logo. A skin file replaces the fields it sets. The menu is a grid. View keys are the first row, actions continue under them, and installed plugin keys get their own rows. `readOnly: true` blocks delete. `refreshRate` is seconds between reindexes; `0` waits for `r`.
+`ui.skin` names a file in `skins/` without `.yaml`. `AIR9S_SKIN` overrides it. An empty skin uses the k9s black screen: black background, white text and borders, warm view keys, a gray column header, and a white selection bar. A skin file replaces the fields it sets. The menu is a grid. View keys are the first row, actions continue under them, and installed plugin keys get their own rows. `readOnly: true` blocks delete. `refreshRate` is seconds between reindexes; `0` waits for `r`.
 
 ## Metadata
 

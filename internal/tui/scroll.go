@@ -138,12 +138,12 @@ func (ui *ui) paintBar(screen tcell.Screen, bar scrollBar, kind string) {
 		return
 	}
 	bg := paintColor(ui.cfg.Skin.Views.Table.Bg, "black")
-	track := tcell.StyleDefault.Foreground(paintColor(ui.cfg.Skin.Frame.Border.Fg, "dodgerblue")).Background(bg)
-	thumbColor := paintColor(ui.cfg.Skin.Frame.Border.Fg, "dodgerblue")
+	track := tcell.StyleDefault.Foreground(paintColor(ui.cfg.Skin.Frame.Border.Fg, "white")).Background(bg)
+	thumbColor := paintColor(ui.cfg.Skin.Frame.Border.Fg, "white")
 	focused := (kind == "preview" && ui.focused == "preview") ||
 		(kind != "preview" && (ui.focused == "table" || ui.focused == "filter" || ui.focused == "command"))
 	if focused {
-		thumbColor = paintColor(ui.cfg.Skin.Frame.Border.Focus, "aqua")
+		thumbColor = paintColor(ui.cfg.Skin.Frame.Border.Focus, "white")
 	}
 	thumb := tcell.StyleDefault.Foreground(thumbColor).Background(bg)
 	for i := 0; i < bar.h; i++ {

@@ -74,22 +74,23 @@ type SkinHeader struct {
 }
 
 func defaultSkin() Skin {
-	// Matches the k9s stock skin. A named skin file replaces any field it sets.
+	// Matches the k9s black-and-wtf skin: a black screen and white text.
+	// A named skin file replaces any field it sets.
 	s := Skin{
-		Body: SkinBody{Fg: "dodgerblue", Bg: "black", Logo: "orange"},
+		Body: SkinBody{Fg: "white", Bg: "black", Logo: "white"},
 		Frame: SkinFrame{
-			Border: SkinBorder{Fg: "dodgerblue", Focus: "aqua"},
-			Menu:   SkinMenu{Fg: "white", Key: "dodgerblue", NumKey: "fuchsia"},
-			Crumbs: SkinCrumbs{Fg: "black", Bg: "steelblue", Active: "orange"},
+			Border: SkinBorder{Fg: "white", Focus: "white"},
+			Menu:   SkinMenu{Fg: "white", Key: "white", NumKey: "navajowhite"},
+			Crumbs: SkinCrumbs{Fg: "white", Bg: "black", Active: "white"},
 			Title: SkinTitle{
-				Fg: "aqua", Bg: "black", Highlight: "fuchsia",
-				Counter: "papayawhip", Filter: "steelblue",
+				Fg: "white", Bg: "black", Highlight: "white",
+				Counter: "navajowhite", Filter: "slategray",
 			},
 		},
 		Views: SkinViews{Table: SkinTable{
-			Fg: "blue", Bg: "black",
-			CursorFg: "black", CursorBg: "aqua",
-			Header: SkinHeader{Fg: "white", Bg: "black"},
+			Fg: "white", Bg: "black",
+			CursorFg: "black", CursorBg: "white",
+			Header: SkinHeader{Fg: "gray", Bg: "black"},
 		}},
 	}
 	return s

@@ -251,13 +251,13 @@ func (ui *ui) paintChrome() {
 	footer := footerSessions
 	switch ui.focused {
 	case "preview":
-		ui.preview.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "aqua"))
-		ui.preview.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "fuchsia"))
+		ui.preview.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "white"))
+		ui.preview.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "white"))
 		ui.preview.SetTitle(" describe · scroll ")
 		footer = footerPreview
 	case "table", "filter", "command":
-		ui.table.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "aqua"))
-		ui.table.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "fuchsia"))
+		ui.table.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "white"))
+		ui.table.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "white"))
 	}
 	ui.footer.SetText(ui.paintFooter(footer))
 	ui.paintHeader()
@@ -611,7 +611,7 @@ func (ui *ui) paintCrumbs() {
 func (ui *ui) paintFooter(base string) string {
 	key := strings.TrimSpace(ui.cfg.Skin.Frame.Menu.Key)
 	if key == "" {
-		key = "dodgerblue"
+		key = "white"
 	}
 	return strings.ReplaceAll(base, "[yellow]", "["+key+"]") + "   " + ui.counter()
 }

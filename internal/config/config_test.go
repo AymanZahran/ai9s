@@ -54,8 +54,8 @@ func TestLoadWritesOnceAndKeepsEdits(t *testing.T) {
 	if !second.Body.ReadOnly || second.Mouse() || second.Limit() != 12 || second.SkinName != "stock" {
 		t.Fatalf("reload %+v mouse %v skin %s", second.Body, second.Mouse(), second.SkinName)
 	}
-	if second.Skin.Frame.Menu.Key != "dodgerblue" || second.Skin.Frame.Menu.NumKey != "fuchsia" || second.Skin.Views.Table.CursorBg != "aqua" || second.Skin.Body.Logo != "orange" {
-		t.Fatalf("skin %+v %+v", second.Skin.Frame.Menu, second.Skin.Views.Table)
+	if second.Skin.Body.Bg != "black" || second.Skin.Body.Fg != "white" || second.Skin.Frame.Crumbs.Bg != "black" || second.Skin.Frame.Menu.Key != "white" || second.Skin.Frame.Menu.NumKey != "navajowhite" || second.Skin.Views.Table.CursorBg != "white" || second.Skin.Body.Logo != "white" {
+		t.Fatalf("skin %+v %+v", second.Skin.Frame, second.Skin.Views.Table)
 	}
 }
 

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.2.5
+
+- The built-in skin is a black screen: white text, a white selection bar, and a black crumbs line.
+
 ## 0.2.4
 
 - The session list is the only window. `d` replaces it with a describe view of the selected row. Esc returns to the list.
@@ -22,7 +26,7 @@
 - Up and down move the list while `/` or `:` is open. Page Up and Page Down do the same. Letters, including `j` and `k`, stay in the field. Enter applies the command row the arrows landed on. An empty command still cycles the view when the arrows were not used.
 - Delete is available for every indexed agent. Grok removes that session directory and its active-session and metadata entries. Gemini removes that chat file. Kiro removes that conversation and leaves the shell history table. Jules drops the local snapshot row, and deletes a cloud session when `JULES_API_KEY` is set.
 - `examples/plugins` adds four opt-in plugins: open the directory in an editor, copy a session reference, show git status and recent commits, and open a terminal there. A bare plugin command is taken from `PATH`, then from the config `plugins/` directory. Enabled plugin keys are drawn on the menu.
-- The shortcut bar is a grid. View keys are the first row, actions continue under them, and installed plugins occupy their own rows. The built-in theme matches the k9s stock palette unless `ui.skin` or `AIR9S_SKIN` selects another file.
+- The shortcut bar is a grid. View keys are the first row, actions continue under them, and installed plugins occupy their own rows. An empty `ui.skin` uses the built-in skin. `AIR9S_SKIN` or `ui.skin` selects a file.
 
 ## 0.2.0
 
