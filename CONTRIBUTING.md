@@ -6,7 +6,7 @@ Do not paste session transcripts, titles from private work, tokens, or credentia
 
 ## Build and test
 
-Requires Go 1.23 or newer.
+Requires Go 1.25 or newer.
 
 ```sh
 go test ./...
@@ -14,7 +14,7 @@ make build
 gofmt -w .
 ```
 
-GitHub Actions runs `gofmt` and `go test -count=1 -timeout 180s ./...` on Ubuntu, for Go 1.23 and for current stable Go. `cmd/air9s/integration_test.go` builds the real binary and runs `index`, `search`, `show`, `resume --print`, and `delete` against temporary fixtures. The fixtures override every agent home, so the test does not read your sessions, and Jules is not contacted. The test skips Windows because the command stubs are POSIX shell scripts.
+GitHub Actions runs `gofmt` and `go test -count=1 -timeout 180s ./...` on Ubuntu, for Go 1.25 and for current stable Go. `cmd/air9s/integration_test.go` builds the real binary and runs `index`, `search`, `show`, `resume --print`, and `delete` against temporary fixtures. The fixtures override every agent home, so the test does not read your sessions, and Jules is not contacted. The test skips Windows because the command stubs are POSIX shell scripts.
 
 `make install` copies the binary to `~/.local/bin`. Override that with `make install PREFIX=/usr/local`.
 

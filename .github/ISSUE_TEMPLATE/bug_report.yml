@@ -19,7 +19,7 @@ body:
     id: os
     attributes:
       label: OS and Go version
-      placeholder: macOS 15, go 1.23
+      placeholder: macOS 15, go 1.25
     validations:
       required: true
   - type: input

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Delete refuses symlinks and paths that resolve outside the agent directory.
+- Resume refuses session ids, profiles, and paths that look like CLI flags.
+- The index database file is mode 0600.
+- Go 1.25 is the minimum. `golang.org/x/sys` and `golang.org/x/text` are updated past reported vulnerabilities.
+
 ## 0.1.0
 
 - Local index and terminal list for Claude, Codex, Copilot CLI, Grok, Antigravity, Gemini CLI, Cursor, OpenCode, Hermes, OpenClaw, Junie, Jules, Goose, Cline, Aider, and Kiro.

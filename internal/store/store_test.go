@@ -1,6 +1,7 @@
 package store
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -8,6 +9,22 @@ import (
 	"github.com/AymanZahran/air9s/internal/model"
 	"github.com/AymanZahran/air9s/internal/query"
 )
+
+func TestIndexFileMode(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "index.db")
+	st, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st.Close()
+	fi, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fi.Mode().Perm() != 0o600 {
+		t.Fatalf("index mode %o", fi.Mode().Perm())
+	}
+}
 
 func TestSearchAndPrune(t *testing.T) {
 	st, err := Open(filepath.Join(t.TempDir(), "index.db"))

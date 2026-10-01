@@ -32,7 +32,7 @@
     <pre><code>go test ./...
 make build
 gofmt -w .</code></pre>
-    <p>CI on Ubuntu runs <code>gofmt</code> and <code>go test -count=1 ./...</code> for Go 1.23 and for the current stable Go. <code>cmd/air9s/integration_test.go</code> builds the binary and runs it against temporary fixtures. Those fixtures override every agent home, so the test does not read your sessions, and Jules is not contacted.</p>
+    <p>CI on Ubuntu runs <code>gofmt</code> and <code>go test -count=1 ./...</code> for Go 1.25 and for the current stable Go. <code>cmd/air9s/integration_test.go</code> builds the binary and runs it against temporary fixtures. Those fixtures override every agent home, so the test does not read your sessions, and Jules is not contacted.</p>
 
     <h2>Layout</h2>
     <ul>

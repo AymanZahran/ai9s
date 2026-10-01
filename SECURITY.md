@@ -13,3 +13,5 @@ air9s reads session files that are already on the machine. The index keeps title
 Jules is contacted only when `AIR9S_JULES_REMOTE=1`. Other agents are read from local files. Resume runs the agent CLI you already have installed. air9s does not add an auto-approve flag unless that CLI documents one and you pass `--yolo` or toggle it in the UI.
 
 Delete removes or rewrites session data for the agents where that is supported. `delete` without `--yes` refuses to run when stdin is not a terminal. Read the agents page before using `--yes`.
+
+Delete resolves the real path. It refuses a symlink, and it refuses a path that resolves outside that agent's session directory. Resume, and the delete commands that call an agent CLI, refuse a session id, profile, or path that starts with `-`, so a crafted id is not passed as a flag. The index file is mode `0600`. Agent databases are opened read-only.
