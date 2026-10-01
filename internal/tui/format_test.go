@@ -8,6 +8,7 @@ import (
 
 	"github.com/AymanZahran/air9s/internal/model"
 	"github.com/mattn/go-runewidth"
+	"github.com/rivo/tview"
 )
 
 func TestSetTokenAndAge(t *testing.T) {
@@ -22,7 +23,7 @@ func TestSetTokenAndAge(t *testing.T) {
 		t.Fatal(relAge(time.Time{}))
 	}
 	text := preview(model.Session{Title: "hi", Agent: "claude", ID: "claude:1", CanDelete: true})
-	if !strings.Contains(text, "hi") || !strings.Contains(text, "delete: yes") || !strings.Contains(text, Icon("claude")) {
+	if !strings.Contains(text, "hi") || strings.Contains(text, "delete:") || !strings.Contains(text, "context    -") || !strings.Contains(text, "tokens     -") || !strings.Contains(text, Icon("claude")) {
 		t.Fatalf("preview %s", text)
 	}
 	var snips []model.Snippet
@@ -46,29 +47,39 @@ func TestUsageLines(t *testing.T) {
 	if contextLabel(model.Usage{Context: 39275, Window: 200000}) != "39.3k/200k" {
 		t.Fatal(contextLabel(model.Usage{Context: 39275, Window: 200000}))
 	}
-	if UsageLines(model.Usage{}) != nil {
-		t.Fatal("empty usage")
+	if contextLabel(model.Usage{}) != "-" || tokenLabel(model.Usage{}) != "-" {
+		t.Fatal("empty labels")
+	}
+	if tokenLabel(model.Usage{Total: 1500, Context: 20}) != "1.5k" {
+		t.Fatalf("total %s", tokenLabel(model.Usage{Total: 1500, Context: 20}))
+	}
+	if tokenLabel(model.Usage{Input: 1000, Output: 20}) != "1k+20" {
+		t.Fatalf("parts %s", tokenLabel(model.Usage{Input: 1000, Output: 20}))
+	}
+	empty := strings.Join(UsageLines(model.Usage{}), "\n")
+	if !strings.Contains(empty, "context    -") || !strings.Contains(empty, "tokens     -") || strings.Contains(empty, "cost") {
+		t.Fatalf("empty usage %s", empty)
 	}
 }
 
 func TestIcons(t *testing.T) {
 	want := map[string]string{
-		"claude":      "✻ ",
-		"codex":       ">_",
-		"copilot":     "╭╮",
-		"grok":        "⣠⣾",
-		"antigravity": "▄▀",
-		"gemini":      "✦ ",
-		"cursor":      "  ",
-		"opencode":    "█▀",
-		"hermes":      "██",
+		"claude":      "🟠",
+		"codex":       "🟢",
+		"copilot":     "🟣",
+		"grok":        "⚫",
+		"antigravity": "🔵",
+		"gemini":      "✨",
+		"cursor":      "🔷",
+		"opencode":    "🟧",
+		"hermes":      "☤ ",
 		"openclaw":    "🦞",
-		"junie":       "//",
-		"jules":       "Ju",
-		"goose":       "Go",
-		"cline":       "Cl",
-		"aider":       "Ai",
-		"kiro":        "╭─",
+		"junie":       "🟨",
+		"jules":       "🌙",
+		"goose":       "🪿",
+		"cline":       "🟩",
+		"aider":       "🔴",
+		"kiro":        "🔶",
 	}
 	seen := map[string]bool{}
 	for _, agent := range []string{"claude", "codex", "copilot", "grok", "antigravity", "gemini", "cursor", "opencode", "hermes", "openclaw", "junie", "jules", "goose", "cline", "aider", "kiro"} {
@@ -76,8 +87,8 @@ func TestIcons(t *testing.T) {
 		if icon != want[agent] || icon == Icon("unknown") || seen[icon] {
 			t.Fatalf("%s icon %q", agent, icon)
 		}
-		if runewidth.StringWidth(icon) != 2 {
-			t.Fatalf("%s width %d %q", agent, runewidth.StringWidth(icon), icon)
+		if runewidth.StringWidth(icon) != 2 || tview.TaggedStringWidth(icon) != 2 {
+			t.Fatalf("%s width rune %d tag %d %q", agent, runewidth.StringWidth(icon), tview.TaggedStringWidth(icon), icon)
 		}
 		seen[icon] = true
 		if !strings.HasPrefix(Label(agent), icon+" ") || !strings.HasSuffix(Label(agent), agent) {

@@ -57,7 +57,7 @@ Enter on a group applies that filter and returns to sessions. A group labeled (n
 
 [::b]Command line[-]
   [yellow]/[-]   edits the filter. Each word is a substring of the title, summary, directory, branch, model, agent, or excerpt.
-         Up and down, and page up and page down, move the list while the field is open.
+         Up and down move the list one row while the field is open. ⌘↑ and ⌘↓ move a page. Ctrl or Alt with those arrows do the same.
          Left and right stay in the field. j and k are letters here.
   [yellow]:[-]   opens command mode. The table lists views and filter tokens.
          Type to narrow that list. Up and down select a row.
@@ -70,17 +70,16 @@ agent:, dir:, branch:, and model: match a substring, so agent:clau finds claude 
 A leading ~ in dir: or in free text expands to your home directory.
 A token with no value, such as dir:, is ignored until you finish it. Pressing p still drops you into the filter.
 Quote a phrase to keep it together: "auth bug".
-Esc on the list or in the filter clears the filter. Esc in describe, the manual, or command mode does not.
+Esc in describe returns to the list and leaves the filter. Esc after you open sessions from a group returns to that group and clears the filter. On that group, Esc clears the filter and stays there. On the sessions list itself, Esc clears the filter. Esc in the manual or in command mode does not.
 
 [::b]Other keys[-]
   enter       resume in the session directory. Quitting the agent returns here. On a group, apply that filter
-  d           describe. The list is replaced by the preview. j/k or up/down scroll a line, h/l or left/right pan, page up/down or ctrl-b/f scroll a page, g/G jump
-  esc         return from describe to the list. On the list or in the filter, esc clears the filter
+  d           describe. The list is replaced by the preview. j/k or up/down scroll a line, h/l or left/right pan, ⌘↑/⌘↓ or ctrl-b/f scroll a page, g/G jump
+  esc         from describe, return to the list. From a drilled-in list, return to that group. On a group, or on sessions, clear the filter
   ctrl-d      delete, after confirmation. Only from the sessions view. d does not delete
   a           cycle the agent: filter
   p           add a dir: filter
   o           cycle sort
-  y           toggle yolo for the next resume
   r           reindex
   s           stats
   ?           this manual
@@ -89,7 +88,7 @@ Esc on the list or in the filter clears the filter. Esc in describe, the manual,
   h / l       pan left / right when the list or the preview is focused. In / and : they are letters
   left / right  pan the list or the preview. In / and : they move the cursor in the field
   up / down   move one line in the focused pane, including the list while / or : is open
-  pgup / pgdn move a page in the focused pane. The list moves its selection. The preview scrolls its text
+  ⌘↑ / ⌘↓   move a page. The list moves its selection. The preview scrolls its text. Ctrl or Alt with up and down do the same. Page Up and Page Down still do
   ctrl-b / f  the same page motion, in the list and in the preview
 
 The list fills the window. Describe uses that same window until you press esc.
@@ -121,19 +120,6 @@ Quitting the agent returns to this list. The index refreshes so the session you 
 
 The Kiro IDE command is a different program. Resume uses kiro-cli.
 Goose resume needs the goose command on PATH.
-
-[::b]Yolo[-]
-Yolo adds a documented auto-approve flag:
-  claude          --dangerously-skip-permissions
-  antigravity     --dangerously-skip-permissions
-  grok            --always-approve
-  copilot         --allow-all-tools
-  cursor          --force
-  hermes          --yolo
-  junie           --brave
-  cline           --yolo
-  kiro-cli        --trust-all-tools
-Codex, Gemini, OpenCode, OpenClaw, Jules, Goose, and Aider are resumed without an extra approval flag.
 
 [::b]Delete[-]
 Delete removes one session and refuses a path outside that agent's own root.

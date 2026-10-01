@@ -79,22 +79,21 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 | --- | --- |
 | `1`–`5` | Sessions, providers, directories, branches, models. Branches lists each git branch with the worktree that contains the session. The active view is bold in the top hotkey bar. |
 | Enter | Resume the selected session. Quitting that session returns to air9s. On a group view, apply that group as a filter and return to sessions. |
-| `d` | Describe the selected row. The list is replaced by the preview. `j`/`k` or up/down scroll a line. `h`/`l` or left/right pan. Page Up/Down or Ctrl-B/Ctrl-F scroll a page. `g`/`G` jump to the top or the end. Esc returns to the list. Tab opens and closes the same view. |
+| `d` | Describe the selected row. The list is replaced by the preview. `j`/`k` or up/down scroll a line. `h`/`l` or left/right pan. ⌘↑/⌘↓ or Ctrl-B/Ctrl-F scroll a page. `g`/`G` jump to the top or the end. Esc returns to the list. Tab opens and closes the same view. |
 | Ctrl-D | Delete, after confirmation. Sessions view only. |
-| `/` | Edit the filter. Up and down move the list while the field is open. Page Up and Page Down do too. Left and right stay in the field. |
-| Esc | Clear the filter from the list or the filter line. In the preview, the manual, or command mode, Esc goes back and leaves the filter alone. |
+| `/` | Edit the filter. Up and down move the list while the field is open. ⌘↑ and ⌘↓ move a page. Left and right stay in the field. |
+| Esc | From describe, return to the list and leave the filter. After opening sessions from a group, return to that group and clear the filter. On that group, or on the sessions list itself, clear the filter and stay there. In the manual or command mode, Esc goes back and leaves the filter alone. |
 | `:` | Command mode. Type a view name or a filter token. Up and down select a row. Enter applies the highlighted row. Enter on an empty command cycles the view. Another `:` cycles the view name in the field. Esc closes it. |
 | `a` | Cycle the `agent:` filter |
 | `p` | Add a `dir:` filter |
 | `o` | Cycle sort: recent, oldest, messages, title |
-| `y` | Toggle yolo for the next resume |
 | `r` | Reindex |
 | `s` | Stats |
 | `?` | Scrollable manual. `j`/`k` scroll, `g`/`G` jump, Esc or `q` returns to the list. |
 | `q` | Quit |
 | `j` / `k` | Move one line when the list or the preview is focused. In the filter and command fields they are typed letters. |
 | `h` / `l` | Pan left and right when the list or the preview is focused. Left and right do the same. In the filter and command fields, left and right stay in the field and `h`/`l` are letters. |
-| Page Up / Page Down | Move a page in the focused pane. The list moves its selection. The preview scrolls its text. Ctrl-B and Ctrl-F do the same. This also works while `/` or `:` is open. |
+| ⌘↑ / ⌘↓ | Move a page in the focused pane. The list moves its selection. The preview scrolls its text. Control or Alt with up and down do the same, and so do Page Up, Page Down, Ctrl-B, and Ctrl-F. This also works while `/` or `:` is open. |
 | Mouse | The wheel scrolls the view on screen. A horizontal wheel pans. The list and describe each have a scrollbar on the right, and a scrollbar along the bottom when a line is wider than the window. Drag a bar or click it to jump. |
 
 ## Filters
@@ -116,15 +115,15 @@ Quote a phrase to keep it together: `"auth bug"`. Esc on the session list clears
 
 ## Config
 
-air9s writes `config.yaml` the first time it starts, when the file is missing. Skins go in `skins/<name>.yaml`. Plugins go in `plugins.yaml` or in `plugins/`. A plugin shortcut that uses `q`, `/`, `:`, `d`, `y`, `r`, `s`, `?`, `a`, `p`, `o`, `j`, `k`, `g`, `G`, `1`–`5`, Enter, Tab, Esc, or Ctrl-D is ignored. The command is a program name, not a shell. A bare name is looked up on `PATH`, then in the config `plugins/` directory. The selected row provides `$ID`, `$NATIVE_ID`, `$AGENT`, `$CWD`, `$TITLE`, `$BRANCH`, `$MODEL`, `$FILTER`, and `$NAME`.
+air9s writes `config.yaml` the first time it starts, when the file is missing. Skins go in `skins/<name>.yaml`. Plugins go in `plugins.yaml` or in `plugins/`. A plugin shortcut that uses `q`, `/`, `:`, `d`, `r`, `s`, `?`, `a`, `p`, `o`, `j`, `k`, `h`, `l`, `g`, `G`, `1`–`5`, Enter, Tab, Esc, or Ctrl-D is ignored. The command is a program name, not a shell. A bare name is looked up on `PATH`, then in the config `plugins/` directory. The selected row provides `$ID`, `$NATIVE_ID`, `$AGENT`, `$CWD`, `$TITLE`, `$BRANCH`, `$MODEL`, `$FILTER`, and `$NAME`.
 
 `examples/plugins` has four plugins you copy in to turn on. `e` opens the directory in `AIR9S_EDITOR`. `c` copies the fields you list to the clipboard. `b` shows git status and recent commits (`AIR9S_GIT_LOG`). `t` opens a terminal there (`AIR9S_TERMINAL`). Enabled keys are drawn on the menu. See `examples/plugins/README.md`.
 
-`ui.skin` names a file in `skins/` without `.yaml`. `AIR9S_SKIN` overrides it. An empty skin uses the k9s black screen: black background, white text and borders, warm view keys, a gray column header, and a white selection bar. A skin file replaces the fields it sets. The menu is a grid. View keys are the first row, actions continue under them, and installed plugin keys get their own rows. `readOnly: true` blocks delete. `refreshRate` is seconds between reindexes; `0` waits for `r`.
+`ui.skin` names a file in `skins/` without `.yaml`. `AIR9S_SKIN` overrides it. An empty skin uses true black (`#000000`) with the k9s accent colors: blue text, an orange logo, a blue border, fuchsia view keys, and an aqua selection bar. The crumbs line stays black. The named `stock` skin is the older white-on-black palette. A skin file replaces the fields it sets. The menu is a grid. View keys are the first row, actions continue under them, and installed plugin keys get their own rows. `readOnly: true` blocks delete. `refreshRate` is seconds between reindexes; `0` waits for `r`.
 
 ## Metadata
 
-The preview and `air9s show` print a context line and a token line when the session file has them: latest prompt size, context window, input, output, cache read, cache write, reasoning tokens, cost, premium requests, and reasoning effort. The CTX column is the latest context size, or `used/window` when both are known.
+Describe and `air9s show` always print a context line and a token line. A dash means the session file did not record that number. The rest of the line appears when it was recorded: input, output, cache read, cache write, reasoning tokens, cost, premium requests, and reasoning effort. The CTX column is the latest prompt size, or `used/window` when both are known. The TOKENS column is the session total, or input plus output when the file has no total.
 
 Claude records per-turn usage and cost. Codex records token totals and, when present, the context window. Copilot CLI records the latest prompt size, cache, reasoning effort, and premium requests. OpenCode records session token totals and the latest prompt size. Grok records reasoning effort. Hermes records token totals and cost. OpenClaw records the context window separately from the estimated prompt size. Goose and Cline record token totals, and Cline records cost. Gemini, Cursor, Antigravity, Junie, Jules, Aider, and Kiro leave the token lines empty when their files do not carry totals.
 

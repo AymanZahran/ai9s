@@ -29,7 +29,7 @@ air9s:
 
 const stockSkinYAML = `# Stock skin. Same black screen as the k9s black-and-wtf skin.
 # Point ui.skin at "stock", or set AIR9S_SKIN=stock.
-# An empty ui.skin uses these colors as the built-in theme.
+# An empty ui.skin uses the built-in theme, not this file.
 # Color values are tcell names (white, navajowhite) or #RRGGBB.
 # The name default keeps the terminal's own color.
 air9s:
@@ -70,7 +70,7 @@ air9s:
 
 const defaultPluginsYAML = `# Plugins run a program on the machine. They do not get a shell.
 # List them here, or put one plugin in each file under plugins/.
-# Reserved keys are ignored: q / : d y r s ? a p o j k h l g G 1-5, enter, tab, esc, ctrl-d.
+# Reserved keys are ignored: q / : d r s ? a p o j k h l g G 1-5, enter, tab, esc, ctrl-d.
 # A selected session provides $ID $NATIVE_ID $AGENT $CWD $TITLE $BRANCH $MODEL.
 # $FILTER is the filter line. $NAME is the row name.
 # scopes: sessions, providers, directories, branches, models, or all.
