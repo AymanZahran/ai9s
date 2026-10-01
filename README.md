@@ -22,6 +22,7 @@ The interface is a terminal list: a header with the hotkeys on top, a filter lin
 
 ```sh
 brew tap AymanZahran/air9s
+brew trust aymanzahran/air9s
 brew install air9s
 ```
 
@@ -31,6 +32,7 @@ While those repositories are private, tap over SSH and export a GitHub token so 
 
 ```sh
 brew tap AymanZahran/air9s git@github.com:AymanZahran/homebrew-air9s.git
+brew trust aymanzahran/air9s
 export HOMEBREW_GITHUB_API_TOKEN="$(gh auth token)"
 brew install air9s
 ```
