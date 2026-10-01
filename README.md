@@ -14,7 +14,7 @@
 
 air9s is a keyboard-first finder for local AI coding sessions. It indexes the session files already on your machine, then lets you search, preview, filter, resume, and — where it is safe — delete them.
 
-The interface follows the k9s screen: a menu of hotkeys, a crumbs bar (`air9s › Sessions › all`), and one framed table. Each agent has its own icon. `1` through `5` switch the table between sessions, providers, directories, branches, and models. `/` edits the filter and `:` opens a command line for those views and for filter tokens. Esc clears the filter from the list and from the filter line. `?` opens a scrollable manual. `d` replaces the list with a describe view of the selected row; Esc returns to the list. Ctrl-D deletes. The CTX column, describe, and `air9s show` include context size and token counts when the agent recorded them.
+The interface follows the k9s screen: a menu of hotkeys, a crumbs bar (`air9s › Sessions › all`), and one framed table. Claude, Gemini, Hermes, OpenClaw, and Goose use a character that project prints. The others publish a picture logo, so the cell is the first two letters of the name. `1` through `5` switch the table between sessions, providers, directories, branches, and models. `/` edits the filter and `:` opens a command line for those views and for filter tokens. Esc clears the filter from the list and from the filter line. `?` opens a scrollable manual. `d` replaces the list with a describe view of the selected row; Esc returns to the list. Ctrl-D deletes. The CTX column, describe, and `air9s show` include context size and token counts when the agent recorded them.
 
 Colors, the mouse, icons, read-only mode, the starting view, and plugins come from `~/.config/air9s/config.yaml` (or `$AIR9S_CONFIG_DIR`, or `$XDG_CONFIG_HOME/air9s`). `air9s info` prints the paths.
 
@@ -78,10 +78,10 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 | Key | Action |
 | --- | --- |
 | `1`–`5` | Sessions, providers, directories, branches, models. Branches lists each git branch with the worktree that contains the session. The active view is bold in the top hotkey bar. |
-| Enter | Resume the selected session. Quitting that session returns to air9s. On a group view, apply that group as a filter and return to sessions. |
-| `d` | Describe the selected row. The list is replaced by the preview. `j`/`k` or up/down scroll a line. `h`/`l` or left/right pan. ⌘↑/⌘↓ or Ctrl-B/Ctrl-F scroll a page. `g`/`G` jump to the top or the end. Esc returns to the list. Tab opens and closes the same view. |
+| Enter | Resume the selected session. Quitting that session returns to air9s, which takes the terminal back. On a group view, apply that group as a filter and return to sessions. |
+| `d` | Describe the selected row. The list is replaced by the preview. `j`/`k` or up/down scroll a line. `h`/`l` or left/right pan. ⌘↑/⌘↓ and ⌘←/⌘→ page. `g`/`G` jump to the top or the end. Esc returns to the list. Tab opens and closes the same view. |
 | Ctrl-D | Delete, after confirmation. Sessions view only. |
-| `/` | Edit the filter. Up and down move the list while the field is open. ⌘↑ and ⌘↓ move a page. Left and right stay in the field. |
+| `/` | Edit the filter. Up and down move the list while the field is open. ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Plain left and right stay in the field. `j` and `k` are letters here. |
 | Esc | From describe, return to the list and leave the filter. After opening sessions from a group, return to that group and clear the filter. On that group, or on the sessions list itself, clear the filter and stay there. In the manual or command mode, Esc goes back and leaves the filter alone. |
 | `:` | Command mode. Type a view name or a filter token. Up and down select a row. Enter applies the highlighted row. Enter on an empty command cycles the view. Another `:` cycles the view name in the field. Esc closes it. |
 | `a` | Cycle the `agent:` filter |
@@ -91,10 +91,11 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 | `s` | Stats |
 | `?` | Scrollable manual. `j`/`k` scroll, `g`/`G` jump, Esc or `q` returns to the list. |
 | `q` | Quit |
-| `j` / `k` | Move one line when the list or the preview is focused. In the filter and command fields they are typed letters. |
-| `h` / `l` | Pan left and right when the list or the preview is focused. Left and right do the same. In the filter and command fields, left and right stay in the field and `h`/`l` are letters. |
-| ⌘↑ / ⌘↓ | Move a page in the focused pane. The list moves its selection. The preview scrolls its text. Control or Alt with up and down do the same, and so do Page Up, Page Down, Ctrl-B, and Ctrl-F. This also works while `/` or `:` is open. |
-| Mouse | The wheel scrolls the view on screen. A horizontal wheel pans. The list and describe each have a scrollbar on the right, and a scrollbar along the bottom when a line is wider than the window. Drag a bar or click it to jump. |
+| `j` / `k`, up / down | Move one line when the list or the preview is focused. Up and down do the same, including while `/` or `:` is open. In those fields, `j` and `k` are typed letters. |
+| `h` / `l`, left / right | Pan when the list or the preview is focused. In the filter and command fields, plain left and right stay in the field and `h`/`l` are letters. |
+| ⌘↑ / ⌘↓ | Move a page of rows. The list moves its selection. The preview scrolls its text. Control or Alt with up and down do the same, and so do Page Up, Page Down, Ctrl-B, and Ctrl-F. This also works while `/` or `:` is open. |
+| ⌘← / ⌘→ | Move a page of columns, on the list and in describe, including while `/` or `:` is open. Control or Alt with left and right do the same. |
+| Mouse | The wheel scrolls the view on screen, including the menu and the footer. A horizontal wheel pans, and so does Shift with the vertical wheel. The list and describe each have a scrollbar on the right, and a scrollbar along the bottom when a line is wider than the window. Drag a bar or click it to jump. |
 
 ## Filters
 
@@ -123,7 +124,7 @@ air9s writes `config.yaml` the first time it starts, when the file is missing. S
 
 ## Metadata
 
-Describe and `air9s show` always print a context line and a token line. A dash means the session file did not record that number. The rest of the line appears when it was recorded: input, output, cache read, cache write, reasoning tokens, cost, premium requests, and reasoning effort. The CTX column is the latest prompt size, or `used/window` when both are known. The TOKENS column is the session total, or input plus output when the file has no total.
+AGE is always a relative age: now, minutes, hours, days, weeks, months, or years. DATE is the local date and time. Sort follows AGE. Describe and `air9s show` always print a context line and a token line. A dash means the session file did not record that number. The rest of the line appears when it was recorded: input, output, cache read, cache write, reasoning tokens, cost, premium requests, and reasoning effort. The CTX column is the latest prompt size, or `used/window` when both are known. The TOKENS column is the session total, or input plus output when the file has no total.
 
 Claude records per-turn usage and cost. Codex records token totals and, when present, the context window. Copilot CLI records the latest prompt size, cache, reasoning effort, and premium requests. OpenCode records session token totals and the latest prompt size. Grok records reasoning effort. Hermes records token totals and cost. OpenClaw records the context window separately from the estimated prompt size. Goose and Cline record token totals, and Cline records cost. Gemini, Cursor, Antigravity, Junie, Jules, Aider, and Kiro leave the token lines empty when their files do not carry totals.
 

@@ -299,6 +299,7 @@ func (ui *ui) paintSessions() {
 	rows := make([][]cellText, 0, len(ui.rows)+1)
 	rows = append(rows, []cellText{
 		{text: sorted("AGE", sortName, "recent", "oldest")},
+		{text: "DATE"},
 		{text: ""},
 		{text: "AGENT"},
 		{text: "DIR"},
@@ -319,6 +320,7 @@ func (ui *ui) paintSessions() {
 		}
 		rows = append(rows, []cellText{
 			{text: relAge(s.Updated)},
+			{text: absDate(s.Updated)},
 			{text: ui.mark(s.Agent)},
 			{text: s.Agent, color: ui.agentTag(s.Agent)},
 			{text: shortPath(s.CWD)},
@@ -438,7 +440,8 @@ func (ui *ui) paintGroups() {
 			{text: "WORKTREE"},
 			{text: "SESSIONS", right: true},
 			{text: "MSGS", right: true},
-			{text: "LATEST"},
+			{text: "AGE"},
+			{text: "DATE"},
 		})
 	} else {
 		rows = append(rows, []cellText{
@@ -446,7 +449,8 @@ func (ui *ui) paintGroups() {
 			{text: "NAME"},
 			{text: "SESSIONS", right: true},
 			{text: "MSGS", right: true},
-			{text: "LATEST"},
+			{text: "AGE"},
+			{text: "DATE"},
 		})
 	}
 	sel := 1
@@ -465,6 +469,7 @@ func (ui *ui) paintGroups() {
 				{text: fmt.Sprintf("%d", g.sessions), right: true},
 				{text: fmt.Sprintf("%d", g.messages), right: true},
 				{text: relAge(g.updated)},
+				{text: absDate(g.updated)},
 			})
 			continue
 		}
@@ -484,6 +489,7 @@ func (ui *ui) paintGroups() {
 			{text: fmt.Sprintf("%d", g.sessions), right: true},
 			{text: fmt.Sprintf("%d", g.messages), right: true},
 			{text: relAge(g.updated)},
+			{text: absDate(g.updated)},
 		})
 	}
 	ui.useRows(rows)
@@ -517,7 +523,7 @@ func (ui *ui) showGroup(row int) {
 		}
 		fmt.Fprintf(&b, "worktree  %s\n", wt)
 	}
-	fmt.Fprintf(&b, "%d sessions   %d messages   %s\n", g.sessions, g.messages, relAge(g.updated))
+	fmt.Fprintf(&b, "%d sessions   %d messages   %s   %s\n", g.sessions, g.messages, relAge(g.updated), absDate(g.updated))
 	if g.key == "(none)" && g.worktree == "" {
 		b.WriteString("\n[gray]This group has an empty value, so enter will not add a filter.[-]\n")
 	} else if spec, ok := viewByName(ui.view); ok && spec.token != "" {

@@ -61,7 +61,11 @@ func (c Command) Run() error {
 	if c.Dir != "" {
 		cmd.Dir = c.Dir
 	}
-	return runAttached(cmd)
+	var err error
+	WithTerminal(func() {
+		err = runAttached(cmd)
+	})
+	return err
 }
 
 // Plan builds the agent's own resume command.

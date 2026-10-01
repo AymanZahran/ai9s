@@ -47,7 +47,7 @@ func (ui *ui) showManual() {
 const manualText = `[::b]air9s manual[-]
 
 [::b]Views[-]
-  [yellow]<1>[-] sessions      the conversation list. Enter resumes. d describes. ctrl-d deletes. h/l pans.
+  [yellow]<1>[-] sessions      the conversation list. AGE is relative. DATE is the local time. Enter resumes. d describes. ctrl-d deletes.
   [yellow]<2>[-] providers     group the current filter by agent
   [yellow]<3>[-] directories   group by working directory
   [yellow]<4>[-] branches      group by git branch and worktree. The worktree is the checkout that holds the session directory. Enter filters by that branch and that checkout.
@@ -57,8 +57,9 @@ Enter on a group applies that filter and returns to sessions. A group labeled (n
 
 [::b]Command line[-]
   [yellow]/[-]   edits the filter. Each word is a substring of the title, summary, directory, branch, model, agent, or excerpt.
-         Up and down move the list one row while the field is open. ⌘↑ and ⌘↓ move a page. Ctrl or Alt with those arrows do the same.
-         Left and right stay in the field. j and k are letters here.
+         Up and down move the list one row while the field is open. j and k are letters here.
+         ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Ctrl or Alt with those arrows do the same.
+         Plain left and right stay in the field.
   [yellow]:[-]   opens command mode. The table lists views and filter tokens.
          Type to narrow that list. Up and down select a row.
          Enter on an empty command cycles the view. After up or down, Enter applies the highlighted row.
@@ -74,7 +75,7 @@ Esc in describe returns to the list and leaves the filter. Esc after you open se
 
 [::b]Other keys[-]
   enter       resume in the session directory. Quitting the agent returns here. On a group, apply that filter
-  d           describe. The list is replaced by the preview. j/k or up/down scroll a line, h/l or left/right pan, ⌘↑/⌘↓ or ctrl-b/f scroll a page, g/G jump
+  d           describe. The list is replaced by the preview. j/k or up/down scroll a line, h/l or left/right pan, ⌘↑/⌘↓ and ⌘←/⌘→ page, g/G jump
   esc         from describe, return to the list. From a drilled-in list, return to that group. On a group, or on sessions, clear the filter
   ctrl-d      delete, after confirmation. Only from the sessions view. d does not delete
   a           cycle the agent: filter
@@ -84,23 +85,25 @@ Esc in describe returns to the list and leaves the filter. Esc after you open se
   s           stats
   ?           this manual
   q           quit
-  j / k       move down / up one line when the list or the preview is focused. In / and : they are letters
-  h / l       pan left / right when the list or the preview is focused. In / and : they are letters
-  left / right  pan the list or the preview. In / and : they move the cursor in the field
-  up / down   move one line in the focused pane, including the list while / or : is open
-  ⌘↑ / ⌘↓   move a page. The list moves its selection. The preview scrolls its text. Ctrl or Alt with up and down do the same. Page Up and Page Down still do
-  ctrl-b / f  the same page motion, in the list and in the preview
+  j / k       down / up one line, the same as the down and up arrows, when the list or the preview is focused. In / and : they are letters
+  up / down   the same one-line move, including the list while / or : is open
+  h / l       pan left / right, the same as the left and right arrows, when the list or the preview is focused. In / and : they are letters
+  left / right  the same pan. In / and : they move the cursor in the field, unless Command, Ctrl, or Alt is held
+  ⌘↑ / ⌘↓   move a page of rows. The list moves its selection. The preview scrolls its text. Ctrl or Alt with up and down do the same. Page Up and Page Down still do
+  ⌘← / ⌘→   move a page of columns, on the list and in the preview, including while / or : is open. Ctrl or Alt with left and right do the same
+  ctrl-b / f  the same vertical page motion, in the list and in the preview
 
 The list fills the window. Describe uses that same window until you press esc.
 Describe keeps each line intact, so a long line pans sideways instead of wrapping.
+AGE is always a relative age. DATE is the local date and time. Sort follows AGE.
 Each of those views draws a scrollbar on the right.
 When a line is wider than the window, a scrollbar along the bottom pans it.
-The mouse wheel scrolls the view on screen: the list moves several rows, describe scrolls several lines.
-A horizontal wheel pans. Drag a scrollbar, or click it, to jump.
+The mouse wheel scrolls the view on screen, including the menu and the footer: the list moves several rows, describe scrolls several lines.
+A horizontal wheel pans. Shift with the vertical wheel pans the same way. Drag a scrollbar, or click it, to jump.
 
 [::b]Resume[-]
 Resume runs that agent's own CLI in the session directory when the directory still exists.
-Quitting the agent returns to this list. The index refreshes so the session you just left is current.
+Quitting the agent returns to this list. air9s takes the terminal back, so the shell does not leave it suspended. The index refreshes so the session you just left is current.
   claude --resume
   codex resume
   copilot --resume
