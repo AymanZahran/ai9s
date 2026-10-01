@@ -93,7 +93,9 @@ func Plan(s model.Session, yolo bool) (Command, error) {
 			args = append(args, "--allow-all-tools")
 		}
 		args = append(args, "--resume", s.NativeID)
-	case "agy":
+	case "antigravity", "agy":
+		// The product name is antigravity. The CLI binary is still agy.
+		// "agy" remains so a row indexed before the rename can resume.
 		name = "agy"
 		if yolo {
 			args = append(args, "--dangerously-skip-permissions")
@@ -184,7 +186,7 @@ func Plan(s model.Session, yolo bool) (Command, error) {
 	if s.CWD != "" {
 		st, err := os.Stat(s.CWD)
 		if err != nil || !st.IsDir() {
-			if s.Agent == "grok" || s.Agent == "agy" {
+			if s.Agent == "grok" || s.Agent == "antigravity" || s.Agent == "agy" {
 				return Command{}, fmt.Errorf("working directory %s is not available", s.CWD)
 			}
 		} else {

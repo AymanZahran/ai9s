@@ -124,7 +124,8 @@ Goose resume needs the goose command on PATH.
 
 [::b]Yolo[-]
 Yolo adds a documented auto-approve flag:
-  claude, agy     --dangerously-skip-permissions
+  claude          --dangerously-skip-permissions
+  antigravity     --dangerously-skip-permissions
   grok            --always-approve
   copilot         --allow-all-tools
   cursor          --force
@@ -138,7 +139,7 @@ Codex, Gemini, OpenCode, OpenClaw, Jules, Goose, and Aider are resumed without a
 Delete removes one session and refuses a path outside that agent's own root.
   claude, codex, cursor    the transcript file, inside that agent's session root
   copilot                  one session-state directory
-  agy                      rewrite history.jsonl without that conversation
+  antigravity             rewrite history.jsonl without that conversation
   opencode                 opencode session delete
   hermes                   hermes sessions delete ID --yes
   openclaw                 openclaw sessions delete KEY --yes
@@ -154,22 +155,22 @@ The jules CLI has no delete command. A remote session is deleted through the Jul
 
 [::b]Where sessions are read[-]
 Each path can be moved with the environment variable after it. A missing directory is skipped.
-  claude     CLAUDE_CONFIG_DIR
-  codex      CODEX_HOME
-  copilot    COPILOT_HOME
-  grok       GROK_HOME
-  agy        GEMINI_HOME
-  gemini     GEMINI_HOME
-  cursor     CURSOR_HOME
-  opencode   OPENCODE_DB
-  hermes     HERMES_HOME, including profiles/<name>/state.db
-  openclaw   OPENCLAW_STATE_DIR or OPENCLAW_HOME
-  junie      JUNIE_HOME
-  jules      JULES_HOME. A remote listing runs only when AIR9S_JULES_REMOTE=1.
-  goose      GOOSE_HOME
-  cline      CLINE_HOME
-  aider      AIDER_CHAT_ROOTS, AIDER_HOME, or AIDER_CHAT_HISTORY. AIDER_SCAN_HOME=1 walks the home directory.
-  kiro       KIRO_CLI_DB or KIRO_HOME
+  claude       CLAUDE_CONFIG_DIR
+  codex        CODEX_HOME
+  copilot      COPILOT_HOME
+  grok         GROK_HOME
+  antigravity  GEMINI_HOME
+  gemini       GEMINI_HOME
+  cursor       CURSOR_HOME
+  opencode     OPENCODE_DB
+  hermes       HERMES_HOME, including profiles/<name>/state.db
+  openclaw     OPENCLAW_STATE_DIR or OPENCLAW_HOME
+  junie        JUNIE_HOME
+  jules        JULES_HOME. A remote listing runs only when AIR9S_JULES_REMOTE=1.
+  goose        GOOSE_HOME
+  cline        CLINE_HOME
+  aider        AIDER_CHAT_ROOTS, AIDER_HOME, or AIDER_CHAT_HISTORY. AIDER_SCAN_HOME=1 walks the home directory.
+  kiro         KIRO_CLI_DB or KIRO_HOME
 
 The index is $AIR9S_CACHE_DIR/index.db, or $XDG_CACHE_HOME/air9s/index.db, or ~/.cache/air9s/index.db.
 

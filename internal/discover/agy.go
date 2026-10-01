@@ -16,7 +16,7 @@ func agyHistoryPath() string {
 
 func scanAgy(fresh func(string, int64) bool) Batch {
 	path := agyHistoryPath()
-	b := Batch{Agent: "agy"}
+	b := Batch{Agent: "antigravity"}
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			return b
@@ -113,7 +113,7 @@ func readAgy(path string) ([]model.Session, error) {
 			updated = time.Unix(fileMtime(path), 0)
 		}
 		out = append(out, model.Session{
-			ID: model.ID("agy", id), NativeID: id, Agent: "agy",
+			ID: model.ID("antigravity", id), NativeID: id, Agent: "antigravity",
 			Title: title, CWD: g.cwd, Updated: updated, Messages: g.buf.n,
 			SourcePath: path, CanDelete: true, DeleteMode: "rewrite",
 			Snippets: g.buf.snippets(),

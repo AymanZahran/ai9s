@@ -103,6 +103,42 @@ func TestFreshRereadsDisabledDelete(t *testing.T) {
 	}
 }
 
+func TestFreshRereadsAgyName(t *testing.T) {
+	st, err := Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	path := filepath.Join(t.TempDir(), "history.jsonl")
+	old := model.Session{
+		ID: "agy:c1", NativeID: "c1", Agent: "agy", Title: "old name",
+		Updated: time.Date(2026, 3, 2, 15, 4, 5, 0, time.UTC), Messages: 1,
+		SourcePath: path, SourceMtime: 10, CanDelete: true, DeleteMode: "rewrite",
+	}
+	if err := st.Apply("agy", []model.Session{old}, storeSource(path)); err != nil {
+		t.Fatal(err)
+	}
+	if st.Fresh(path, 10) {
+		t.Fatal("a session stored as agy should be read again")
+	}
+	next := old
+	next.ID = "antigravity:c1"
+	next.Agent = "antigravity"
+	if err := st.Apply("antigravity", []model.Session{next}, storeSource(path)); err != nil {
+		t.Fatal(err)
+	}
+	if !st.Fresh(path, 10) {
+		t.Fatal("antigravity should stay fresh")
+	}
+	if _, err := st.Get("agy:c1"); err == nil {
+		t.Fatal("old agy id should be gone")
+	}
+	got, err := st.Get("antigravity:c1")
+	if err != nil || got.Agent != "antigravity" {
+		t.Fatalf("renamed %+v %v", got, err)
+	}
+}
+
 func storeSource(path string) []Source {
 	return []Source{{Path: path, Mtime: 10}}
 }

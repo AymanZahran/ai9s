@@ -53,25 +53,25 @@ func TestUsageLines(t *testing.T) {
 
 func TestIcons(t *testing.T) {
 	want := map[string]string{
-		"claude":   "✻ ",
-		"codex":    ">_",
-		"copilot":  "╭╮",
-		"grok":     "⣠⣾",
-		"agy":      "▄▀",
-		"gemini":   "✦ ",
-		"cursor":   "  ",
-		"opencode": "█▀",
-		"hermes":   "██",
-		"openclaw": "🦞",
-		"junie":    "//",
-		"jules":    "Ju",
-		"goose":    "Go",
-		"cline":    "Cl",
-		"aider":    "Ai",
-		"kiro":     "╭─",
+		"claude":      "✻ ",
+		"codex":       ">_",
+		"copilot":     "╭╮",
+		"grok":        "⣠⣾",
+		"antigravity": "▄▀",
+		"gemini":      "✦ ",
+		"cursor":      "  ",
+		"opencode":    "█▀",
+		"hermes":      "██",
+		"openclaw":    "🦞",
+		"junie":       "//",
+		"jules":       "Ju",
+		"goose":       "Go",
+		"cline":       "Cl",
+		"aider":       "Ai",
+		"kiro":        "╭─",
 	}
 	seen := map[string]bool{}
-	for _, agent := range []string{"claude", "codex", "copilot", "grok", "agy", "gemini", "cursor", "opencode", "hermes", "openclaw", "junie", "jules", "goose", "cline", "aider", "kiro"} {
+	for _, agent := range []string{"claude", "codex", "copilot", "grok", "antigravity", "gemini", "cursor", "opencode", "hermes", "openclaw", "junie", "jules", "goose", "cline", "aider", "kiro"} {
 		icon := Icon(agent)
 		if icon != want[agent] || icon == Icon("unknown") || seen[icon] {
 			t.Fatalf("%s icon %q", agent, icon)

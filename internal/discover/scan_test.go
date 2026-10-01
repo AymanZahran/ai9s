@@ -58,13 +58,13 @@ func TestScanAgyAndGemini(t *testing.T) {
 	var agyS, gemS int
 	for _, b := range Collect(nil) {
 		switch b.Agent {
-		case "agy":
+		case "antigravity":
 			if b.Err != nil {
 				t.Fatal(b.Err)
 			}
 			agyS = len(b.Sessions)
-			if agyS != 1 || b.Sessions[0].NativeID != "c1" || b.Sessions[0].CWD != "/work/app" || !b.Sessions[0].CanDelete {
-				t.Fatalf("agy %+v", b.Sessions)
+			if agyS != 1 || b.Sessions[0].Agent != "antigravity" || b.Sessions[0].ID != "antigravity:c1" || b.Sessions[0].NativeID != "c1" || b.Sessions[0].CWD != "/work/app" || !b.Sessions[0].CanDelete {
+				t.Fatalf("antigravity %+v", b.Sessions)
 			}
 		case "gemini":
 			if b.Err != nil {
@@ -77,6 +77,6 @@ func TestScanAgyAndGemini(t *testing.T) {
 		}
 	}
 	if agyS != 1 || gemS != 1 {
-		t.Fatalf("counts agy %d gemini %d", agyS, gemS)
+		t.Fatalf("counts antigravity %d gemini %d", agyS, gemS)
 	}
 }

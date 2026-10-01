@@ -34,7 +34,7 @@ func Scanners() []Scanner {
 		{"codex", scanCodex},
 		{"copilot", scanCopilotCLI},
 		{"grok", scanGrok},
-		{"agy", scanAgy},
+		{"antigravity", scanAgy},
 		{"gemini", scanGemini},
 		{"cursor", scanCursor},
 		{"opencode", scanOpenCode},

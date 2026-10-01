@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.2.8
+
+- Antigravity sessions use the name antigravity. Resume still runs the `agy` command.
+
 ## 0.2.7
 
 - View 4 lists each git branch together with the worktree that contains the session. Enter filters by that branch and that checkout.

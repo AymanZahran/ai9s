@@ -17,7 +17,7 @@ import (
 	"github.com/AymanZahran/air9s/internal/tui"
 )
 
-const version = "0.2.7"
+const version = "0.2.8"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -200,7 +200,7 @@ func cmdStats(args []string) int {
 func printStats(st store.Stats) {
 	fmt.Printf("%d sessions, %d messages\n", st.Sessions, st.Messages)
 	for _, a := range st.Agents {
-		fmt.Printf("  %s %-10s %5d sessions  %7d messages\n", tui.Icon(a.Agent), a.Agent, a.Sessions, a.Messages)
+		fmt.Printf("  %s %-12s %5d sessions  %7d messages\n", tui.Icon(a.Agent), a.Agent, a.Sessions, a.Messages)
 	}
 }
 
@@ -236,7 +236,7 @@ func cmdSearch(args []string) int {
 		if branch == "" {
 			branch = "-"
 		}
-		fmt.Printf("%s %-8s %-18s %-10s %5d  %-48s  %s\n", tui.Icon(s.Agent), s.Agent, clip(shortHome(s.CWD), 18), branch, s.Messages, clip(s.Title, 48), s.ID)
+		fmt.Printf("%s %-12s %-18s %-10s %5d  %-48s  %s\n", tui.Icon(s.Agent), s.Agent, clip(shortHome(s.CWD), 18), branch, s.Messages, clip(s.Title, 48), s.ID)
 	}
 	return 0
 }

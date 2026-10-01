@@ -18,22 +18,22 @@ import (
 // and no glyph, so those cells are the first two letters of the name.
 func Icon(agent string) string {
 	icon := map[string]string{
-		"claude":   "✻",  // Claude Code status glyph, U+273B
-		"codex":    ">_", // Codex banner: ">_ OpenAI Codex"
-		"copilot":  "╭╮", // eyes of the Copilot CLI mascot
-		"grok":     "⣠⣾", // opening cells of Grok's braille logo
-		"agy":      "▄▀", // opening cells of the Antigravity CLI logo
-		"gemini":   "✦",  // Gemini CLI prompt glyph, U+2726
-		"cursor":   "  ",
-		"opencode": "█▀", // opening cells of the OpenCode wordmark
-		"hermes":   "██", // opening cells of the Hermes banner
-		"openclaw": "🦞",  // OpenClaw's own README mark
-		"junie":    "//", // Junie help banner
-		"jules":    "Ju",
-		"goose":    "Go",
-		"cline":    "Cl",
-		"aider":    "Ai",
-		"kiro":     "╭─", // Kiro CLI menu frame
+		"claude":      "✻",  // Claude Code status glyph, U+273B
+		"codex":       ">_", // Codex banner: ">_ OpenAI Codex"
+		"copilot":     "╭╮", // eyes of the Copilot CLI mascot
+		"grok":        "⣠⣾", // opening cells of Grok's braille logo
+		"antigravity": "▄▀", // opening cells of the Antigravity CLI logo
+		"gemini":      "✦",  // Gemini CLI prompt glyph, U+2726
+		"cursor":      "  ",
+		"opencode":    "█▀", // opening cells of the OpenCode wordmark
+		"hermes":      "██", // opening cells of the Hermes banner
+		"openclaw":    "🦞",  // OpenClaw's own README mark
+		"junie":       "//", // Junie help banner
+		"jules":       "Ju",
+		"goose":       "Go",
+		"cline":       "Cl",
+		"aider":       "Ai",
+		"kiro":        "╭─", // Kiro CLI menu frame
 	}[agent]
 	if icon == "" {
 		icon = "⚪"
@@ -95,7 +95,7 @@ func agentColor(name string) string {
 		return "blue"
 	case "grok":
 		return "aqua"
-	case "agy":
+	case "antigravity", "agy":
 		return "purple"
 	case "gemini":
 		return "yellow"

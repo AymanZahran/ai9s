@@ -169,7 +169,13 @@ func (s *Store) Fresh(path string, mtime int64) bool {
 		return false
 	}
 	err = s.db.QueryRow(`SELECT count(*) FROM sessions WHERE source_path = ? AND (can_delete = 0 OR delete_mode = '')`, path).Scan(&stale)
-	return err == nil && stale == 0
+	if err != nil || stale != 0 {
+		return false
+	}
+	// Rows stored as agy are read again so the index uses the name antigravity.
+	var legacy int
+	err = s.db.QueryRow(`SELECT count(*) FROM sessions WHERE source_path = ? AND agent = 'agy'`, path).Scan(&legacy)
+	return err == nil && legacy == 0
 }
 
 // Apply merges one agent's scan into the index.
@@ -245,7 +251,40 @@ func (s *Store) Apply(agent string, sessions []model.Session, files []Source) er
 	if _, err := tx.Exec(`DELETE FROM files WHERE agent = ? AND path NOT IN (SELECT path FROM air9s_seen)`, agent); err != nil {
 		return err
 	}
+	if agent == "antigravity" {
+		if err := dropAgent(tx, s.fts, "agy"); err != nil {
+			return err
+		}
+	}
 	return tx.Commit()
+}
+
+// dropAgent removes every session stored under a retired agent id.
+func dropAgent(tx *sql.Tx, fts bool, agent string) error {
+	rows, err := tx.Query(`SELECT id FROM sessions WHERE agent = ?`, agent)
+	if err != nil {
+		return err
+	}
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return err
+		}
+		ids = append(ids, id)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for _, id := range ids {
+		if err := deleteID(tx, fts, id); err != nil {
+			return err
+		}
+	}
+	_, err = tx.Exec(`DELETE FROM files WHERE agent = ?`, agent)
+	return err
 }
 
 func upsertFile(tx *sql.Tx, path string, mtime int64, agent string) error {

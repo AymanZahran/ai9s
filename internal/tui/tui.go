@@ -554,7 +554,7 @@ func colorOf(agent string) tcell.Color {
 		return tcell.ColorDodgerBlue
 	case "grok":
 		return tcell.ColorAqua
-	case "agy":
+	case "antigravity", "agy":
 		return tcell.ColorPurple
 	case "gemini":
 		return tcell.ColorYellow

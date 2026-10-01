@@ -65,6 +65,7 @@ func TestPlanMoreAgents(t *testing.T) {
 		{model.Session{Agent: "aider", NativeID: filepath.Join(dir, ".aider.chat.history.md"), SourcePath: filepath.Join(dir, ".aider.chat.history.md"), CWD: dir}, true, []string{"--restore-chat-history"}, []string{"--chat-history-file", "yolo"}},
 		{model.Session{Agent: "aider", NativeID: filepath.Join(dir, "custom.md"), SourcePath: filepath.Join(dir, "custom.md"), CWD: dir}, false, []string{"--restore-chat-history", "--chat-history-file"}, nil},
 		{model.Session{Agent: "kiro", NativeID: "sid", CWD: dir}, true, []string{"kiro-cli", "--trust-all-tools", "chat", "--resume-id sid"}, nil},
+		{model.Session{Agent: "antigravity", NativeID: "c1", CWD: dir}, true, []string{"/usr/bin/agy", "--dangerously-skip-permissions", "--conversation c1"}, []string{"--resume"}},
 	}
 	for _, tc := range checks {
 		cmd, err := Plan(tc.sess, tc.yolo)
@@ -123,7 +124,7 @@ func TestRewriteAgy(t *testing.T) {
 	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	err := Delete(model.Session{Agent: "agy", NativeID: "drop", CanDelete: true, DeleteMode: "rewrite", SourcePath: path})
+	err := Delete(model.Session{Agent: "antigravity", NativeID: "drop", CanDelete: true, DeleteMode: "rewrite", SourcePath: path})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -534,7 +535,7 @@ func TestDeleteSymlinkEscape(t *testing.T) {
 	if err := os.Symlink(other, history); err != nil {
 		t.Fatal(err)
 	}
-	err := Delete(model.Session{Agent: "agy", NativeID: "keep", CanDelete: true, DeleteMode: "rewrite", SourcePath: history})
+	err := Delete(model.Session{Agent: "antigravity", NativeID: "keep", CanDelete: true, DeleteMode: "rewrite", SourcePath: history})
 	if err == nil {
 		t.Fatal("rewrote a symlinked Antigravity history")
 	}
