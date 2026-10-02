@@ -8,9 +8,17 @@ import (
 func (ui *ui) showManual() {
 	tv := tview.NewTextView().SetDynamicColors(true).SetScrollable(true).SetWrap(true)
 	tv.SetBorder(true).SetTitle(" manual ")
+	bg := paintColor(ui.cfg.Skin.Views.Table.Bg, "#000000")
+	fg := paintColor(ui.cfg.Skin.Views.Table.Fg, "white")
+	tv.SetBackgroundColor(bg)
+	tv.SetTextColor(fg)
+	tv.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "white"))
+	tv.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "white"))
 	tv.SetText(manualText)
 	tv.ScrollToBeginning()
+	ui.manual = tv
 	back := func() {
+		ui.manual = nil
 		ui.app.SetRoot(ui.layout, true)
 		ui.restoreBodyFocus()
 	}
@@ -18,6 +26,29 @@ func (ui *ui) showManual() {
 	tv.SetInputCapture(func(ev *tcell.EventKey) *tcell.EventKey {
 		if ev.Key() == tcell.KeyEscape {
 			back()
+			return nil
+		}
+		switch ev.Key() {
+		case tcell.KeyUp, tcell.KeyDown:
+			if paging(ev) {
+				delta := ui.manualPage()
+				if ev.Key() == tcell.KeyUp {
+					delta = -delta
+				}
+				ui.scrollManual(delta)
+				return nil
+			}
+		case tcell.KeyPgUp:
+			ui.scrollManual(-ui.manualPage())
+			return nil
+		case tcell.KeyPgDn:
+			ui.scrollManual(ui.manualPage())
+			return nil
+		case tcell.KeyCtrlB:
+			ui.scrollManual(-ui.manualPage())
+			return nil
+		case tcell.KeyCtrlF:
+			ui.scrollManual(ui.manualPage())
 			return nil
 		}
 		if ev.Key() != tcell.KeyRune {
@@ -42,6 +73,25 @@ func (ui *ui) showManual() {
 		}
 	})
 	ui.app.SetRoot(tv, true)
+}
+
+func (ui *ui) manualPage() int {
+	if ui.manual == nil {
+		return 1
+	}
+	_, _, _, h := ui.manual.GetInnerRect()
+	if h < 1 {
+		return 1
+	}
+	return h
+}
+
+func (ui *ui) scrollManual(delta int) {
+	if ui.manual == nil || delta == 0 {
+		return
+	}
+	row, col := ui.manual.GetScrollOffset()
+	ui.manual.ScrollTo(row+delta, col)
 }
 
 const manualText = `[::b]air9s manual[-]
@@ -83,7 +133,7 @@ Esc in describe returns to the list and leaves the filter. Esc after you open se
   o           cycle sort
   r           reindex
   s           stats
-  ?           this manual
+  ?           this manual. It uses the same black screen as the list. j/k scroll a line. The wheel, page keys, and ⌘↑/⌘↓ scroll a page. g/G jump. q, ?, or esc closes it
   q           quit
   j / k       down / up one line, the same as the down and up arrows, when the list or the preview is focused. In / and : they are letters
   up / down   the same one-line move, including the list while / or : is open
@@ -98,7 +148,8 @@ Describe keeps each line intact, so a long line pans sideways instead of wrappin
 AGE is always a relative age. DATE is the local date and time. Sort follows AGE.
 Each of those views draws a scrollbar on the right.
 When a line is wider than the window, a scrollbar along the bottom pans it.
-The mouse wheel scrolls the view on screen, including the menu and the footer: the list moves several rows, describe scrolls several lines.
+Hotkeys are on the top menu. The bottom of the screen is empty, except the scrollbar that pans a line wider than the window.
+The mouse wheel scrolls the view on screen, including the menu and the crumbs: the list moves several rows, describe scrolls several lines, and this manual scrolls too.
 A horizontal wheel pans. Shift with the vertical wheel pans the same way. Drag a scrollbar, or click it, to jump.
 
 [::b]Resume[-]

@@ -2,6 +2,7 @@ package discover
 
 import (
 	"database/sql"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -66,15 +67,24 @@ func readHermes(path, profile string, mt int64) ([]model.Session, error) {
 		return nil, err
 	}
 	defer db.Close()
-	rows, err := db.Query(`
+	hasConfig, err := hasColumn(db, "sessions", "model_config")
+	if err != nil {
+		return nil, err
+	}
+	q := `
 		SELECT id, coalesce(source,''), coalesce(model,''), coalesce(title,''),
 			coalesce(cwd,''), coalesce(git_branch,''), coalesce(message_count,0),
 			coalesce(input_tokens,0), coalesce(output_tokens,0),
 			coalesce(cache_read_tokens,0), coalesce(cache_write_tokens,0),
 			coalesce(reasoning_tokens,0), actual_cost_usd, estimated_cost_usd,
-			started_at, last_activity_at, ended_at
+			started_at, last_activity_at, ended_at`
+	if hasConfig {
+		q += `, coalesce(model_config,'')`
+	}
+	q += `
 		FROM sessions
-		WHERE coalesce(hidden,0) = 0 AND coalesce(archived,0) = 0`)
+		WHERE coalesce(hidden,0) = 0 AND coalesce(archived,0) = 0`
+	rows, err := db.Query(q)
 	if err != nil {
 		return nil, err
 	}
@@ -82,12 +92,16 @@ func readHermes(path, profile string, mt int64) ([]model.Session, error) {
 	var out []model.Session
 	byID := map[string]*model.Session{}
 	for rows.Next() {
-		var id, source, modelName, title, cwd, branch string
+		var id, source, modelName, title, cwd, branch, modelConfig string
 		var messages, inTok, outTok, cacheR, cacheW, reason int
 		var actual, estimated sql.NullFloat64
 		var started, last, ended sql.NullFloat64
-		if err := rows.Scan(&id, &source, &modelName, &title, &cwd, &branch, &messages,
-			&inTok, &outTok, &cacheR, &cacheW, &reason, &actual, &estimated, &started, &last, &ended); err != nil {
+		dest := []any{&id, &source, &modelName, &title, &cwd, &branch, &messages,
+			&inTok, &outTok, &cacheR, &cacheW, &reason, &actual, &estimated, &started, &last, &ended}
+		if hasConfig {
+			dest = append(dest, &modelConfig)
+		}
+		if err := rows.Scan(dest...); err != nil {
 			return nil, err
 		}
 		id = strings.TrimSpace(id)
@@ -118,6 +132,7 @@ func readHermes(path, profile string, mt int64) ([]model.Session, error) {
 			Usage: model.Usage{
 				Input: inTok, Output: outTok, CacheRead: cacheR, CacheWrite: cacheW,
 				Reasoning: reason, CostUSD: cost,
+				Context: hermesPromptTokens(modelConfig),
 			},
 		}
 		out = append(out, s)
@@ -142,6 +157,42 @@ func readHermes(path, profile string, mt int64) ([]model.Session, error) {
 		}
 	}
 	return out, nil
+}
+
+// hermesPromptTokens is the latest prompt size. Hermes stores it on the
+// session as model_config._usage_anchor.prompt_tokens. The database has no
+// context window, and cumulative input_tokens is not that prompt size.
+func hermesPromptTokens(raw string) int {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return 0
+	}
+	var doc map[string]any
+	if json.Unmarshal([]byte(raw), &doc) != nil {
+		return 0
+	}
+	anchor, _ := doc["_usage_anchor"].(map[string]any)
+	return asInt(anchor["prompt_tokens"])
+}
+
+func hasColumn(db *sql.DB, table, column string) (bool, error) {
+	rows, err := db.Query(`PRAGMA table_info(` + table + `)`)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid, notNull, pk int
+		var name, typ string
+		var dflt sql.NullString
+		if err := rows.Scan(&cid, &name, &typ, &notNull, &dflt, &pk); err != nil {
+			return false, err
+		}
+		if name == column {
+			return true, nil
+		}
+	}
+	return false, rows.Err()
 }
 
 func fillHermesSnippets(db *sql.DB, byID map[string]*model.Session) error {

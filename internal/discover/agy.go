@@ -24,7 +24,7 @@ func scanAgy(fresh func(string, int64) bool) Batch {
 		b.Err = err
 		return b
 	}
-	mt, isFresh := stamp(path, fresh)
+	mt, isFresh := stamp(path, fresh, agyConversationDBs(path)...)
 	b.Files = []File{{Path: path, Mtime: mt, Fresh: isFresh}}
 	if isFresh {
 		return b
@@ -115,6 +115,7 @@ func readAgy(path string) ([]model.Session, error) {
 		out = append(out, model.Session{
 			ID: model.ID("antigravity", id), NativeID: id, Agent: "antigravity",
 			Title: title, CWD: g.cwd, Updated: updated, Messages: g.buf.n,
+			Usage:      agyUsage(path, id),
 			SourcePath: path, CanDelete: true, DeleteMode: "rewrite",
 			Snippets: g.buf.snippets(),
 		})

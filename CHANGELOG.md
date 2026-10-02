@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Grok context and window come from signals.json. Token totals, cache, reasoning, and cost come from usage.json. Cost is costUsdTicks divided by 10^10. The percent field is not a token count.
+- Hermes context is the latest prompt size in model_config, under _usage_anchor.prompt_tokens. The database has no context window. Token totals and cost were already recorded.
+- Cursor context and window come from composerData when that row exists: contextTokensUsed, or the prompt breakdown total, over the limit. Transcripts still have no session token total.
+- Antigravity context and window come from each conversation database. Input, output, cache read, and reasoning are summed across generations. A conversation with no database stays a dash.
+- Kiro's database does not store context or token counts, so those columns stay a dash.
+- The hotkey list is only the top menu, including g and G. The bottom hotkey line is gone. A wide line still has its horizontal scrollbar.
+- The manual uses the same true-black screen as the list. j and k, the wheel, page keys, and Command-Up and Command-Down scroll it.
+- Icons were checked again against the projects that print one: Claude Code's ✳, Gemini CLI's ✦, Hermes ☤, OpenClaw's lobster, and Goose's goose. A font without ✦ may draw it as a plus. Codex, Copilot, Grok, Antigravity, Cursor, OpenCode, Junie, Jules, Cline, Aider, and Kiro publish a picture and no emoji, so those cells stay the first two letters.
+
 ## 0.2.11
 
 - Quitting a resumed agent returns to the list. air9s takes the terminal back, so the shell does not stop it with "suspended (tty output)".

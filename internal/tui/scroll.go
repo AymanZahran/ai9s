@@ -424,6 +424,18 @@ func (ui *ui) onMouse(ev *tcell.EventMouse, action tview.MouseAction) (*tcell.Ev
 	if ev == nil {
 		return nil, action
 	}
+	if ui.manual != nil {
+		switch action {
+		case tview.MouseScrollUp, tview.MouseScrollDown:
+			step := wheelRows
+			if action == tview.MouseScrollUp {
+				step = -step
+			}
+			ui.scrollManual(step)
+			return nil, action
+		}
+		return ev, action
+	}
 	x, y := ev.Position()
 	// Only the visible window owns the pointer. The hidden one keeps its old rect.
 	describe := ui.describing()
@@ -509,7 +521,7 @@ func (ui *ui) onMouse(ev *tcell.EventMouse, action tview.MouseAction) (*tcell.Ev
 }
 
 // wheelHits is true when the pointer is over the pane that should scroll.
-// The layout counts as well: a wheel on the menu, crumbs, or footer still
+// The layout counts as well: a wheel on the menu or the crumbs still
 // moves the list, which is what a full-screen pager does.
 func (ui *ui) wheelHits(x, y int, describe bool) bool {
 	if describe && ui.preview != nil && ui.preview.InRect(x, y) {
