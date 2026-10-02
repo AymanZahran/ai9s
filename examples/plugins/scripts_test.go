@@ -85,10 +85,23 @@ func TestGitStoryLogLimit(t *testing.T) {
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git is not installed")
 	}
-	repo := t.TempDir()
+	repo, err := os.MkdirTemp("", "air9s-git-story-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		removeAllRetry(t, repo)
+	})
 	git := func(args ...string) {
 		t.Helper()
-		cmd := exec.Command("git", append([]string{"-C", repo}, args...)...)
+		// maintenance.auto and gc.auto stop git from writing .git after the
+		// command returns. Go 1.27 fails the test when that races cleanup.
+		cmd := exec.Command("git", append([]string{
+			"-C", repo,
+			"-c", "maintenance.auto=false",
+			"-c", "gc.auto=0",
+			"-c", "core.fsmonitor=",
+		}, args...)...)
 		cmd.Env = append(os.Environ(),
 			"GIT_CONFIG_GLOBAL=/dev/null",
 			"GIT_CONFIG_SYSTEM=/dev/null",
@@ -101,7 +114,9 @@ func TestGitStoryLogLimit(t *testing.T) {
 			t.Fatalf("git %v: %v\n%s", args, err, out)
 		}
 	}
-	git("init")
+	git("init", "-b", "main")
+	git("config", "maintenance.auto", "false")
+	git("config", "gc.auto", "0")
 	for _, msg := range []string{"one", "two", "three"} {
 		git("commit", "--allow-empty", "-m", msg)
 	}
@@ -177,6 +192,22 @@ func TestNewTerminalStartsInDirectory(t *testing.T) {
 	}
 	if gotResolved != resolved {
 		t.Fatalf("terminal cwd %q", where)
+	}
+}
+
+func removeAllRetry(t *testing.T, dir string) {
+	t.Helper()
+	deadline := time.Now().Add(3 * time.Second)
+	var err error
+	for {
+		err = os.RemoveAll(dir)
+		if err == nil || time.Now().After(deadline) {
+			break
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	if err != nil {
+		t.Errorf("cleanup %s: %v", dir, err)
 	}
 }
 
