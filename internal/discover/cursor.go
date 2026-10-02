@@ -1,6 +1,7 @@
 package discover
 
 import (
+	"database/sql"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,6 +20,13 @@ func scanCursor(fresh func(string, int64) bool) Batch {
 		b.Err = err
 		return b
 	}
+	dbPath := cursorStateDB()
+	var db *sql.DB
+	defer func() {
+		if db != nil {
+			db.Close()
+		}
+	}()
 	b.Err = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return nil
@@ -35,12 +43,21 @@ func scanCursor(fresh func(string, int64) bool) Batch {
 		if strings.Contains(path, string(filepath.Separator)+"subagents"+string(filepath.Separator)) {
 			return nil
 		}
-		mt, isFresh := stamp(path, fresh)
+		mt, isFresh := stamp(path, fresh, dbPath)
 		b.Files = append(b.Files, File{Path: path, Mtime: mt, Fresh: isFresh})
 		if isFresh {
 			return nil
 		}
 		if s, ok := readCursor(path); ok {
+			if db == nil && dbPath != "" {
+				if st, err := os.Stat(dbPath); err == nil && !st.IsDir() {
+					db, _ = openDB(dbPath)
+				}
+			}
+			if db != nil {
+				s.Usage = cursorUsage(db, s.NativeID)
+			}
+			s.SourceMtime = mt
 			b.Sessions = append(b.Sessions, s)
 		}
 		return nil

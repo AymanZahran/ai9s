@@ -83,7 +83,7 @@ type ui struct {
 	filter          *tview.InputField
 	table           *tview.Table
 	preview         *tview.TextView
-	footer          *tview.TextView
+	manual          *tview.TextView
 	rows            []model.Session
 	agents          []string
 	warnings        []string
@@ -125,7 +125,6 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 	ui.logo = tview.NewTextView().SetDynamicColors(true).SetWrap(false)
 	ui.crumbs = tview.NewTextView().SetDynamicColors(true).SetWrap(false)
 	ui.info = tview.NewTextView().SetDynamicColors(true).SetWrap(true)
-	ui.footer = tview.NewTextView().SetDynamicColors(true).SetWrap(false)
 
 	ui.filter = tview.NewInputField().SetLabel(" / ").SetFieldWidth(0)
 	ui.filter.SetChangedFunc(func(string) { ui.reload() })
@@ -216,8 +215,7 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 		AddItem(ui.crumbs, crumbsH, 0, false).
 		AddItem(ui.info, infoH, 0, false).
 		AddItem(ui.pages, 1, 0, false).
-		AddItem(ui.body, 0, 1, true).
-		AddItem(ui.footer, 1, 0, false)
+		AddItem(ui.body, 0, 1, true)
 	ui.focused = "table"
 	ui.view = viewSessions
 	if spec, ok := viewByName(cfg.Body.DefaultView); ok {
@@ -251,11 +249,6 @@ func (ui *ui) clearFilter() {
 	}
 	ui.filter.SetText("")
 }
-
-const (
-	footerSessions = `[yellow]j/k ↑/↓[-] line   [yellow]h/l ←/→[-] pan   [yellow]⌘↑/⌘↓[-] page   [yellow]⌘←/⌘→[-] page   [yellow]d[-] describe   [yellow]ctrl-d[-] delete   [yellow]enter[-] resume   [yellow]/[-] filter   [yellow]q[-] quit`
-	footerPreview  = `[yellow]j/k ↑/↓[-] line   [yellow]h/l ←/→[-] pan   [yellow]⌘↑/⌘↓[-] page   [yellow]⌘←/⌘→[-] page   [yellow]g/G[-] top/end   [yellow]wheel[-] scroll   [yellow]esc[-] list   [yellow]ctrl-d[-] delete   [yellow]enter[-] resume   [yellow]q[-] quit`
-)
 
 // paging reports Command, Control, or Alt held with Up or Down.
 // On a Mac those are the page keys. Page Up and Page Down stay as aliases.
@@ -299,18 +292,15 @@ func (ui *ui) paintChrome() {
 		ui.table.SetTitle(viewTitle(ui.view))
 	}
 	ui.preview.SetTitle(" describe ")
-	footer := footerSessions
 	switch ui.focused {
 	case "preview":
 		ui.preview.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "white"))
 		ui.preview.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "white"))
 		ui.preview.SetTitle(" describe · scroll ")
-		footer = footerPreview
 	case "table", "filter", "command":
 		ui.table.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "white"))
 		ui.table.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "white"))
 	}
-	ui.footer.SetText(ui.paintFooter(footer))
 	ui.paintHeader()
 }
 
@@ -718,19 +708,6 @@ func (ui *ui) paintCrumbs() {
 	}
 	ui.crumbs.SetText(fmt.Sprintf(" air9s › [%s::b]%s[-] › %s    %d sessions · %d messages%s    %s",
 		active, label, filter, stats.Sessions, stats.Messages, extra, ui.counter()))
-	footer := footerSessions
-	if ui.focused == "preview" {
-		footer = footerPreview
-	}
-	ui.footer.SetText(ui.paintFooter(footer))
-}
-
-func (ui *ui) paintFooter(base string) string {
-	key := strings.TrimSpace(ui.cfg.Skin.Frame.Menu.Key)
-	if key == "" {
-		key = "white"
-	}
-	return strings.ReplaceAll(base, "[yellow]", "["+key+"]") + "   " + ui.counter()
 }
 
 func (ui *ui) paintInfo() {

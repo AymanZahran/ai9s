@@ -139,6 +139,23 @@ CREATE INDEX IF NOT EXISTS sessions_updated ON sessions(updated);
 			return err
 		}
 	}
+	// indexRevision bumps when a parser learns a field the previous index
+	// would have stored as a dash. Zeroing mtime once makes the next scan
+	// re-read those files. A later open leaves recorded mtimes alone.
+	const indexRevision = "2"
+	if _, err := s.db.Exec(`CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)`); err != nil {
+		return err
+	}
+	var rev string
+	_ = s.db.QueryRow(`SELECT value FROM meta WHERE key = 'index_revision'`).Scan(&rev)
+	if rev != indexRevision {
+		if _, err := s.db.Exec(`UPDATE files SET mtime = 0`); err != nil {
+			return err
+		}
+		if _, err := s.db.Exec(`INSERT OR REPLACE INTO meta(key, value) VALUES ('index_revision', ?)`, indexRevision); err != nil {
+			return err
+		}
+	}
 	if _, err := s.db.Exec(`CREATE VIRTUAL TABLE IF NOT EXISTS fts USING fts5(title, summary, body, session_id UNINDEXED)`); err != nil {
 		s.fts = false
 		return nil

@@ -38,10 +38,11 @@
           <tr><td><code>1</code>–<code>5</code></td><td>Sessions, providers, directories, branches, models. Branches lists the git branch and the worktree that contains the session.</td></tr>
           <tr><td>Enter</td><td>Resume the selected session. Quitting that session returns to air9s, which takes the terminal back. On a group view, apply that group as a filter and return to sessions.</td></tr>
           <tr><td><code>j</code> / <code>k</code>, up / down</td><td>Move one line when the list or the preview is focused. Up and down do the same, including while the filter or command field is open. In the manual, <code>j</code> and <code>k</code> scroll a line. In those fields they are typed letters.</td></tr>
+          <tr><td><code>g</code> / <code>G</code></td><td>Jump to the top or the end of the list, the preview, or the manual. In the filter and command fields they are typed letters.</td></tr>
           <tr><td><code>h</code> / <code>l</code>, left / right</td><td>Pan when the list or the preview is focused. In the filter and command fields, plain left and right stay in the field and these letters are typed.</td></tr>
           <tr><td>⌘↑ / ⌘↓</td><td>Move a page of rows. The list moves its selection. The preview scrolls its text. Control or Alt with up and down do the same, and so do Page Up, Page Down, Ctrl-B, and Ctrl-F, including while the filter or command field is open.</td></tr>
           <tr><td>⌘← / ⌘→</td><td>Move a page of columns, on the list and in describe, including while the filter or command field is open. Control or Alt with left and right do the same.</td></tr>
-          <tr><td>Mouse</td><td>The wheel scrolls the view on screen, including the menu and the footer. A horizontal wheel pans, and so does Shift with the vertical wheel. The list and the preview each have a scrollbar on the right, and a scrollbar along the bottom when a line is wider than the window. Drag a bar or click it to jump.</td></tr>
+          <tr><td>Mouse</td><td>The wheel scrolls the view on screen, including the menu, the crumbs, and the manual. A horizontal wheel pans, and so does Shift with the vertical wheel. The list and the preview each have a scrollbar on the right, and a scrollbar along the bottom when a line is wider than the window. Drag a bar or click it to jump. Hotkeys stay on the top menu.</td></tr>
           <tr><td><code>d</code></td><td>Describe the selected row. The list is replaced by the preview. Esc returns to the list. Tab opens and closes the same view.</td></tr>
           <tr><td><code>/</code></td><td>Edit the filter text. Up and down move the list while the field is open. ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Plain left and right stay in the field. <code>j</code> and <code>k</code> are letters here.</td></tr>
           <tr><td>Esc</td><td>From describe, return to the list and leave the filter. After opening sessions from a group, return to that group and clear the filter. On that group, or on the sessions list itself, clear the filter and stay there. In the manual or command mode, Esc goes back and leaves the filter alone.</td></tr>
@@ -52,7 +53,7 @@
           <tr><td><code>o</code></td><td>Cycle sort: recent, oldest, messages, title.</td></tr>
           <tr><td><code>r</code></td><td>Reindex.</td></tr>
           <tr><td><code>s</code></td><td>Stats.</td></tr>
-          <tr><td><code>?</code></td><td>Scrollable manual.</td></tr>
+          <tr><td><code>?</code></td><td>Manual, on the same true-black screen as the list. <code>j</code> and <code>k</code> scroll a line. The wheel, page keys, and ⌘↑ / ⌘↓ scroll a page. <code>g</code> and <code>G</code> jump. <code>q</code>, <code>?</code>, or Esc closes it.</td></tr>
           <tr><td><code>q</code></td><td>Quit.</td></tr>
         </tbody>
       </table>

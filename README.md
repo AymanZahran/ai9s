@@ -92,10 +92,11 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 | `?` | Scrollable manual. `j`/`k` scroll, `g`/`G` jump, Esc or `q` returns to the list. |
 | `q` | Quit |
 | `j` / `k`, up / down | Move one line when the list or the preview is focused. Up and down do the same, including while `/` or `:` is open. In those fields, `j` and `k` are typed letters. |
+| `g` / `G` | Jump to the top or the end of the list, the preview, or the manual. In `/` and `:` they are typed letters. |
 | `h` / `l`, left / right | Pan when the list or the preview is focused. In the filter and command fields, plain left and right stay in the field and `h`/`l` are letters. |
 | ⌘↑ / ⌘↓ | Move a page of rows. The list moves its selection. The preview scrolls its text. Control or Alt with up and down do the same, and so do Page Up, Page Down, Ctrl-B, and Ctrl-F. This also works while `/` or `:` is open. |
 | ⌘← / ⌘→ | Move a page of columns, on the list and in describe, including while `/` or `:` is open. Control or Alt with left and right do the same. |
-| Mouse | The wheel scrolls the view on screen, including the menu and the footer. A horizontal wheel pans, and so does Shift with the vertical wheel. The list and describe each have a scrollbar on the right, and a scrollbar along the bottom when a line is wider than the window. Drag a bar or click it to jump. |
+| Mouse | The wheel scrolls the view on screen, including the menu, the crumbs, and the manual. A horizontal wheel pans, and so does Shift with the vertical wheel. The list and describe each have a scrollbar on the right, and a scrollbar along the bottom when a line is wider than the window. Drag a bar or click it to jump. Hotkeys stay on the top menu. |
 
 ## Filters
 
@@ -126,7 +127,7 @@ air9s writes `config.yaml` the first time it starts, when the file is missing. S
 
 AGE is always a relative age: now, minutes, hours, days, weeks, months, or years. DATE is the local date and time. Sort follows AGE. Describe and `air9s show` always print a context line and a token line. A dash means the session file did not record that number. The rest of the line appears when it was recorded: input, output, cache read, cache write, reasoning tokens, cost, premium requests, and reasoning effort. The CTX column is the latest prompt size, or `used/window` when both are known. The TOKENS column is the session total, or input plus output when the file has no total.
 
-Claude records per-turn usage and cost. Codex records token totals and, when present, the context window. Copilot CLI records the latest prompt size, cache, reasoning effort, and premium requests. OpenCode records session token totals and the latest prompt size. Grok records reasoning effort. Hermes records token totals and cost. OpenClaw records the context window separately from the estimated prompt size. Goose and Cline record token totals, and Cline records cost. Gemini, Cursor, Antigravity, Junie, Jules, Aider, and Kiro leave the token lines empty when their files do not carry totals.
+Claude records per-turn usage and cost. Codex records token totals and, when present, the context window. Copilot CLI records the latest prompt size, cache, reasoning effort, and premium requests. OpenCode records session token totals and the latest prompt size. Grok records the latest context and window, token totals, cache, reasoning, cost, and reasoning effort. Hermes records token totals, cost, and the latest prompt size, and does not record a window. Cursor records the latest context and window when composer data has them, and does not record a session token total. Antigravity records the latest context and window and sums per-generation input, output, cache read, and reasoning. OpenClaw records the context window separately from the estimated prompt size. Goose and Cline record token totals, and Cline records cost. Gemini, Junie, Jules, Aider, and Kiro leave the token lines empty. Kiro's database does not store those numbers.
 
 ## Agents
 

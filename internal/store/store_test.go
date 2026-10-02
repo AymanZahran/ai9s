@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"os"
 	"path/filepath"
 	"testing"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/AymanZahran/air9s/internal/model"
 	"github.com/AymanZahran/air9s/internal/query"
+	_ "modernc.org/sqlite"
 )
 
 func TestIndexFileMode(t *testing.T) {
@@ -178,5 +180,40 @@ func TestSearchSubstrings(t *testing.T) {
 	}
 	if len(got) != 0 {
 		t.Fatalf("agent prefix matched %+v", got)
+	}
+}
+
+func TestRevisionRereadsSources(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "index.db")
+	db, err := sql.Open("sqlite", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`CREATE TABLE files (path TEXT PRIMARY KEY, mtime INTEGER NOT NULL, agent TEXT NOT NULL)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO files VALUES ('src', 9, 'grok')`); err != nil {
+		t.Fatal(err)
+	}
+	db.Close()
+	st, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var mt int64
+	if err := st.db.QueryRow(`SELECT mtime FROM files WHERE path = 'src'`).Scan(&mt); err != nil || mt != 0 {
+		t.Fatalf("mtime %d %v", mt, err)
+	}
+	if _, err := st.db.Exec(`UPDATE files SET mtime = 4 WHERE path = 'src'`); err != nil {
+		t.Fatal(err)
+	}
+	st.Close()
+	st, err = Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	if err := st.db.QueryRow(`SELECT mtime FROM files WHERE path = 'src'`).Scan(&mt); err != nil || mt != 4 {
+		t.Fatalf("kept mtime %d %v", mt, err)
 	}
 }

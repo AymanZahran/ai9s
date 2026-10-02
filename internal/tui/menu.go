@@ -176,6 +176,7 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 			item("d", "describe"),
 			item("ctrl-d", "delete"),
 			item("j/k ↑/↓", "line"),
+			item("g/G", "top/end"),
 			item("h/l ←/→", "pan"),
 			item("enter", enter),
 			item("⌘↑/⌘↓", "page"),

@@ -64,6 +64,9 @@ func scanKiro(fresh func(string, int64) bool) Batch {
 	return b
 }
 
+// readKiro lists conversations_v2. That JSON has the transcript and a
+// context-file budget. It does not record a prompt size or token counts,
+// so CTX and TOKENS stay a dash.
 func readKiro(path string, mt int64) ([]model.Session, error) {
 	db, err := openDB(path)
 	if err != nil {
