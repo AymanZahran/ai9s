@@ -3,8 +3,8 @@
 
 This does not change visibility. Branch protection, secret scanning, push
 protection, and GitHub Pages return an error until the repository is public
-(or the account plan includes them). Run this after both repositories are
-public and a pull request's checks have passed once:
+(or the account plan includes them). Run this after the repository is public
+and a pull request's checks have passed once:
 
     python3 scripts/public_github.py
 
@@ -18,12 +18,10 @@ import subprocess
 import sys
 
 AI9S = "AymanZahran/ai9s"
-TAP = "AymanZahran/homebrew-ai9s"
 HOMEPAGE = "https://ai9scli.io/"
 
 CHECKS = {
-    AI9S: ["audit", "go 1.25", "go stable", "govulncheck"],
-    TAP: ["formula"],
+    AI9S: ["audit", "go 1.25", "go stable", "govulncheck", "formula"],
 }
 
 
@@ -53,11 +51,9 @@ def protection_body(contexts: list[str]) -> dict:
 
 
 def repos_to_configure(visibilities: dict[str, str]) -> list[str]:
-    ready = []
-    for repo in (AI9S, TAP):
-        if visibilities.get(repo) == "public":
-            ready.append(repo)
-    return ready
+    if visibilities.get(AI9S) == "public":
+        return [AI9S]
+    return []
 
 
 def api(method: str, path: str, body: dict | None = None) -> tuple[int, str]:
@@ -145,14 +141,12 @@ def configure(repo: str) -> None:
 
 def main() -> int:
     try:
-        visibilities = {}
-        for repo in (AI9S, TAP):
-            payload = require_ok(*api("GET", f"repos/{repo}"), f"read {repo}")
-            if not isinstance(payload, dict):
-                die(f"could not read {repo}")
-            visibilities[repo] = payload.get("visibility", "")
+        payload = require_ok(*api("GET", f"repos/{AI9S}"), f"read {AI9S}")
+        if not isinstance(payload, dict):
+            die(f"could not read {AI9S}")
+        visibilities = {AI9S: payload.get("visibility", "")}
         ready = repos_to_configure(visibilities)
-        skipped = [repo for repo in (AI9S, TAP) if repo not in ready]
+        skipped = [AI9S] if AI9S not in ready else []
         for repo in ready:
             configure(repo)
         if skipped:

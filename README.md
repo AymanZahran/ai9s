@@ -23,17 +23,17 @@ Colors, the mouse, icons, read-only mode, the starting view, and plugins come fr
 ### Homebrew
 
 ```sh
-brew tap AymanZahran/ai9s
+brew tap AymanZahran/ai9s https://github.com/AymanZahran/ai9s
 brew trust aymanzahran/ai9s
 brew install ai9s
 ```
 
-The formula is in [AymanZahran/homebrew-ai9s](https://github.com/AymanZahran/homebrew-ai9s). `brew install --HEAD ai9s` builds the latest `main` once that repository can be cloned over HTTPS.
+The formula is `Formula/ai9s.rb` in this repository. `brew install --HEAD ai9s` builds the latest `main` once this repository can be cloned over HTTPS.
 
-While those repositories are private, tap over SSH, trust the tap, and export a GitHub token so Homebrew can download the release archive. Install that tagged formula. `--HEAD` cannot clone the private source repository over HTTPS.
+While this repository is private, tap over SSH, trust the tap, and export a GitHub token so Homebrew can download the release archive. Install that tagged formula. `--HEAD` cannot clone the private source repository over HTTPS.
 
 ```sh
-brew tap AymanZahran/ai9s git@github.com:AymanZahran/homebrew-ai9s.git
+brew tap AymanZahran/ai9s git@github.com:AymanZahran/ai9s.git
 brew trust aymanzahran/ai9s
 export HOMEBREW_GITHUB_API_TOKEN="$(gh auth token)"
 brew install ai9s

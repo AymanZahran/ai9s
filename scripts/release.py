@@ -9,9 +9,9 @@ commit have passed:
     make release
 
 That reads the latest vX.Y.Z tag, bumps it, and pushes an annotated tag. The
-tag push runs GoReleaser. The Homebrew formula is then committed straight to
-the tap's main. The formula keeps its private-archive download strategy and
-passes `-X` so `ai9s version` prints the tag.
+tag push runs GoReleaser. The Homebrew formula in this repository is then
+committed straight to main. The formula keeps its private-archive download
+strategy and passes `-X` so `ai9s version` prints the tag.
 
     make release VERSION=1.2.3
     make release PART=minor
@@ -244,12 +244,10 @@ def parse_args(argv: list[str]) -> tuple[str, bool, bool, bool]:
     return spec or "patch", dry, install, skip_formula
 
 
-def tap_dir() -> Path:
-    raw = os.environ.get("AI9S_TAP", "").strip()
-    path = Path(raw) if raw else ROOT.parent / "homebrew-ai9s"
-    formula = path / "Formula" / "ai9s.rb"
-    if not formula.is_file():
-        die(f"Homebrew formula not found at {formula}. Set AI9S_TAP to the tap checkout.")
+def formula_path() -> Path:
+    path = ROOT / "Formula" / "ai9s.rb"
+    if not path.is_file():
+        die(f"Homebrew formula not found at {path}")
     return path
 
 
@@ -430,11 +428,11 @@ def archive_sha(version: str) -> str:
         path.unlink(missing_ok=True)
 
 
-def publish_formula(version: str, sha256: str, tap: Path) -> None:
-    formula = tap / "Formula" / "ai9s.rb"
+def publish_formula(version: str, sha256: str) -> None:
+    formula = formula_path()
     formula.write_text(update_formula(formula.read_text(), version, sha256))
     message = f"Point the formula at ai9s {version}."
-    commit_and_push(tap, ["Formula/ai9s.rb"], message)
+    commit_and_push(ROOT, ["Formula/ai9s.rb"], message)
     print(f"formula {version} {sha256}")
 
 
@@ -451,10 +449,8 @@ def main(argv: list[str] | None = None) -> int:
     spec, dry, install, skip_formula = parse_args(sys.argv[1:] if argv is None else argv)
     try:
         require_ready_checkout(ROOT)
-        tap = None
         if not skip_formula:
-            tap = tap_dir()
-            require_ready_checkout(tap)
+            formula_path()
         current = latest_version()
         if current is not None:
             require_current_tag(current)
@@ -469,8 +465,8 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print("release notes come from the commits")
         print(f"tag v{version}")
-        if tap is not None:
-            print("formula commit on the tap main")
+        if not skip_formula:
+            print("formula commit on main")
         if dry:
             print("dry run")
             return 0
@@ -501,10 +497,10 @@ def main(argv: list[str] | None = None) -> int:
         git("tag", "-a", f"v{version}", "-m", message)
         git("push", "origin", f"v{version}")
         print(f"tag v{version}")
-        if skip_formula or tap is None:
+        if skip_formula:
             return 0
         sha256 = archive_sha(version)
-        publish_formula(version, sha256, tap)
+        publish_formula(version, sha256)
         if install:
             reinstall(run(["gh", "auth", "token"]).strip())
             print(run(["ai9s", "version"]).strip())

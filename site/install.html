@@ -29,11 +29,11 @@
     <p>ai9s is a single Go binary. It runs on macOS, Linux, and Windows. GitHub Actions tests it on Ubuntu.</p>
 
     <h2>Homebrew</h2>
-    <pre><code>brew tap AymanZahran/ai9s
+    <pre><code>brew tap AymanZahran/ai9s https://github.com/AymanZahran/ai9s
 brew trust aymanzahran/ai9s
 brew install ai9s</code></pre>
-    <p>The formula is in <a href="https://github.com/AymanZahran/homebrew-ai9s">AymanZahran/homebrew-ai9s</a>. <code>brew install --HEAD ai9s</code> builds the latest <code>main</code> once that repository can be cloned over HTTPS. While those repositories are private, tap over SSH, trust the tap, and export a GitHub token so Homebrew can download the release archive. Install that tagged formula. <code>--HEAD</code> cannot clone the private source repository over HTTPS.</p>
-    <pre><code>brew tap AymanZahran/ai9s git@github.com:AymanZahran/homebrew-ai9s.git
+    <p>The formula is <code>Formula/ai9s.rb</code> in this repository. <code>brew install --HEAD ai9s</code> builds the latest <code>main</code> once this repository can be cloned over HTTPS. While this repository is private, tap over SSH, trust the tap, and export a GitHub token so Homebrew can download the release archive. Install that tagged formula. <code>--HEAD</code> cannot clone the private source repository over HTTPS.</p>
+    <pre><code>brew tap AymanZahran/ai9s git@github.com:AymanZahran/ai9s.git
 brew trust aymanzahran/ai9s
 export HOMEBREW_GITHUB_API_TOKEN="$(gh auth token)"
 brew install ai9s</code></pre>

@@ -65,15 +65,15 @@ make release
 
 `make release` reads the latest `vX.Y.Z` tag and pushes the next annotated tag once the checks on `main` have passed. GoReleaser, in [`.github/workflows/release.yml`](.github/workflows/release.yml), builds the binaries and the GitHub Release from that tag. Nothing in the source file stores the release number. `make build` and the formula pass it with `-ldflags -X`.
 
-If `## Unreleased` has notes, the command moves them under the new version, pushes that changelog commit to `main`, waits for its checks, and then tags. It does not open a pull request. The formula update is a commit on [AymanZahran/homebrew-ai9s](https://github.com/AymanZahran/homebrew-ai9s) `main`, also with no pull request. The formula still builds the tagged source, including the private-archive download header, and passes `-X github.com/AymanZahran/ai9s/cmd.version`.
+If `## Unreleased` has notes, the command moves them under the new version, pushes that changelog commit to `main`, waits for its checks, and then tags. It does not open a pull request. The formula update is the next commit on `main`, also with no pull request. `Formula/ai9s.rb` still builds the tagged source, including the private-archive download header, and passes `-X github.com/AymanZahran/ai9s/cmd.version`.
 
 If a check fails, or GitHub reports none, the command stops and does not create the tag.
 
-`make release VERSION=1.2.3` chooses that version. `make release PART=minor` or `PART=major` bumps that component. The default bump is the patch number. `make release DRY=1` prints the version and notes and changes nothing. `make release INSTALL=1` fast-forwards the tapped formula and reinstalls it after the formula commit. `AI9S_TAP` selects the tap checkout when it is not the sibling `homebrew-ai9s` directory.
+`make release VERSION=1.2.3` chooses that version. `make release PART=minor` or `PART=major` bumps that component. The default bump is the patch number. `make release DRY=1` prints the version and notes and changes nothing. `make release INSTALL=1` fast-forwards the tapped checkout and reinstalls ai9s after the formula commit.
 
-## After the repositories are public
+## After the repository is public
 
-Branch protection, secret scanning, push protection, and GitHub Pages cannot be saved while this repository is private on the current plan. `scripts/public_github.py` turns those on for ai9s and the Homebrew tap. It does not change visibility. Run it after both repositories are public and a pull request's checks have passed once, so the check names exist:
+Branch protection, secret scanning, push protection, and GitHub Pages cannot be saved while this repository is private on the current plan. `scripts/public_github.py` turns those on. It does not change visibility. Run it after the repository is public and a pull request's checks have passed once, so the check names exist:
 
 ```sh
 python3 scripts/public_github.py

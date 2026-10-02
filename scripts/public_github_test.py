@@ -13,19 +13,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PublicGitHubTests(unittest.TestCase):
-    def test_private_repositories_are_not_configured(self):
+    def test_private_repository_is_not_configured(self):
         self.assertEqual(
-            settings.repos_to_configure(
-                {settings.AI9S: "private", settings.TAP: "private"}
-            ),
+            settings.repos_to_configure({settings.AI9S: "private"}),
             [],
         )
 
-    def test_only_a_public_repository_is_configured(self):
+    def test_public_repository_is_configured(self):
         self.assertEqual(
-            settings.repos_to_configure(
-                {settings.AI9S: "public", settings.TAP: "private"}
-            ),
+            settings.repos_to_configure({settings.AI9S: "public"}),
             [settings.AI9S],
         )
 
@@ -34,7 +30,7 @@ class PublicGitHubTests(unittest.TestCase):
         contexts = body["required_status_checks"]["contexts"]
         self.assertEqual(
             contexts,
-            ["audit", "go 1.25", "go stable", "govulncheck"],
+            ["audit", "go 1.25", "go stable", "govulncheck", "formula"],
         )
         self.assertEqual(
             [item["context"] for item in body["required_status_checks"]["checks"]],
@@ -51,6 +47,8 @@ class PublicGitHubTests(unittest.TestCase):
         self.assertIn("name: go ${{ matrix.go }}", workflow)
         self.assertIn("name: govulncheck", workflow)
         self.assertIn("name: audit", workflow)
+        self.assertIn("name: formula", workflow)
+        self.assertIn("Formula/ai9s.rb", workflow)
         self.assertIn("golang.org/x/vuln/cmd/govulncheck@v1.8.0", workflow)
 
 

@@ -96,8 +96,8 @@ class ReleaseTests(unittest.TestCase):
             "AymanZahran/ai9s",
         )
         self.assertEqual(
-            release.origin_slug("https://github.com/AymanZahran/homebrew-ai9s.git"),
-            "AymanZahran/homebrew-ai9s",
+            release.origin_slug("https://github.com/AymanZahran/ai9s.git"),
+            "AymanZahran/ai9s",
         )
         with self.assertRaises(release.ReleaseError):
             release.origin_slug("ssh://example.com/ai9s.git")
