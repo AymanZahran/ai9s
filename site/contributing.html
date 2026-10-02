@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contributing — ai9s</title>
+  <meta name="description" content="How to build, test, and add an agent adapter to ai9s.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://ai9scli.io/contributing.html">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="index.html">ai9s</a>
+    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <nav class="site-nav" aria-label="Documentation">
+      <a href="install.html">Install</a>
+      <a href="commands.html">Commands</a>
+      <a href="keys.html">Keys</a>
+      <a href="agents.html">Agents</a>
+      <a href="filters.html">Filters</a>
+      <a href="config.html">Config</a>
+      <a href="contributing.html" aria-current="page">Contributing</a>
+      <a href="https://github.com/AymanZahran/ai9s">GitHub</a>
+    </nav>
+  </header>
+  <main>
+    <h1><span class="mark" aria-hidden="true">+</span> Contributing</h1>
+    <p>Issues and pull requests are welcome. Please read the <a href="https://github.com/AymanZahran/ai9s/blob/main/CODE_OF_CONDUCT.md">code of conduct</a>. The same guide is in <a href="https://github.com/AymanZahran/ai9s/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>.</p>
+    <p class="note">Do not paste session transcripts, titles from private work, tokens, or credentials into an issue, a pull request, or a test fixture.</p>
+
+    <h2>Build and test</h2>
+    <pre><code>go test ./...
+make build
+gofmt -w .</code></pre>
+    <p>CI on Ubuntu runs <code>gofmt</code> and <code>go test -count=1 ./...</code> for Go 1.25 and for the current stable Go. It also runs <code>govulncheck</code> and scans tracked files for secrets. <code>cmd/integration_test.go</code> builds the binary and runs it against temporary fixtures. Those fixtures override every agent home, so the test does not read your sessions, and Jules is not contacted.</p>
+
+    <h2>Layout</h2>
+    <ul>
+      <li><code>main.go</code> and <code>cmd/</code> — CLI, prompts, and the integration test</li>
+      <li><code>internal/discover</code> — one scanner per agent</li>
+      <li><code>internal/store</code> — SQLite index</li>
+      <li><code>internal/query</code> — filter language</li>
+      <li><code>internal/index</code> — rebuild</li>
+      <li><code>internal/act</code> — resume and delete</li>
+      <li><code>internal/tui</code> — list, views, manual, icons</li>
+      <li><code>site</code> — this website, published by GitHub Pages</li>
+      <li><code>examples/plugins</code> — opt-in plugins. Copy a script and its yaml into the config <code>plugins/</code> directory</li>
+    </ul>
+
+    <h2>Adding an agent</h2>
+    <ol>
+      <li>Add a scanner that returns <code>discover.Batch</code>. Register it in <code>Scanners()</code>.</li>
+      <li>Point the test homes at temporary directories in <code>scan_test.go</code>, <code>index_test.go</code>, and the CLI integration environment. A missing override must not scan the developer's real store, and it must not call the network.</li>
+      <li>Teach <code>act.Plan</code> the resume command. Add a yolo flag only when that CLI documents one. Do not guess.</li>
+      <li>Enable delete only when the removal is one file, one directory inside that agent's session root, a careful rewrite, or one CLI command. Otherwise set <code>CanDelete</code> false and say why.</li>
+      <li>Add an icon that is two columns wide. Use a glyph that product prints. If it prints a name and no glyph, use the first two letters of the name.</li>
+      <li>Update the agents table in the README and on this website.</li>
+    </ol>
+
+    <h2>Pull requests</h2>
+    <p>Every feature change lands through a pull request. Merge it only after the checks on that pull request have passed. Run <code>gofmt</code> and <code>go test ./...</code> before you push. Update the docs when a command, path, or delete rule changes. Commit subjects in this repository are sentence case and end with a period. A release tag is not a pull request.</p>
+    <p>Report vulnerabilities privately. See <a href="https://github.com/AymanZahran/ai9s/blob/main/SECURITY.md">SECURITY.md</a>.</p>
+
+    <h2>Releases</h2>
+    <p>From a clean <code>main</code> whose checks have passed:</p>
+    <pre><code>make release</code></pre>
+    <p><code>make release</code> pushes the next annotated tag. GoReleaser builds the GitHub Release from that tag. The version is a link-time value, not a constant in the source. Notes under <code>## Unreleased</code> are moved into the changelog and pushed before the tag, with no pull request. The Homebrew formula commit goes straight to the tap. If a check fails, or GitHub reports none, the command does not create the tag. <code>make release VERSION=1.2.3</code> chooses the version. <code>PART=minor</code> or <code>PART=major</code> bumps that component. <code>DRY=1</code> prints the plan. <code>INSTALL=1</code> reinstalls the formula after the formula commit.</p>
+  </main>
+  <footer class="site-footer">
+    <p><a href="https://github.com/AymanZahran/ai9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/AymanZahran/ai9s/blob/main/LICENSE">MIT</a></p>
+    <p>© 2026 The ai9s authors.</p>
+  </footer>
+</body>
+</html>

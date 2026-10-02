@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Keys — ai9s</title>
+  <meta name="description" content="ai9s keyboard shortcuts for views, filtering, preview, resume, and delete.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://ai9scli.io/keys.html">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="index.html">ai9s</a>
+    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <nav class="site-nav" aria-label="Documentation">
+      <a href="install.html">Install</a>
+      <a href="commands.html">Commands</a>
+      <a href="keys.html" aria-current="page">Keys</a>
+      <a href="agents.html">Agents</a>
+      <a href="filters.html">Filters</a>
+      <a href="config.html">Config</a>
+      <a href="contributing.html">Contributing</a>
+      <a href="https://github.com/AymanZahran/ai9s">GitHub</a>
+    </nav>
+  </header>
+  <main>
+    <h1><span class="mark" aria-hidden="true">⌨</span> Keys</h1>
+    <p>The same manual is inside the program. Press <code>?</code>. <code>j</code> and <code>k</code> scroll it, <code>g</code> and <code>G</code> jump, and Esc, <code>q</code>, or <code>?</code> returns to the list.</p>
+    <p>Hotkeys are drawn in a grid at the top. View keys are the first row and the active view is bold. Actions continue on the rows under that, and installed plugin keys get rows of their own. Angle brackets mark the key, in the same style as k9s.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Key</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>1</code>–<code>5</code></td><td>Sessions, providers, directories, branches, models. Branches lists the git branch and the worktree that contains the session.</td></tr>
+          <tr><td>Enter</td><td>Resume the selected session. Quitting that session returns to ai9s, which takes the terminal back. On a group view, apply that group as a filter and return to sessions.</td></tr>
+          <tr><td><code>j</code> / <code>k</code>, up / down</td><td>Move one line when the list or the preview is focused. Up and down do the same, including while the filter or command field is open. In the manual, <code>j</code> and <code>k</code> scroll a line. In those fields they are typed letters.</td></tr>
+          <tr><td><code>g</code> / <code>G</code></td><td>Jump to the top or the end of the list, the preview, or the manual. In the filter and command fields they are typed letters.</td></tr>
+          <tr><td><code>h</code> / <code>l</code>, left / right</td><td>Pan when the list or the preview is focused. In the filter and command fields, plain left and right stay in the field and these letters are typed.</td></tr>
+          <tr><td>⌘↑ / ⌘↓</td><td>Move a page of rows. The list moves its selection. The preview scrolls its text. Control or Alt with up and down do the same, and so do Page Up, Page Down, Ctrl-B, and Ctrl-F, including while the filter or command field is open.</td></tr>
+          <tr><td>⌘← / ⌘→</td><td>Move a page of columns, on the list and in describe, including while the filter or command field is open. Control or Alt with left and right do the same.</td></tr>
+          <tr><td>Mouse</td><td>The wheel scrolls the view on screen, including the menu, the crumbs, and the manual. A horizontal wheel pans, and so does Shift with the vertical wheel. The list and the preview each have a scrollbar on the right, and a scrollbar along the bottom when a line is wider than the window. Drag a bar or click it to jump. Hotkeys stay on the top menu.</td></tr>
+          <tr><td><code>d</code></td><td>Describe the selected row. The list is replaced by the preview. Esc returns to the list. Tab opens and closes the same view.</td></tr>
+          <tr><td><code>/</code></td><td>Edit the filter text. Up and down move the list while the field is open. ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Plain left and right stay in the field. <code>j</code> and <code>k</code> are letters here.</td></tr>
+          <tr><td>Esc</td><td>From describe, return to the list and leave the filter. After opening sessions from a group, return to that group and clear the filter. On that group, or on the sessions list itself, clear the filter and stay there. In the manual or command mode, Esc goes back and leaves the filter alone.</td></tr>
+          <tr><td><code>:</code></td><td>Command mode. Type a view name or a filter token. Up and down select a row. Enter applies the highlighted row. Enter on an empty command cycles the view. Another <code>:</code> cycles the view name in the field. Esc closes it.</td></tr>
+          <tr><td>Ctrl-D</td><td>Delete, after confirmation. Sessions view only.</td></tr>
+          <tr><td><code>a</code></td><td>Cycle the <code>agent:</code> filter.</td></tr>
+          <tr><td><code>p</code></td><td>Add a <code>dir:</code> filter and focus the filter line so you can finish it.</td></tr>
+          <tr><td><code>o</code></td><td>Cycle sort: recent, oldest, messages, title.</td></tr>
+          <tr><td><code>r</code></td><td>Reindex.</td></tr>
+          <tr><td><code>s</code></td><td>Stats.</td></tr>
+          <tr><td><code>?</code></td><td>Manual, on the same true-black screen as the list. <code>j</code> and <code>k</code> scroll a line. The wheel, page keys, and ⌘↑ / ⌘↓ scroll a page. <code>g</code> and <code>G</code> jump. <code>q</code>, <code>?</code>, or Esc closes it.</td></tr>
+          <tr><td><code>q</code></td><td>Quit.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Preview</h2>
+    <p>The list is the only window until you press <code>d</code>. Describe replaces it with the preview and always shows context and token usage. <code>j</code> and <code>k</code> or up and down scroll a line. <code>h</code> and <code>l</code> or left and right pan a line that is wider than the window. ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Page Up, Page Down, Ctrl-B, and Ctrl-F scroll a page of rows. <code>g</code> and <code>G</code> jump to the top or the end. Esc returns to the list. The wheel scrolls the view on screen. A horizontal wheel, or Shift with the vertical wheel, pans. Each view has a scrollbar on the right, and a bottom scrollbar when a line is wider than the window. AGE is a relative age. DATE is the local date and time. The session list has a TOKENS column beside CTX.</p>
+
+    <h2>Group views</h2>
+    <p>Providers, directories, branches, and models group the current filtered list. The branches view has a branch column and a worktree column. The worktree is the git checkout that contains the session directory, including the main checkout and a linked worktree. Enter on a branches row filters by that branch and that checkout. Enter on another group sets the matching token and returns to sessions. A row labeled <code>(none)</code> has an empty value, so Enter leaves the filter alone, unless that branches row still has a worktree. Resume and delete stay on the sessions view. From a group view, delete tells you to switch back first.</p>
+
+    <h2>Example plugins</h2>
+    <p>Copy a pair from <code>examples/plugins</code> into the config <code>plugins/</code> directory. After a restart, <code>e</code> opens the directory, <code>c</code> copies a reference, <code>b</code> shows git status and recent commits, and <code>t</code> opens a terminal there. Those keys appear on the menu. See <a href="config.html">Config</a>.</p>
+
+    <h2>Command mode</h2>
+    <p>The table lists view names and tokens: <code>agent:</code>, <code>dir:</code>, <code>branch:</code>, <code>model:</code>, <code>date:</code>, and <code>sort:</code>. Typing narrows that list. Up and down move through that list while the field stays focused. Enter on a token with a value rewrites that token in the filter and returns to sessions. Enter on a token with no value focuses the filter so you can type the rest, the same way <code>p</code> does.</p>
+  </main>
+  <footer class="site-footer">
+    <p><a href="https://github.com/AymanZahran/ai9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/AymanZahran/ai9s/blob/main/LICENSE">MIT</a></p>
+    <p>© 2026 The ai9s authors.</p>
+  </footer>
+</body>
+</html>

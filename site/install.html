@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Install — ai9s</title>
+  <meta name="description" content="Install ai9s with Homebrew, from source, or with go install.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://ai9scli.io/install.html">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="index.html">ai9s</a>
+    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <nav class="site-nav" aria-label="Documentation">
+      <a href="install.html" aria-current="page">Install</a>
+      <a href="commands.html">Commands</a>
+      <a href="keys.html">Keys</a>
+      <a href="agents.html">Agents</a>
+      <a href="filters.html">Filters</a>
+      <a href="config.html">Config</a>
+      <a href="contributing.html">Contributing</a>
+      <a href="https://github.com/AymanZahran/ai9s">GitHub</a>
+    </nav>
+  </header>
+  <main>
+    <h1><span class="mark" aria-hidden="true">↓</span> Installation</h1>
+    <p>ai9s is a single Go binary. It runs on macOS, Linux, and Windows. GitHub Actions tests it on Ubuntu.</p>
+
+    <h2>Homebrew</h2>
+    <pre><code>brew tap AymanZahran/ai9s
+brew trust aymanzahran/ai9s
+brew install ai9s</code></pre>
+    <p>The formula is in <a href="https://github.com/AymanZahran/homebrew-ai9s">AymanZahran/homebrew-ai9s</a>. <code>brew install --HEAD ai9s</code> builds the latest <code>main</code> once that repository can be cloned over HTTPS. While those repositories are private, tap over SSH, trust the tap, and export a GitHub token so Homebrew can download the release archive. Install that tagged formula. <code>--HEAD</code> cannot clone the private source repository over HTTPS.</p>
+    <pre><code>brew tap AymanZahran/ai9s git@github.com:AymanZahran/homebrew-ai9s.git
+brew trust aymanzahran/ai9s
+export HOMEBREW_GITHUB_API_TOKEN="$(gh auth token)"
+brew install ai9s</code></pre>
+
+    <h2>From source</h2>
+    <pre><code>git clone https://github.com/AymanZahran/ai9s.git
+cd ai9s
+make install</code></pre>
+    <p><code>make install</code> copies the binary to <code>~/.local/bin</code>. Put that directory on your <code>PATH</code>, or choose another prefix:</p>
+    <pre><code>make install PREFIX=/usr/local</code></pre>
+
+    <h2>With the Go tool</h2>
+    <p>Requires Go 1.25 or newer.</p>
+    <pre><code>go install github.com/AymanZahran/ai9s@latest</code></pre>
+    <p>The binary lands in <code>$(go env GOPATH)/bin</code>.</p>
+
+    <h2>Check</h2>
+    <pre><code>ai9s version
+ai9s</code></pre>
+    <p>With no arguments, ai9s indexes and opens the list. A non-terminal stdin prints a short message and exits, so scripts should call <code>ai9s search</code> or <code>ai9s stats</code>.</p>
+
+    <h2>Terminal</h2>
+    <p>Use a terminal with 256 colors. On Unix-like systems:</p>
+    <pre><code>export TERM=xterm-256color</code></pre>
+    <p>The list fills the window. <code>d</code> describes the selected row in that same window, and Esc returns to the list. The mouse wheel scrolls the view on screen. Resume needs the agent CLI on <code>PATH</code>. ai9s does not embed those CLIs.</p>
+
+    <h2>Where the index lives</h2>
+    <p>The cache database is the first of these that applies:</p>
+    <ol>
+      <li><code>$AI9S_CACHE_DIR/index.db</code></li>
+      <li><code>$XDG_CACHE_HOME/ai9s/index.db</code></li>
+      <li><code>~/.cache/ai9s/index.db</code></li>
+    </ol>
+    <p>It stores titles, metadata, and short excerpts, not a second full copy of every log. Delete that directory any time. The next run rebuilds it from the agent files.</p>
+  </main>
+  <footer class="site-footer">
+    <p><a href="https://github.com/AymanZahran/ai9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/AymanZahran/ai9s/blob/main/LICENSE">MIT</a></p>
+    <p>© 2026 The ai9s authors.</p>
+  </footer>
+</body>
+</html>

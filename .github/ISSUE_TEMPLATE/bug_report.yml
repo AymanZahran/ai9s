@@ -1,0 +1,43 @@
+name: Bug report
+description: Indexing, the list, resume, or delete did something wrong
+title: ""
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste session transcripts, titles from private work, tokens, or credentials.
+  - type: input
+    id: version
+    attributes:
+      label: ai9s version
+      description: Output of `ai9s version`
+      placeholder: ai9s 0.2.8
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS and Go version
+      placeholder: macOS 15, go 1.25
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent
+      description: Which agent store is involved, if any
+      placeholder: claude
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Commands you ran and what ai9s printed. Redact paths if they identify a private project.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true

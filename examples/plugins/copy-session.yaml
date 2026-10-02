@@ -1,0 +1,11 @@
+# Copy a reference for the selected row. Edit args to keep the fields you paste.
+# One argument is copied as a single string. Several arguments are tab-separated.
+shortCut: c
+description: copy
+scopes: [sessions, directories]
+command: copy-session
+args:
+  - $AGENT
+  - $NATIVE_ID
+  - $TITLE
+  - $CWD

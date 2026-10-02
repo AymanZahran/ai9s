@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Config — ai9s</title>
+  <meta name="description" content="ai9s config.yaml, skins, and plugins.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://ai9scli.io/config.html">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="index.html">ai9s</a>
+    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <nav class="site-nav" aria-label="Documentation">
+      <a href="install.html">Install</a>
+      <a href="commands.html">Commands</a>
+      <a href="keys.html">Keys</a>
+      <a href="agents.html">Agents</a>
+      <a href="filters.html">Filters</a>
+      <a href="config.html" aria-current="page">Config</a>
+      <a href="contributing.html">Contributing</a>
+      <a href="https://github.com/AymanZahran/ai9s">GitHub</a>
+    </nav>
+  </header>
+  <main>
+    <h1><span class="mark" aria-hidden="true">⚙</span> Config</h1>
+    <p>The config directory is <code>$AI9S_CONFIG_DIR</code>, or <code>$XDG_CONFIG_HOME/ai9s</code>, or <code>~/.config/ai9s</code>. The first <code>ai9s</code> or <code>ai9s info</code> creates <code>config.yaml</code>, <code>skins/stock.yaml</code>, and <code>plugins.yaml</code> when they are missing, and does not overwrite them later. <code>ai9s info</code> prints the paths.</p>
+
+    <pre><code>ai9s:
+  refreshRate: 0
+  readOnly: false
+  defaultView: sessions
+  noExitOnCtrlC: false
+  ui:
+    enableMouse: true
+    headless: false
+    logoless: false
+    noIcons: false
+    skin: ""
+    limit: 400</code></pre>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Key</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>refreshRate</code></td><td>Seconds between reindexes. <code>0</code> reindexes only when you press <code>r</code>.</td></tr>
+          <tr><td><code>readOnly</code></td><td>When true, Ctrl-D does not delete. <code>d</code> still opens describe.</td></tr>
+          <tr><td><code>defaultView</code></td><td><code>sessions</code>, <code>providers</code>, <code>directories</code>, <code>branches</code>, or <code>models</code>.</td></tr>
+          <tr><td><code>noExitOnCtrlC</code></td><td>When true, Ctrl-C does not quit.</td></tr>
+          <tr><td><code>ui.enableMouse</code></td><td>The mouse is on unless this is false.</td></tr>
+          <tr><td><code>ui.headless</code></td><td>Hide the menu, the crumbs, and the logo.</td></tr>
+          <tr><td><code>ui.logoless</code></td><td>Hide the logo beside the menu.</td></tr>
+          <tr><td><code>ui.noIcons</code></td><td>Hide agent icons. The column keeps its width.</td></tr>
+          <tr><td><code>ui.skin</code></td><td>A file in <code>skins/</code>, without <code>.yaml</code>. Empty uses the built-in skin. <code>AI9S_SKIN</code> overrides this.</td></tr>
+          <tr><td><code>ui.limit</code></td><td>Maximum rows in the table. The ceiling is 2000. The default is 400.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Skins</h2>
+    <p>A skin file uses the same shape as the stock skin: body, frame, and table colors. Values are tcell names such as <code>white</code>, or <code>#RRGGBB</code>. The name <code>default</code> keeps the terminal color. <code>agents</code> maps an agent id to a color and overrides the built-in mark.</p>
+    <p>With <code>ui.skin</code> empty, the screen is true black (<code>#000000</code>) with the k9s accent colors: blue text, an orange logo, a blue border, fuchsia view keys, and an aqua selection bar. The crumbs line stays black. The named <code>stock</code> skin is the older white-on-black palette. A skin file replaces any field it sets, and the rest stay on the built-in palette. The shortcut bar is a grid: view keys on the first row, actions beneath them, and a further row for each group of plugin keys you have installed.</p>
+
+    <h2>Plugins</h2>
+    <p>A plugin runs a program. It does not get a shell. Put the list in <code>plugins.yaml</code>, or one plugin in each file under <code>plugins/</code>. <code>background: true</code> starts it without leaving the UI and discards its output. Otherwise ai9s suspends the screen, the way resume does.</p>
+    <pre><code>plugins:
+  edit:
+    shortCut: Ctrl-E
+    description: open the directory
+    scopes: [sessions]
+    command: code
+    args:
+      - $CWD</code></pre>
+    <p>The selected row provides <code>$ID</code>, <code>$NATIVE_ID</code>, <code>$AGENT</code>, <code>$CWD</code>, <code>$TITLE</code>, <code>$BRANCH</code>, <code>$MODEL</code>, <code>$FILTER</code>, and <code>$NAME</code>. Scopes are <code>sessions</code>, <code>providers</code>, <code>directories</code>, <code>branches</code>, <code>models</code>, or <code>all</code>. An empty scope list means every view. A command with no slash is looked up on <code>PATH</code>, then in the config <code>plugins/</code> directory, so a script can sit beside its yaml file.</p>
+    <h2>Example plugins</h2>
+    <p>The repo ships four plugins under <code>examples/plugins</code>. They stay off until you copy the script and the yaml file into <code>plugins/</code> and restart. The new keys are drawn on the menu. Each environment value is one program name, not a shell line.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Key</th><th>Plugin</th><th>Action</th><th>Configure</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>e</code></td><td><code>open-editor</code></td><td>Open <code>$CWD</code>. A terminal editor uses this screen. A GUI editor returns to the list.</td><td><code>AI9S_EDITOR</code></td></tr>
+          <tr><td><code>c</code></td><td><code>copy-session</code></td><td>Copy the arguments to the clipboard. Several arguments are separated by tabs.</td><td>the <code>args</code> list</td></tr>
+          <tr><td><code>b</code></td><td><code>git-story</code></td><td>Show git status and recent commits, then wait for enter.</td><td><code>AI9S_GIT_LOG</code>, default 20</td></tr>
+          <tr><td><code>t</code></td><td><code>new-terminal</code></td><td>Open a terminal in <code>$CWD</code> without resuming the agent.</td><td><code>AI9S_TERMINAL</code>. Empty uses Terminal.app on macOS.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>These shortcuts are reserved and ignored: <code>q</code>, <code>/</code>, <code>:</code>, <code>d</code>, <code>r</code>, <code>s</code>, <code>?</code>, <code>a</code>, <code>p</code>, <code>o</code>, <code>j</code>, <code>k</code>, <code>h</code>, <code>l</code>, <code>g</code>, <code>G</code>, <code>1</code>–<code>5</code>, Enter, Tab, Esc, and Ctrl-D. A repeated shortcut is ignored too. ai9s prints the reason on startup and in the header.</p>
+    <p>Do not put tokens or other secrets in these files. A new <code>config.yaml</code> is mode <code>0600</code>.</p>
+  </main>
+  <footer class="site-footer">
+    <p><a href="https://github.com/AymanZahran/ai9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/AymanZahran/ai9s/blob/main/LICENSE">MIT</a></p>
+    <p>© 2026 The ai9s authors.</p>
+  </footer>
+</body>
+</html>

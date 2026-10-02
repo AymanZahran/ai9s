@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" role="img" aria-label="ai9s">
+  <polygon points="281.95,109.49 210.51,38.05 109.49,38.05 38.05,109.49 38.05,210.51 109.49,281.95 210.51,281.95 281.95,210.51" fill="#2A55F4"/>
+  <g transform="translate(160 160) scale(0.92)">
+    <circle r="90" fill="none" stroke="#fff" stroke-width="8"/>
+    <g fill="#fff" transform="rotate(15)">
+      <path d="M0,-16 C22,-18 24,-50 10,-76 C6,-84 -2,-84 -6,-76 C-16,-48 -8,-24 0,-16 Z"/>
+      <path d="M0,-16 C22,-18 24,-50 10,-76 C6,-84 -2,-84 -6,-76 C-16,-48 -8,-24 0,-16 Z" transform="rotate(90)"/>
+      <path d="M0,-16 C22,-18 24,-50 10,-76 C6,-84 -2,-84 -6,-76 C-16,-48 -8,-24 0,-16 Z" transform="rotate(180)"/>
+      <path d="M0,-16 C22,-18 24,-50 10,-76 C6,-84 -2,-84 -6,-76 C-16,-48 -8,-24 0,-16 Z" transform="rotate(270)"/>
+    </g>
+    <circle r="16" fill="#fff"/>
+    <circle r="6.5" fill="#2A55F4"/>
+  </g>
+</svg>
