@@ -36,10 +36,10 @@ func TestNewAgentStores(t *testing.T) {
 			cache_read_tokens INTEGER, cache_write_tokens INTEGER, reasoning_tokens INTEGER,
 			actual_cost_usd REAL, estimated_cost_usd REAL,
 			started_at REAL, last_activity_at REAL, ended_at REAL,
-			hidden INTEGER, archived INTEGER)`,
+			hidden INTEGER, archived INTEGER, model_config TEXT)`,
 		`CREATE TABLE messages (id INTEGER PRIMARY KEY, session_id TEXT, role TEXT, content TEXT, active INTEGER)`,
-		`INSERT INTO sessions VALUES ('home-1','cli','opus','desk','/work/h','main',2,10,4,0,0,0,1.5,0.2,0,1700000000,0,0,0)`,
-		`INSERT INTO sessions VALUES ('hidden-1','cli','opus','nope','/work/h','',1,0,0,0,0,0,0,0,0,1700000000,0,1,0)`,
+		`INSERT INTO sessions VALUES ('home-1','cli','opus','desk','/work/h','main',2,10,4,0,0,0,1.5,0.2,0,1700000000,0,0,0,'{"_usage_anchor":{"prompt_tokens":4248}}')`,
+		`INSERT INTO sessions VALUES ('hidden-1','cli','opus','nope','/work/h','',1,0,0,0,0,0,0,0,0,1700000000,0,1,0,'')`,
 		`INSERT INTO messages VALUES (1,'home-1','user','hello from hermes',1)`,
 	)
 	execDB(t, filepath.Join(root, "hermes", "profiles", "work", "state.db"),
@@ -66,6 +66,18 @@ func TestNewAgentStores(t *testing.T) {
 	}
 	if got["home-1"] != "/work/h" || got["p:work:abc:def"] != "/work/p" || len(got) != 2 {
 		t.Fatalf("hermes ids %+v", got)
+	}
+	for _, s := range hermes.Sessions {
+		switch s.NativeID {
+		case "home-1":
+			if s.Usage.Context != 4248 || s.Usage.Input != 10 || s.Usage.Window != 0 {
+				t.Fatalf("hermes usage %+v", s.Usage)
+			}
+		case "p:work:abc:def":
+			if s.Usage.Context != 0 {
+				t.Fatalf("profile context %d", s.Usage.Context)
+			}
+		}
 	}
 
 	entry := `{"sessionId":"uuid-1","displayName":"Ship","model":"gpt","modelProvider":"openai","systemPromptReport":{"workspaceDir":"/work/app"},"inputTokens":3,"outputTokens":1,"contextTokens":200000,"contextBudgetStatus":{"estimatedPromptTokens":500}}`
@@ -180,7 +192,7 @@ func TestNewAgentStores(t *testing.T) {
 		t.Fatalf("kiro %+v %v", kiro.Sessions, kiro.Err)
 	}
 	if kiro.Sessions[0].NativeID != "conv-1" || kiro.Sessions[0].CWD != "/work/kiro" || !kiro.Sessions[0].CanDelete || kiro.Sessions[0].DeleteMode != "kiro" ||
-		kiro.Sessions[0].Title != "rename the button" {
-		t.Fatalf("kiro session %+v", kiro.Sessions[0])
+		kiro.Sessions[0].Title != "rename the button" || !kiro.Sessions[0].Usage.Empty() {
+		t.Fatalf("kiro session agent=%s cwd=%s delete=%s usage=%+v", kiro.Sessions[0].Agent, kiro.Sessions[0].CWD, kiro.Sessions[0].DeleteMode, kiro.Sessions[0].Usage)
 	}
 }

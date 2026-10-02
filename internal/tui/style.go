@@ -40,8 +40,6 @@ func (ui *ui) applySkin() {
 	ui.logo.SetBackgroundColor(bg)
 	ui.info.SetBackgroundColor(bg)
 	ui.info.SetTextColor(fg)
-	ui.footer.SetBackgroundColor(bg)
-	ui.footer.SetTextColor(fg)
 	ui.crumbs.SetBackgroundColor(crumbsBg)
 	ui.crumbs.SetTextColor(crumbsFg)
 	ui.table.SetBackgroundColor(tableBg)

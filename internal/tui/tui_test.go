@@ -46,8 +46,8 @@ func TestTabScrollsPreview(t *testing.T) {
 	if app.GetFocus() != ui.table {
 		t.Fatalf("focus started on %T", app.GetFocus())
 	}
-	if !strings.Contains(ui.footer.GetText(true), "describe") {
-		t.Fatalf("session footer %q", ui.footer.GetText(true))
+	if header := ui.header.GetText(true); !strings.Contains(header, "describe") || !strings.Contains(header, "g/G") {
+		t.Fatalf("session menu %q", header)
 	}
 	if name, _ := ui.body.GetFrontPage(); name != "list" {
 		t.Fatalf("front page %s", name)
@@ -63,8 +63,8 @@ func TestTabScrollsPreview(t *testing.T) {
 	if ui.preview.GetTitle() != " describe · scroll " {
 		t.Fatalf("title %q", ui.preview.GetTitle())
 	}
-	if !strings.Contains(ui.footer.GetText(true), "scroll") {
-		t.Fatalf("preview footer %q", ui.footer.GetText(true))
+	if !strings.Contains(ui.header.GetText(true), "scroll") {
+		t.Fatalf("preview menu %q", ui.header.GetText(true))
 	}
 
 	send(ui.preview, tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone))
@@ -145,8 +145,11 @@ func TestViewsCommandAndManual(t *testing.T) {
 	ui := newUI(app, st, config.Defaults())
 	ui.reload()
 	app.SetRoot(ui.layout, false)
-	if !strings.Contains(ui.header.GetText(true), "<1>") || !strings.Contains(ui.header.GetText(true), "manual") {
-		t.Fatalf("header %q", ui.header.GetText(true))
+	headerText := ui.header.GetText(true)
+	for _, want := range []string{"<1>", "manual", "j/k ↑/↓", "h/l ←/→", "⌘↑/⌘↓", "⌘←/⌘→"} {
+		if !strings.Contains(headerText, want) {
+			t.Fatalf("header missing %q in %q", want, headerText)
+		}
 	}
 
 	send(ui.table, tcell.NewEventKey(tcell.KeyRune, '2', tcell.ModNone))
@@ -174,6 +177,34 @@ func TestViewsCommandAndManual(t *testing.T) {
 	}
 	if !strings.Contains(manual.GetText(true), "kiro-cli") || !strings.Contains(manual.GetText(true), "AIR9S_JULES_REMOTE") {
 		t.Fatal("manual is missing agent help")
+	}
+	if manual.GetBackgroundColor() != tcell.GetColor("#000000") {
+		t.Fatalf("manual background %v", manual.GetBackgroundColor())
+	}
+	send(manual, tcell.NewEventKey(tcell.KeyRune, 'j', tcell.ModNone))
+	row, _ := manual.GetScrollOffset()
+	if row < 1 {
+		t.Fatalf("manual j row %d", row)
+	}
+	send(manual, tcell.NewEventKey(tcell.KeyPgDn, 0, tcell.ModNone))
+	paged, _ := manual.GetScrollOffset()
+	if paged <= row {
+		t.Fatalf("manual page %d from %d", paged, row)
+	}
+	ui.onMouse(tcell.NewEventMouse(2, 2, tcell.WheelDown, tcell.ModNone), tview.MouseScrollDown)
+	wheeled, _ := manual.GetScrollOffset()
+	if wheeled < paged+wheelRows {
+		t.Fatalf("manual wheel %d from %d", wheeled, paged)
+	}
+	send(manual, tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModMeta))
+	cmd, _ := manual.GetScrollOffset()
+	if cmd <= wheeled {
+		t.Fatalf("manual cmd-down %d from %d", cmd, wheeled)
+	}
+	send(manual, tcell.NewEventKey(tcell.KeyRune, 'g', tcell.ModNone))
+	top, _ := manual.GetScrollOffset()
+	if top != 0 {
+		t.Fatalf("manual g row %d", top)
 	}
 	send(manual, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
 	if app.GetFocus() != ui.table {
@@ -284,8 +315,8 @@ func TestEscapeReturnsToDrilledView(t *testing.T) {
 	if strings.Contains(info, "claude") || strings.Contains(header, "yolo") || strings.Contains(header, "pgup") {
 		t.Fatalf("chrome info %q header %q", info, header)
 	}
-	if !strings.Contains(ui.table.GetCell(0, 0).Text, "TOKENS") {
-		t.Fatalf("header %q", ui.table.GetCell(0, 0).Text)
+	if !strings.Contains(ui.lines[0], "AGE") || !strings.Contains(ui.lines[0], "DATE") || !strings.Contains(ui.lines[0], "TOKENS") {
+		t.Fatalf("header %q", ui.lines[0])
 	}
 }
 
@@ -690,6 +721,59 @@ func TestHorizontalScroll(t *testing.T) {
 	if col != hScrollStep {
 		t.Fatalf("preview wheel col %d", col)
 	}
+	page := ui.pageStepX()
+	if page <= hScrollStep {
+		t.Fatalf("preview page %d", page)
+	}
+	if got := ui.previewKeys(tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModMeta)); got != nil {
+		t.Fatal("preview page key was not consumed")
+	}
+	_, col = ui.preview.GetScrollOffset()
+	if col != hScrollStep+page {
+		t.Fatalf("preview cmd-right col %d page %d", col, page)
+	}
+	send(ui.preview, tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModCtrl))
+	_, col = ui.preview.GetScrollOffset()
+	if col != hScrollStep {
+		t.Fatalf("preview ctrl-left col %d", col)
+	}
+
+	ui.body.SwitchToPage("list")
+	ui.setListX(0)
+	page = ui.pageStepX()
+	if page != ui.listViewW || page <= hScrollStep {
+		t.Fatalf("list page %d view %d", page, ui.listViewW)
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModMeta))
+	if ui.listX != page {
+		t.Fatalf("cmd-right x %d page %d", ui.listX, page)
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModAlt))
+	if ui.listX != 0 {
+		t.Fatalf("alt-left x %d", ui.listX)
+	}
+	ui.app.SetFocus(ui.filter)
+	send(ui.filter, tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone))
+	if ui.listX != 0 || app.GetFocus() != ui.filter {
+		t.Fatalf("filter left x %d focus %T", ui.listX, app.GetFocus())
+	}
+	send(ui.filter, tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModMeta))
+	if ui.listX != page {
+		t.Fatalf("filter cmd-right x %d page %d", ui.listX, page)
+	}
+	if !strings.Contains(ui.lines[0], "AGE") || !strings.Contains(ui.lines[0], "DATE") {
+		t.Fatalf("columns %q", ui.lines[0])
+	}
+	if !strings.Contains(ui.lines[1], absDate(sess.Updated)) {
+		t.Fatalf("row %q date %q", ui.lines[1], absDate(sess.Updated))
+	}
+	sel, _ := ui.table.GetSelection()
+	ui.setListX(0)
+	ui.onMouse(tcell.NewEventMouse(4, 4, tcell.WheelDown, tcell.ModShift), tview.MouseScrollDown)
+	got, _ := ui.table.GetSelection()
+	if ui.listX != hScrollStep || got != sel {
+		t.Fatalf("shift-wheel x %d row %d want %d", ui.listX, got, sel)
+	}
 }
 
 func TestBranchesShowWorktrees(t *testing.T) {
@@ -772,7 +856,7 @@ func TestBranchesShowWorktrees(t *testing.T) {
 		lines = append(lines, cell.Text)
 	}
 	joined := strings.Join(lines, "\n")
-	if !strings.Contains(lines[0], "BRANCH") || !strings.Contains(lines[0], "WORKTREE") {
+	if !strings.Contains(lines[0], "BRANCH") || !strings.Contains(lines[0], "WORKTREE") || !strings.Contains(lines[0], "AGE") || !strings.Contains(lines[0], "DATE") {
 		t.Fatalf("header %q", lines[0])
 	}
 	if !strings.Contains(joined, repo) || !strings.Contains(joined, wt) || !strings.Contains(joined, "-") {

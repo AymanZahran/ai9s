@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+## 0.2.12
+
+- Grok context and window come from signals.json. Token totals, cache, reasoning, and cost come from usage.json. Cost is costUsdTicks divided by 10^10. The percent field is not a token count.
+- Hermes context is the latest prompt size in model_config, under _usage_anchor.prompt_tokens. The database has no context window. Token totals and cost were already recorded.
+- Cursor context and window come from composerData when that row exists: contextTokensUsed, or the prompt breakdown total, over the limit. Transcripts still have no session token total.
+- Antigravity context and window come from each conversation database. Input, output, cache read, and reasoning are summed across generations. A conversation with no database stays a dash.
+- Kiro's database does not store context or token counts, so those columns stay a dash.
+- The hotkey list is only the top menu, including g and G. The bottom hotkey line is gone. A wide line still has its horizontal scrollbar.
+- The manual uses the same true-black screen as the list. j and k, the wheel, page keys, and Command-Up and Command-Down scroll it.
+- Icons were checked again against the projects that print one: Claude Code's ✳, Gemini CLI's ✦, Hermes ☤, OpenClaw's lobster, and Goose's goose. A font without ✦ may draw it as a plus. Codex, Copilot, Grok, Antigravity, Cursor, OpenCode, Junie, Jules, Cline, Aider, and Kiro publish a picture and no emoji, so those cells stay the first two letters.
+
+## 0.2.11
+
+- Quitting a resumed agent returns to the list. air9s takes the terminal back, so the shell does not stop it with "suspended (tty output)".
+- The mouse wheel scrolls. Mouse tracking is buttons and drags, so a terminal that keeps the wheel when all-motion tracking is on still delivers it. Shift with the wheel pans sideways.
+- Command-Left and Command-Right move a page of columns, the same way Command-Up and Command-Down move a page of rows. Control or Alt with those arrows do the same, including while the filter or command field is open.
+- AGE stays a relative age. DATE is the local date and time. Sort still follows AGE.
+- The hotkey bar shows `j`/`k` with the up and down arrows, and `h`/`l` with the left and right arrows.
+- Icons use a character that product prints: Claude Code's ✳, Gemini CLI's ✦, Hermes ☤, OpenClaw's lobster, and Goose's goose. A font without ✦ may draw it as a plus. Agents that publish a picture and no emoji use the first two letters of the name.
+
 ## 0.2.10
 
 - Left and right pan by the same column width the table paints, so a cut-off title moves and the bottom scrollbar appears when a line is wider than the window.

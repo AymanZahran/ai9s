@@ -10,6 +10,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/AymanZahran/air9s/internal/act"
 	"github.com/AymanZahran/air9s/internal/config"
 	"github.com/AymanZahran/air9s/internal/model"
 	"github.com/gdamore/tcell/v2"
@@ -117,8 +118,10 @@ func (ui *ui) execPlugin(p config.Plugin) {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	ui.app.Suspend(func() {
-		err = cmd.Run()
+	act.WithTerminal(func() {
+		ui.app.Suspend(func() {
+			err = cmd.Run()
+		})
 	})
 	if err != nil {
 		ui.alert(p.Name + ": " + err.Error())

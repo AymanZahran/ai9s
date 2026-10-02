@@ -15,6 +15,7 @@ func isolate(t *testing.T) string {
 	t.Setenv("COPILOT_HOME", filepath.Join(root, "copilot"))
 	t.Setenv("GEMINI_HOME", filepath.Join(root, "gemini"))
 	t.Setenv("CURSOR_HOME", filepath.Join(root, "cursor"))
+	t.Setenv("CURSOR_STATE_DB", filepath.Join(root, "missing-cursor.vscdb"))
 	t.Setenv("OPENCODE_DB", filepath.Join(root, "missing.db"))
 	t.Setenv("HERMES_HOME", filepath.Join(root, "hermes"))
 	t.Setenv("OPENCLAW_HOME", filepath.Join(root, "openclaw"))

@@ -12,12 +12,12 @@ import (
 
 // runAttached starts cmd in its own process group and, when stdin is a
 // terminal, makes that group the foreground. Ctrl-C then goes to the agent.
-// The previous foreground group is restored before returning, so a caller
-// that suspended a TUI can draw again.
+// This process group is put back in the foreground before returning.
+// Callers that draw after this returns must already be inside WithTerminal,
+// because the restore and the following write both raise SIGTTOU otherwise.
 func runAttached(cmd *exec.Cmd) error {
 	fd := int(os.Stdin.Fd())
-	old, err := unix.IoctlGetInt(fd, unix.TIOCGPGRP)
-	if err != nil {
+	if _, err := unix.IoctlGetInt(fd, unix.TIOCGPGRP); err != nil {
 		return cmd.Run()
 	}
 	if cmd.SysProcAttr == nil {
@@ -32,6 +32,6 @@ func runAttached(cmd *exec.Cmd) error {
 		_ = unix.IoctlSetPointerInt(fd, unix.TIOCSPGRP, pgid)
 	}
 	waitErr := cmd.Wait()
-	_ = unix.IoctlSetPointerInt(fd, unix.TIOCSPGRP, old)
+	reclaimForeground()
 	return waitErr
 }

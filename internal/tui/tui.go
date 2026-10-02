@@ -39,6 +39,13 @@ func Run(st *store.Store) (*act.Command, error) {
 		})
 	}
 	app.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
+		// Button and drag tracking deliver the wheel and scrollbar drags.
+		// All-motion tracking (1003) makes some terminals, including Warp,
+		// keep the wheel instead of forwarding it.
+		if cfg.Mouse() && !ui.mouseArmed {
+			screen.EnableMouse(tcell.MouseButtonEvents | tcell.MouseDragEvents)
+			ui.mouseArmed = true
+		}
 		w, _ := screen.Size()
 		logo := 10
 		if ui.cfg.Body.UI.Logoless {
@@ -76,7 +83,7 @@ type ui struct {
 	filter          *tview.InputField
 	table           *tview.Table
 	preview         *tview.TextView
-	footer          *tview.TextView
+	manual          *tview.TextView
 	rows            []model.Session
 	agents          []string
 	warnings        []string
@@ -109,6 +116,7 @@ type ui struct {
 	listViewW       int
 	scrollDrag      string
 	scrollGrab      int
+	mouseArmed      bool
 }
 
 func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
@@ -117,7 +125,6 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 	ui.logo = tview.NewTextView().SetDynamicColors(true).SetWrap(false)
 	ui.crumbs = tview.NewTextView().SetDynamicColors(true).SetWrap(false)
 	ui.info = tview.NewTextView().SetDynamicColors(true).SetWrap(true)
-	ui.footer = tview.NewTextView().SetDynamicColors(true).SetWrap(false)
 
 	ui.filter = tview.NewInputField().SetLabel(" / ").SetFieldWidth(0)
 	ui.filter.SetChangedFunc(func(string) { ui.reload() })
@@ -208,8 +215,7 @@ func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
 		AddItem(ui.crumbs, crumbsH, 0, false).
 		AddItem(ui.info, infoH, 0, false).
 		AddItem(ui.pages, 1, 0, false).
-		AddItem(ui.body, 0, 1, true).
-		AddItem(ui.footer, 1, 0, false)
+		AddItem(ui.body, 0, 1, true)
 	ui.focused = "table"
 	ui.view = viewSessions
 	if spec, ok := viewByName(cfg.Body.DefaultView); ok {
@@ -244,11 +250,6 @@ func (ui *ui) clearFilter() {
 	ui.filter.SetText("")
 }
 
-const (
-	footerSessions = `[yellow]d[-] describe   [yellow]ctrl-d[-] delete   [yellow]h/l[-] pan   [yellow]⌘↑/⌘↓[-] page   [yellow]enter[-] resume   [yellow]/[-] filter   [yellow]a[-] agent   [yellow]p[-] directory   [yellow]o[-] sort   [yellow]r[-] reindex   [yellow]s[-] stats   [yellow]?[-] help   [yellow]q[-] quit`
-	footerPreview  = `[yellow]j/k[-] line   [yellow]h/l[-] pan   [yellow]⌘↑/⌘↓[-] page   [yellow]g/G[-] top/end   [yellow]wheel[-] scroll   [yellow]esc[-] list   [yellow]ctrl-d[-] delete   [yellow]enter[-] resume   [yellow]q[-] quit`
-)
-
 // paging reports Command, Control, or Alt held with Up or Down.
 // On a Mac those are the page keys. Page Up and Page Down stay as aliases.
 func paging(ev *tcell.EventKey) bool {
@@ -256,6 +257,30 @@ func paging(ev *tcell.EventKey) bool {
 		return false
 	}
 	return ev.Modifiers()&(tcell.ModMeta|tcell.ModCtrl|tcell.ModAlt) != 0
+}
+
+// pagingX is the horizontal pair of paging: Command, Control, or Alt with Left or Right.
+func pagingX(ev *tcell.EventKey) bool {
+	if ev.Key() != tcell.KeyLeft && ev.Key() != tcell.KeyRight {
+		return false
+	}
+	return ev.Modifiers()&(tcell.ModMeta|tcell.ModCtrl|tcell.ModAlt) != 0
+}
+
+// pageStepX is one screen of columns, the horizontal match for a vertical page.
+func (ui *ui) pageStepX() int {
+	w := ui.listViewW
+	if ui.describing() {
+		if ui.previewXBar.h > 1 {
+			w = ui.previewXBar.h
+		} else if _, _, iw, _ := ui.preview.GetInnerRect(); iw > 1 {
+			w = iw
+		}
+	}
+	if w < 8 {
+		w = 32
+	}
+	return w
 }
 
 func (ui *ui) paintChrome() {
@@ -267,23 +292,21 @@ func (ui *ui) paintChrome() {
 		ui.table.SetTitle(viewTitle(ui.view))
 	}
 	ui.preview.SetTitle(" describe ")
-	footer := footerSessions
 	switch ui.focused {
 	case "preview":
 		ui.preview.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "white"))
 		ui.preview.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "white"))
 		ui.preview.SetTitle(" describe · scroll ")
-		footer = footerPreview
 	case "table", "filter", "command":
 		ui.table.SetBorderColor(paintColor(ui.cfg.Skin.Frame.Border.Focus, "white"))
 		ui.table.SetTitleColor(paintColor(ui.cfg.Skin.Frame.Title.Highlight, "white"))
 	}
-	ui.footer.SetText(ui.paintFooter(footer))
 	ui.paintHeader()
 }
 
 // forwardListMotion lets the list move while / or : still has the cursor.
-// Letters, including j and k, and left/right/home/end stay in the field.
+// Letters, including j and k, and plain left/right/home/end stay in the field.
+// Command, Control, or Alt with an arrow pages the list.
 func (ui *ui) forwardListMotion(ev *tcell.EventKey) *tcell.EventKey {
 	if paging(ev) {
 		delta := ui.listPage()
@@ -294,6 +317,14 @@ func (ui *ui) forwardListMotion(ev *tcell.EventKey) *tcell.EventKey {
 			ui.commandMoved = true
 		}
 		ui.moveSelection(delta)
+		return nil
+	}
+	if pagingX(ev) {
+		delta := ui.pageStepX()
+		if ev.Key() == tcell.KeyLeft {
+			delta = -delta
+		}
+		ui.scrollListX(delta)
 		return nil
 	}
 	switch ev.Key() {
@@ -413,11 +444,15 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyPgDn:
 		ui.moveSelection(ui.listPage())
 		return nil
-	case tcell.KeyLeft:
-		ui.scrollListX(-hScrollStep)
-		return nil
-	case tcell.KeyRight:
-		ui.scrollListX(hScrollStep)
+	case tcell.KeyLeft, tcell.KeyRight:
+		delta := hScrollStep
+		if pagingX(ev) {
+			delta = ui.pageStepX()
+		}
+		if ev.Key() == tcell.KeyLeft {
+			delta = -delta
+		}
+		ui.scrollListX(delta)
 		return nil
 	}
 	if ev.Key() != tcell.KeyRune {
@@ -503,11 +538,15 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyPgDn:
 		ui.scrollPreview(ui.previewPage())
 		return nil
-	case tcell.KeyLeft:
-		ui.scrollPreviewX(-hScrollStep)
-		return nil
-	case tcell.KeyRight:
-		ui.scrollPreviewX(hScrollStep)
+	case tcell.KeyLeft, tcell.KeyRight:
+		delta := hScrollStep
+		if pagingX(ev) {
+			delta = ui.pageStepX()
+		}
+		if ev.Key() == tcell.KeyLeft {
+			delta = -delta
+		}
+		ui.scrollPreviewX(delta)
 		return nil
 	case tcell.KeyCtrlB, tcell.KeyCtrlF:
 		if ui.tryPlugin(ev) {
@@ -669,19 +708,6 @@ func (ui *ui) paintCrumbs() {
 	}
 	ui.crumbs.SetText(fmt.Sprintf(" air9s › [%s::b]%s[-] › %s    %d sessions · %d messages%s    %s",
 		active, label, filter, stats.Sessions, stats.Messages, extra, ui.counter()))
-	footer := footerSessions
-	if ui.focused == "preview" {
-		footer = footerPreview
-	}
-	ui.footer.SetText(ui.paintFooter(footer))
-}
-
-func (ui *ui) paintFooter(base string) string {
-	key := strings.TrimSpace(ui.cfg.Skin.Frame.Menu.Key)
-	if key == "" {
-		key = "white"
-	}
-	return strings.ReplaceAll(base, "[yellow]", "["+key+"]") + "   " + ui.counter()
 }
 
 func (ui *ui) paintInfo() {
@@ -799,9 +825,15 @@ func (ui *ui) resumeSelected() {
 		return
 	}
 	var runErr error
-	if ui.app.Suspend(func() {
-		runErr = cmd.Run()
-	}) {
+	suspended := false
+	// Hold the terminal across Resume. Command.Run restores the foreground
+	// group and then drops its own hold; the screen writes on the next line.
+	act.WithTerminal(func() {
+		suspended = ui.app.Suspend(func() {
+			runErr = cmd.Run()
+		})
+	})
+	if suspended {
 		if runErr != nil {
 			var exitErr *exec.ExitError
 			if !errors.As(runErr, &exitErr) {

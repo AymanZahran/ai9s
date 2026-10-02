@@ -134,9 +134,10 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 	switch ui.focused {
 	case "preview":
 		return []menuHint{
-			item("j/k", "line"),
-			item("h/l", "pan"),
+			item("j/k ↑/↓", "line"),
+			item("h/l ←/→", "pan"),
 			item("⌘↑/⌘↓", "page"),
+			item("⌘←/⌘→", "page"),
 			item("g/G", "top/end"),
 			item("wheel", "scroll"),
 			item("esc", "list"),
@@ -147,16 +148,18 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 		}
 	case "filter":
 		return []menuHint{
-			item("up/down", "select"),
+			item("↑/↓", "select"),
 			item("⌘↑/⌘↓", "page"),
+			item("⌘←/⌘→", "page"),
 			item("enter", "list"),
 			item("esc", "back"),
 			item("tab", "describe"),
 		}
 	case "command":
 		return []menuHint{
-			item("up/down", "select"),
+			item("↑/↓", "select"),
 			item("⌘↑/⌘↓", "page"),
+			item("⌘←/⌘→", "page"),
 			item("enter", "apply"),
 			item(":", "next"),
 			item("esc", "cancel"),
@@ -172,9 +175,12 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 			item(":", "command"),
 			item("d", "describe"),
 			item("ctrl-d", "delete"),
-			item("h/l", "pan"),
+			item("j/k ↑/↓", "line"),
+			item("g/G", "top/end"),
+			item("h/l ←/→", "pan"),
 			item("enter", enter),
 			item("⌘↑/⌘↓", "page"),
+			item("⌘←/⌘→", "page"),
 			item("wheel", "scroll"),
 			item("esc", "back"),
 			item("a", "agent"),
