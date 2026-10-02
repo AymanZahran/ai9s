@@ -7,7 +7,7 @@
   <meta name="description" content="How to build, test, and add an agent adapter to air9s.">
   <link rel="stylesheet" href="css/main.css">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="canonical" href="https://aymanzahran.github.io/air9s/contributing.html">
+  <link rel="canonical" href="https://air9scli.io/contributing.html">
 </head>
 <body>
   <header class="site-header">
@@ -33,11 +33,11 @@
     <pre><code>go test ./...
 make build
 gofmt -w .</code></pre>
-    <p>CI on Ubuntu runs <code>gofmt</code> and <code>go test -count=1 ./...</code> for Go 1.25 and for the current stable Go. It also runs <code>govulncheck</code> and scans tracked files for secrets. <code>cmd/air9s/integration_test.go</code> builds the binary and runs it against temporary fixtures. Those fixtures override every agent home, so the test does not read your sessions, and Jules is not contacted.</p>
+    <p>CI on Ubuntu runs <code>gofmt</code> and <code>go test -count=1 ./...</code> for Go 1.25 and for the current stable Go. It also runs <code>govulncheck</code> and scans tracked files for secrets. <code>cmd/integration_test.go</code> builds the binary and runs it against temporary fixtures. Those fixtures override every agent home, so the test does not read your sessions, and Jules is not contacted.</p>
 
     <h2>Layout</h2>
     <ul>
-      <li><code>cmd/air9s</code> — CLI, prompts, and the integration test</li>
+      <li><code>main.go</code> and <code>cmd/</code> — CLI, prompts, and the integration test</li>
       <li><code>internal/discover</code> — one scanner per agent</li>
       <li><code>internal/store</code> — SQLite index</li>
       <li><code>internal/query</code> — filter language</li>
@@ -59,13 +59,13 @@ gofmt -w .</code></pre>
     </ol>
 
     <h2>Pull requests</h2>
-    <p>Every change lands through a pull request, including a version bump and a Homebrew formula update. Merge it only after the checks on that pull request have passed. Run <code>gofmt</code> and <code>go test ./...</code> before you push. Update the docs when a command, path, or delete rule changes. Commit subjects in this repository are sentence case and end with a period.</p>
+    <p>Every feature change lands through a pull request. Merge it only after the checks on that pull request have passed. Run <code>gofmt</code> and <code>go test ./...</code> before you push. Update the docs when a command, path, or delete rule changes. Commit subjects in this repository are sentence case and end with a period. A release tag is not a pull request.</p>
     <p>Report vulnerabilities privately. See <a href="https://github.com/AymanZahran/air9s/blob/main/SECURITY.md">SECURITY.md</a>.</p>
 
     <h2>Releases</h2>
-    <p>Write the notes under <code>## Unreleased</code> in <code>CHANGELOG.md</code> and merge that commit first. From a clean <code>main</code>:</p>
+    <p>From a clean <code>main</code> whose checks have passed:</p>
     <pre><code>make release</code></pre>
-    <p><code>make release</code> opens a pull request for the version bump, waits until the checks pass, and merges it. Only then does it create the annotated tag and the GitHub Release. The Homebrew formula gets its own pull request and merges the same way. If a check fails, or GitHub reports none, the command stops and leaves the pull request open. <code>make release VERSION=1.2.3</code> chooses the version. <code>PART=minor</code> or <code>PART=major</code> bumps that component. <code>DRY=1</code> prints the plan. <code>INSTALL=1</code> reinstalls the formula after the formula pull request merges. The version constant is what <code>air9s version</code> prints.</p>
+    <p><code>make release</code> pushes the next annotated tag. GoReleaser builds the GitHub Release from that tag. The version is a link-time value, not a constant in the source. Notes under <code>## Unreleased</code> are moved into the changelog and pushed before the tag, with no pull request. The Homebrew formula commit goes straight to the tap. If a check fails, or GitHub reports none, the command does not create the tag. <code>make release VERSION=1.2.3</code> chooses the version. <code>PART=minor</code> or <code>PART=major</code> bumps that component. <code>DRY=1</code> prints the plan. <code>INSTALL=1</code> reinstalls the formula after the formula commit.</p>
   </main>
   <footer class="site-footer">
     <p><a href="https://github.com/AymanZahran/air9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/AymanZahran/air9s/blob/main/LICENSE">MIT</a></p>

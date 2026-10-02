@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"encoding/json"
@@ -17,34 +17,47 @@ import (
 	"github.com/AymanZahran/air9s/internal/tui"
 )
 
-const version = "0.2.12"
+// version, commit, and date are set with -ldflags -X at build time.
+// A build without those flags prints dev, the same way k9s does.
+var (
+	version = "dev"
+	commit  = "dev"
+	date    = "dev"
+)
 
-func main() {
+// Execute runs the air9s command and exits.
+func Execute() {
+	os.Exit(dispatch())
+}
+
+func dispatch() int {
 	if len(os.Args) < 2 {
-		os.Exit(runTUI())
+		return runTUI()
 	}
 	switch os.Args[1] {
 	case "index":
-		os.Exit(cmdIndex(os.Args[2:]))
+		return cmdIndex(os.Args[2:])
 	case "stats":
-		os.Exit(cmdStats(os.Args[2:]))
+		return cmdStats(os.Args[2:])
 	case "search":
-		os.Exit(cmdSearch(os.Args[2:]))
+		return cmdSearch(os.Args[2:])
 	case "show":
-		os.Exit(cmdShow(os.Args[2:]))
+		return cmdShow(os.Args[2:])
 	case "resume":
-		os.Exit(cmdResume(os.Args[2:]))
+		return cmdResume(os.Args[2:])
 	case "delete":
-		os.Exit(cmdDelete(os.Args[2:]))
+		return cmdDelete(os.Args[2:])
 	case "info":
-		os.Exit(cmdInfo())
+		return cmdInfo()
 	case "version", "--version", "-v":
 		fmt.Println("air9s", version)
+		return 0
 	case "help", "--help", "-h":
 		usage()
+		return 0
 	default:
 		usage()
-		os.Exit(2)
+		return 2
 	}
 }
 
@@ -132,6 +145,9 @@ func cmdInfo() int {
 	if cfg.Body.ReadOnly {
 		readOnly = "yes"
 	}
+	fmt.Printf("version   %s\n", version)
+	fmt.Printf("commit    %s\n", commit)
+	fmt.Printf("built     %s\n", date)
 	fmt.Printf("config    %s\n", cfg.Path)
 	fmt.Printf("cache     %s\n", cache)
 	fmt.Printf("skin      %s\n", cfg.SkinName)

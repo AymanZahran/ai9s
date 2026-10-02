@@ -23,9 +23,8 @@ CHANGELOG = """# Changelog
 
 FORMULA = """  url "https://github.com/AymanZahran/air9s/archive/refs/tags/v0.2.8.tar.gz", using: Air9sDownloadStrategy
   sha256 "a37e16606e06b281045380f95f0ab103d27e1840d626099323f945b474ca0f53"
+    system "go", "build", *std_go_args, "./cmd/air9s"
 """
-
-SOURCE = 'package main\n\nconst version = "0.2.8"\n'
 
 
 class ReleaseTests(unittest.TestCase):
@@ -57,10 +56,9 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaises(release.ReleaseError):
             release.splice_changelog(empty, "0.2.9")
 
-    def test_version_const_round_trip(self):
-        self.assertEqual(release.parse_version(SOURCE), "0.2.8")
-        updated = release.write_version(SOURCE, "0.2.9")
-        self.assertEqual(release.parse_version(updated), "0.2.9")
+    def test_empty_unreleased_notes_are_blank(self):
+        empty = "# Changelog\n\n## Unreleased\n\n## 0.2.8\n\n- old\n"
+        self.assertEqual(release.unreleased_notes(empty), "")
 
     def test_formula_pins_the_new_archive(self):
         sha = "b" * 64
@@ -68,6 +66,9 @@ class ReleaseTests(unittest.TestCase):
         self.assertIn("refs/tags/v0.2.9.tar.gz", updated)
         self.assertIn(f'sha256 "{sha}"', updated)
         self.assertNotIn("v0.2.8", updated)
+        self.assertIn("cmd.version=#{version}", updated)
+        self.assertIn('"."', updated)
+        self.assertNotIn("./cmd/air9s", updated)
 
     def test_formula_rejects_a_short_hash(self):
         with self.assertRaises(release.ReleaseError):
@@ -93,16 +94,6 @@ class ReleaseTests(unittest.TestCase):
         )
         with self.assertRaises(release.ReleaseError):
             release.origin_slug("ssh://example.com/air9s.git")
-
-    def test_branch_names_and_pull_request_text(self):
-        self.assertEqual(release.release_branch("0.2.9"), "release/0.2.9")
-        self.assertEqual(release.formula_branch("0.2.9"), "formula/air9s-0.2.9")
-        body = release.release_pr_body("- Notes.\n")
-        self.assertIn("- Notes.", body)
-        self.assertIn("checks pass", body)
-        formula = release.formula_pr_body("0.2.9", "ab" * 32)
-        self.assertIn("air9s 0.2.9", formula)
-        self.assertIn("ab" * 32, formula)
 
     def test_checks_merge_only_when_one_passed_and_none_failed(self):
         self.assertEqual(release.checks_decision([]), "wait")

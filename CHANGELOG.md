@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- A release is an annotated tag. GoReleaser builds the GitHub Release, and the version is passed with -ldflags instead of a constant in the source. The command is still `main.go`, with the CLI in `cmd/`. The site is aimed at air9scli.io.
+
 ## 0.2.12
 
 - Grok context and window come from signals.json. Token totals, cache, reasoning, and cost come from usage.json. Cost is costUsdTicks divided by 10^10. The percent field is not a token count.

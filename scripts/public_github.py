@@ -19,7 +19,7 @@ import sys
 
 AIR9S = "AymanZahran/air9s"
 TAP = "AymanZahran/homebrew-air9s"
-HOMEPAGE = "https://aymanzahran.github.io/air9s/"
+HOMEPAGE = "https://air9scli.io/"
 
 CHECKS = {
     AIR9S: ["audit", "go 1.25", "go stable", "govulncheck"],

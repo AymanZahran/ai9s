@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"bytes"
@@ -24,6 +24,11 @@ import (
 var bin string
 
 func TestMain(m *testing.M) {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		fmt.Fprintln(os.Stderr, "caller")
+		os.Exit(1)
+	}
 	dir, err := os.MkdirTemp("", "air9s-bin")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -32,6 +37,7 @@ func TestMain(m *testing.M) {
 	defer os.RemoveAll(dir)
 	bin = filepath.Join(dir, "air9s")
 	cmd := exec.Command("go", "build", "-o", bin, ".")
+	cmd.Dir = filepath.Dir(filepath.Dir(file))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

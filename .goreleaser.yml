@@ -1,0 +1,46 @@
+version: 2
+
+project_name: air9s
+
+before:
+  hooks:
+    - go mod download
+
+release:
+  prerelease: false
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/AymanZahran/air9s/cmd.version={{ trimPrefix "v" .Version }}
+      - -s -w -X github.com/AymanZahran/air9s/cmd.commit={{ .ShortCommit }}
+      - -s -w -X github.com/AymanZahran/air9s/cmd.date={{ .Date }}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}amd64
+      {{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        formats: ["zip"]
+
+checksum:
+  name_template: checksums.sha256
+
+snapshot:
+  version_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
