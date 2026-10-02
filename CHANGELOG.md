@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.12
+
 - Grok context and window come from signals.json. Token totals, cache, reasoning, and cost come from usage.json. Cost is costUsdTicks divided by 10^10. The percent field is not a token count.
 - Hermes context is the latest prompt size in model_config, under _usage_anchor.prompt_tokens. The database has no context window. Token totals and cost were already recorded.
 - Cursor context and window come from composerData when that row exists: contextTokensUsed, or the prompt breakdown total, over the limit. Transcripts still have no session token total.
