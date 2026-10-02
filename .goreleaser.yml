@@ -15,9 +15,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X github.com/AymanZahran/air9s/cmd.version={{ trimPrefix "v" .Version }}
-      - -s -w -X github.com/AymanZahran/air9s/cmd.commit={{ .ShortCommit }}
-      - -s -w -X github.com/AymanZahran/air9s/cmd.date={{ .Date }}
+      - -s -w -X github.com/AymanZahran/air9s/cmd.version={{ trimPrefix "v" .Version }} -X github.com/AymanZahran/air9s/cmd.commit={{ .ShortCommit }} -X github.com/AymanZahran/air9s/cmd.date={{ .Date }}
     goos:
       - linux
       - darwin
