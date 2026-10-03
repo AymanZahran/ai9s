@@ -3,13 +3,13 @@ package discover
 import (
 	"database/sql"
 	"encoding/json"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/AymanZahran/ai9s/internal/model"
+	"github.com/AymanZahran/ai9s/internal/sqliteuri"
 	_ "modernc.org/sqlite"
 )
 
@@ -57,8 +57,7 @@ func scanOpenCode(fresh func(string, int64) bool) Batch {
 }
 
 func readOpenCode(path string, mt int64) ([]model.Session, error) {
-	u := url.URL{Scheme: "file", Path: path, RawQuery: "mode=ro&_pragma=busy_timeout(3000)"}
-	db, err := sql.Open("sqlite", u.String())
+	db, err := sql.Open("sqlite", sqliteuri.Path(path, "mode=ro&_pragma=busy_timeout(3000)"))
 	if err != nil {
 		return nil, err
 	}

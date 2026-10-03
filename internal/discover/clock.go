@@ -2,17 +2,16 @@ package discover
 
 import (
 	"database/sql"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/AymanZahran/ai9s/internal/sqliteuri"
 	_ "modernc.org/sqlite"
 )
 
 func openDB(path string) (*sql.DB, error) {
-	u := url.URL{Scheme: "file", Path: path, RawQuery: "mode=ro&_pragma=busy_timeout(3000)"}
-	db, err := sql.Open("sqlite", u.String())
+	db, err := sql.Open("sqlite", sqliteuri.Path(path, "mode=ro&_pragma=busy_timeout(3000)"))
 	if err != nil {
 		return nil, err
 	}

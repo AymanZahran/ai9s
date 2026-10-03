@@ -16,6 +16,7 @@ import (
 func TestLaunchScope(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
 	proj := filepath.Join(home, "proj")
 	if err := os.Mkdir(proj, 0o755); err != nil {
 		t.Fatal(err)
@@ -27,10 +28,10 @@ func TestLaunchScope(t *testing.T) {
 	}
 	t.Chdir(proj)
 	display, roots = launchScope()
-	if display != proj {
+	if !sameDir(display, proj) {
 		t.Fatalf("display %q", display)
 	}
-	if len(roots) == 0 || roots[0] != proj {
+	if len(roots) == 0 || !sameDir(roots[0], proj) {
 		t.Fatalf("roots %v", roots)
 	}
 }

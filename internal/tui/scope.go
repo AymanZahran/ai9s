@@ -53,8 +53,13 @@ func sameDir(a, b string) bool {
 	if a == b {
 		return true
 	}
-	if runtime.GOOS == "darwin" || runtime.GOOS == "windows" {
-		return strings.EqualFold(a, b)
+	if (runtime.GOOS == "darwin" || runtime.GOOS == "windows") && strings.EqualFold(a, b) {
+		return true
 	}
-	return false
+	ia, err1 := os.Stat(a)
+	ib, err2 := os.Stat(b)
+	if err1 != nil || err2 != nil {
+		return false
+	}
+	return os.SameFile(ia, ib)
 }

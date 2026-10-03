@@ -1,6 +1,8 @@
 package query
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -22,16 +24,21 @@ func TestParse(t *testing.T) {
 }
 
 func TestParsePartialAndHome(t *testing.T) {
-	t.Setenv("HOME", "/Users/ada")
+	home := filepath.Join(t.TempDir(), "ada")
+	if err := os.MkdirAll(home, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
 	empty := Parse("agent:")
 	if empty.Agent != "" || empty.Text != "" {
 		t.Fatalf("empty token %+v", empty)
 	}
 	got := Parse(`agent:clau dir:~/work ~/notes`)
-	if got.Agent != "clau" || got.Dir != "/Users/ada/work" {
+	if got.Agent != "clau" || got.Dir != home+"/work" {
 		t.Fatalf("fields %+v", got)
 	}
-	if !strings.Contains(got.Text, "/Users/ada/notes") {
+	if !strings.Contains(got.Text, home+"/notes") {
 		t.Fatalf("text %q", got.Text)
 	}
 	bogus := Parse("sort:bogus date:nope")

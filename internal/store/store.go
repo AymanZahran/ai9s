@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/AymanZahran/ai9s/internal/model"
 	"github.com/AymanZahran/ai9s/internal/query"
+	"github.com/AymanZahran/ai9s/internal/sqliteuri"
 	_ "modernc.org/sqlite"
 )
 
@@ -75,8 +75,7 @@ func Open(path string) (*Store, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return nil, err
 	}
-	u := url.URL{Scheme: "file", Path: path, RawQuery: "_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"}
-	db, err := sql.Open("sqlite", u.String())
+	db, err := sql.Open("sqlite", sqliteuri.Path(path, "_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"))
 	if err != nil {
 		return nil, err
 	}
