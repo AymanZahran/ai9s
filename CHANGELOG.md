@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.1
+
 - Install instructions use the public tap URL.
 - Branch protection sends the status-check names GitHub still accepts.
 - The README and the website show the interface, drawn from example sessions.
