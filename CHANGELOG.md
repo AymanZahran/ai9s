@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Install instructions use the public tap URL.
+- Branch protection sends the status-check names GitHub still accepts.
 
 ## 1.0.0
 

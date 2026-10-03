@@ -34,12 +34,11 @@ def die(message: str) -> None:
 
 
 def protection_body(contexts: list[str]) -> dict:
-    names = list(contexts)
+    # GitHub rejects a body that sets both contexts and checks.
     return {
         "required_status_checks": {
             "strict": True,
-            "contexts": names,
-            "checks": [{"context": name} for name in names],
+            "contexts": list(contexts),
         },
         "enforce_admins": True,
         "required_pull_request_reviews": None,
