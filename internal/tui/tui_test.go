@@ -503,7 +503,8 @@ func TestPageAndScrollbar(t *testing.T) {
 	if ui.listBar.h < 2 {
 		t.Fatalf("list bar %+v", ui.listBar)
 	}
-	r, _, _, _ := screen.GetContent(ui.listBar.x, ui.listBar.y)
+	text, _, _ := screen.Get(ui.listBar.x, ui.listBar.y)
+	r := primaryRune(text)
 	if r != '┃' && r != '│' {
 		t.Fatalf("list bar rune %q", r)
 	}
@@ -648,7 +649,8 @@ func TestHorizontalScroll(t *testing.T) {
 	if ui.listWide <= ui.listViewW || ui.listX != 0 || ui.listXBar.h < 2 {
 		t.Fatalf("wide %d view %d x %d bar %+v", ui.listWide, ui.listViewW, ui.listX, ui.listXBar)
 	}
-	r, _, _, _ := screen.GetContent(ui.listXBar.x, ui.listXBar.y)
+	text, _, _ := screen.Get(ui.listXBar.x, ui.listXBar.y)
+	r := primaryRune(text)
 	if r != '─' && r != '━' {
 		t.Fatalf("bottom bar rune %q", string(r))
 	}
@@ -932,15 +934,22 @@ func waitUI(t *testing.T, app *tview.Application, cond func() bool) {
 	t.Fatal("timed out waiting for the interface")
 }
 
+func primaryRune(text string) rune {
+	for _, r := range text {
+		if r != 0 {
+			return r
+		}
+	}
+	return ' '
+}
+
 func screenText(screen tcell.SimulationScreen) string {
 	w, h := screen.Size()
 	var b strings.Builder
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
-			r, _, _, _ := screen.GetContent(x, y)
-			if r == 0 {
-				r = ' '
-			}
+			text, _, _ := screen.Get(x, y)
+			r := primaryRune(text)
 			b.WriteRune(r)
 		}
 		b.WriteByte('\n')

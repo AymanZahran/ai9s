@@ -663,6 +663,9 @@ func main() {
 		t.Fatal(err)
 	}
 
+	if runtime.GOOS == "windows" {
+		return
+	}
 	if _, err := exec.LookPath("sh"); err != nil {
 		t.Skip(err)
 	}

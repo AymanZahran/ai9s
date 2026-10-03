@@ -16,7 +16,7 @@ help:
 	@echo "install  install to PREFIX/bin (default ~/.local/bin)"
 	@echo "test     go test ./... and the release, audit, and settings tests"
 	@echo "fmt      gofmt -w ."
-	@echo "release  tag the next version after checks pass (VERSION=, PART=minor|major, INSTALL=1, DRY=1)"
+	@echo "release  open pull requests for the changelog and the formula, then tag (VERSION=, PART=minor|major, INSTALL=1, DRY=1)"
 
 build:
 	go build -trimpath -ldflags "$(LDFLAGS)" -o ai9s .

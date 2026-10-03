@@ -439,7 +439,7 @@ func confirm(s model.Session) bool {
 	}
 	fmt.Printf("Delete %s (%s)? Type %s to confirm: ", tui.VisibleLine(s.Title), tui.VisibleLine(s.ID), tui.VisibleLine(s.NativeID))
 	var line string
-	fmt.Scanln(&line)
+	_, _ = fmt.Scanln(&line)
 	return strings.TrimSpace(line) == s.NativeID
 }
 

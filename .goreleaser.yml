@@ -37,6 +37,16 @@ archives:
 checksum:
   name_template: checksums.sha256
 
+signs:
+  - cmd: cosign
+    signature: "${artifact}.sigstore.json"
+    args:
+      - sign-blob
+      - --bundle=${signature}
+      - ${artifact}
+      - --yes
+    artifacts: checksum
+
 snapshot:
   version_template: "{{ .Tag }}-next"
 

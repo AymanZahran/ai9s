@@ -18,6 +18,44 @@ The interface follows the k9s screen: a menu of hotkeys, a crumbs bar (`ai9s ›
 
 Colors, the mouse, icons, read-only mode, the starting view, and plugins come from `~/.config/ai9s/config.yaml` (or `$AI9S_CONFIG_DIR`, or `$XDG_CONFIG_HOME/ai9s`). `ai9s info` prints the paths.
 
+## Interface
+
+These pictures are the real interface, drawn from example sessions.
+
+<p align="center">
+  <img src="site/assets/shots/sessions.png" alt="Session list. The rows are example sessions." width="960">
+</p>
+
+`d` replaces the list with describe. NAME stays whole. A long directory keeps its ending.
+
+<p align="center">
+  <img src="site/assets/shots/describe.png" alt="Describe view for an example session, including context and tokens." width="960">
+</p>
+
+`3` groups by directory. `:` opens the command line. `?` opens the manual. `u` shows usage for the selected session.
+
+<p align="center">
+  <img src="site/assets/shots/directories.png" alt="Directories view. A long path keeps its ending." width="960">
+</p>
+
+<p align="center">
+  <img src="site/assets/shots/command.png" alt="Command line with view and filter suggestions." width="960">
+</p>
+
+<p align="center">
+  <img src="site/assets/shots/manual.png" alt="The scrollable manual." width="960">
+</p>
+
+<p align="center">
+  <img src="site/assets/shots/usage.png" alt="Usage for the selected example session." width="960">
+</p>
+
+Plugins add their own row of keys. The four examples are `e` edit, `c` copy, `b` git, and `t` shell.
+
+<p align="center">
+  <img src="site/assets/shots/plugins.png" alt="Session list with the example plugin keys on the menu." width="960">
+</p>
+
 ## Install
 
 Install release 1.0.0. It is the supported release.
@@ -180,11 +218,11 @@ go test ./...
 make build
 ```
 
-GitHub Actions runs that test suite on Ubuntu for the Go version in `go.mod` and for the current stable Go. `cmd/integration_test.go` builds the binary and runs `index`, `search`, `show`, `resume --print`, and `delete` against temporary fixtures. The fixtures override every agent home, so the test does not read a developer's real sessions, and Jules is not contacted. A missing `gofmt` diff fails the same workflow.
+GitHub Actions runs that test suite on Ubuntu for Go 1.25 and for the current stable Go, and on macOS and Windows. `cmd/integration_test.go` builds the binary and runs `index`, `search`, `show`, `resume --print`, and `delete` against temporary fixtures. The fixtures override every agent home, so the test does not read a developer's real sessions, and Jules is not contacted. A missing `gofmt` diff fails the same workflow. `golangci-lint` runs as its own job.
 
 The documentation site lives in [`site/`](site/) and is published with GitHub Pages from [`.github/workflows/pages.yml`](.github/workflows/pages.yml). The site is aimed at [ai9scli.io](https://ai9scli.io/). See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request, and [SECURITY.md](SECURITY.md) for private vulnerability reports.
 
-`ai9s version` prints the version baked in at build time. A local `make build` uses the current git tag. A release is an annotated tag: `make release` pushes `vX.Y.Z` after the checks on `main` have passed, and GoReleaser builds the GitHub Release. It does not open a pull request. `make release VERSION=1.2.3` chooses the version. `PART=minor` or `PART=major` bumps that component. Put notes under `## Unreleased` in [CHANGELOG.md](CHANGELOG.md) first when you want them in the changelog; otherwise the release notes are the commits.
+`ai9s version` prints the version baked in at build time. A local `make build` uses the current git tag. A release is an annotated tag. `make release` opens a pull request for the changelog when `## Unreleased` has notes, waits for the checks, squash-merges it, and then pushes `vX.Y.Z`. GoReleaser builds the GitHub Release, and from that tag onward Cosign signs the checksum file. The formula update is a second pull request. `make release VERSION=1.2.3` chooses the version. `PART=minor` or `PART=major` bumps that component. Put notes under `## Unreleased` in [CHANGELOG.md](CHANGELOG.md) first when you want them in the changelog; otherwise the release notes are the commits.
 
 ## License
 

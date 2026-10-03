@@ -75,7 +75,7 @@ brew install ai9s</code></pre>
       </li>
       <li>Delete only when one file, one directory, or one CLI call is enough
         <ul>
-          <li>Grok, Gemini, Jules, and Kiro stay read-only. The preview says why.</li>
+          <li>The preview says when a row cannot be deleted.</li>
         </ul>
       </li>
       <li>A local index
@@ -102,21 +102,35 @@ brew install ai9s</code></pre>
     </ul>
 
     <h2><span class="mark" aria-hidden="true">▤</span> Preview</h2>
-    <p>A sketch of the session list. The rows below are examples, not a recording of anyone's sessions.</p>
-    <div class="term" role="img" aria-label="Example ai9s session list">
-      <div class="row"><span class="num">&lt;1&gt;</span> <span class="b">sessions</span>  <span class="num">&lt;2&gt;</span> providers  <span class="num">&lt;3&gt;</span> directories  <span class="num">&lt;4&gt;</span> branches  <span class="num">&lt;5&gt;</span> models</div>
-      <div class="row"><span class="key">&lt;j/k ↑/↓&gt;</span> line  <span class="key">&lt;h/l ←/→&gt;</span> pan  <span class="key">&lt;⌘↑/⌘↓&gt;</span> page  <span class="key">&lt;⌘←/⌘→&gt;</span> page</div>
-      <div class="row"><span class="key">&lt;/&gt;</span> filter  <span class="key">&lt;d&gt;</span> describe  <span class="key">&lt;ctrl-d&gt;</span> delete  <span class="key">&lt;enter&gt;</span> resume  <span class="key">&lt;q&gt;</span> quit</div>
-      <div class="row"><span class="key">&lt;n&gt;</span> rename  <span class="key">&lt;u&gt;</span> usage  <span class="key">&lt;s&gt;</span> stats</div>
-      <div class="row crumbs"> ai9s › Sessions › all    4 sessions · 48 messages    1/4</div>
-      <div class="row"><span class="claude">claude 1</span>   <span class="codex">codex 1</span>   <span class="hermes">hermes 1</span>   <span class="kiro">kiro 1</span></div>
-      <div class="row dim">agent: dir: branch: model: date:&lt;7d sort:recent</div>
-      <div class="row dim"> AGE↓  DATE              AGENT   DIR   BRANCH  CTX  TOKENS  MSGS  NAME</div>
-      <div class="row sel"> 2h    2026-03-02 15:04  claude  demo  main    12k  —       14    sketch the readme</div>
-      <div class="row"> 5h    2026-03-02 12:10  codex   cli   main    8k   —       22    rename the command</div>
-      <div class="row"> 1d    2026-03-01 09:00  hermes  ops   main    —    —       6     check the deploy</div>
-      <div class="row"> 3d    2026-02-27 18:20  kiro    app   main    —    —       6     kiro:btn</div>
-    </div>
+    <p>The real interface, drawn from example sessions.</p>
+    <figure class="shot">
+      <img src="assets/shots/sessions.png" alt="Session list. The rows are example sessions.">
+      <figcaption>Sessions. NAME is last. A long directory keeps its ending.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/shots/describe.png" alt="Describe view for an example session, including context and tokens.">
+      <figcaption>Describe replaces the list. Esc returns.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/shots/directories.png" alt="Directories view. A long path keeps its ending.">
+      <figcaption>Directories. Enter applies that directory as a filter.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/shots/command.png" alt="Command line with view and filter suggestions.">
+      <figcaption>The command line. <code>:</code> opens it.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/shots/manual.png" alt="The scrollable manual.">
+      <figcaption>The manual. <code>?</code> opens it.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/shots/usage.png" alt="Usage for the selected example session.">
+      <figcaption>Usage for the selected session. <code>u</code> opens it.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/shots/plugins.png" alt="Session list with the example plugin keys on the menu.">
+      <figcaption>Example plugins add <code>e</code>, <code>c</code>, <code>b</code>, and <code>t</code>.</figcaption>
+    </figure>
 
     <h2><span class="mark" aria-hidden="true">✉</span> Get in touch</h2>
     <ul>

@@ -639,45 +639,6 @@ func (ui *ui) reload() {
 	ui.paintHeader()
 }
 
-func colorOf(agent string) tcell.Color {
-	switch agent {
-	case "claude":
-		return tcell.ColorOrange
-	case "codex":
-		return tcell.ColorGreen
-	case "copilot":
-		return tcell.ColorDodgerBlue
-	case "grok":
-		return tcell.ColorAqua
-	case "antigravity", "agy":
-		return tcell.ColorPurple
-	case "gemini":
-		return tcell.ColorYellow
-	case "cursor":
-		return tcell.ColorSilver
-	case "opencode":
-		return tcell.ColorFuchsia
-	case "hermes":
-		return tcell.NewHexColor(0xFFD700)
-	case "openclaw":
-		return tcell.NewHexColor(0x2DD4BF)
-	case "junie":
-		return tcell.NewHexColor(0x7DD3FC)
-	case "jules":
-		return tcell.NewHexColor(0x5A009D)
-	case "goose":
-		return tcell.NewHexColor(0xF59E0B)
-	case "cline":
-		return tcell.NewHexColor(0x22C55E)
-	case "aider":
-		return tcell.NewHexColor(0xFB7185)
-	case "kiro":
-		return tcell.NewHexColor(0xA78BFA)
-	default:
-		return tcell.ColorWhite
-	}
-}
-
 func (ui *ui) paintHeader() {
 	if ui.cfg.Body.UI.Headless {
 		return

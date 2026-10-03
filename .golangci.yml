@@ -1,0 +1,24 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+  exclusions:
+    presets:
+      - std-error-handling
+    rules:
+      - linters:
+          - errcheck
+        text: Rollback
+
+formatters:
+  enable:
+    - gofmt

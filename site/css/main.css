@@ -162,6 +162,21 @@ tr:nth-child(even) td { background: #fafafa; }
   font-style: italic;
 }
 
+figure.shot {
+  margin: 8px 0 20px;
+}
+figure.shot img {
+  display: block;
+  background: #000;
+  border-radius: 8px;
+  filter: drop-shadow(8px 8px 10px #373831);
+}
+figure.shot figcaption {
+  color: #666;
+  font-size: 14px;
+  margin-top: 6px;
+}
+
 .term {
   background: #000;
   color: #fff;

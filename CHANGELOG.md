@@ -4,6 +4,11 @@
 
 - Install instructions use the public tap URL.
 - Branch protection sends the status-check names GitHub still accepts.
+- The README and the website show the interface, drawn from example sessions.
+- A release opens a pull request for the changelog and another for the formula.
+- CI tests on macOS and Windows, and runs golangci-lint.
+- Future releases sign the checksum file with keyless cosign.
+- The security policy names 1.0.x as the supported release.
 
 ## 1.0.0
 
