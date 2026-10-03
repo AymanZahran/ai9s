@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Install instructions use the public tap URL.
+
 ## 1.0.0
 
 - First release intended for a public repository. Install this version.

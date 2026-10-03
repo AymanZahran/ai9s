@@ -30,16 +30,7 @@ brew trust aymanzahran/ai9s
 brew install ai9s
 ```
 
-The formula is `Formula/ai9s.rb` in this repository. `brew install --HEAD ai9s` builds the latest `main` once this repository can be cloned over HTTPS.
-
-While this repository is private, tap over SSH, trust the tap, and export a GitHub token so Homebrew can download the release archive. Install that tagged formula. `--HEAD` cannot clone the private source repository over HTTPS.
-
-```sh
-brew tap AymanZahran/ai9s git@github.com:AymanZahran/ai9s.git
-brew trust aymanzahran/ai9s
-export HOMEBREW_GITHUB_API_TOKEN="$(gh auth token)"
-brew install ai9s
-```
+The formula is `Formula/ai9s.rb` in this repository. `brew tap AymanZahran/ai9s` with no URL looks for a repository named `homebrew-ai9s`, so pass the URL above. `brew install --HEAD ai9s` builds the latest `main`.
 
 ### From source
 
