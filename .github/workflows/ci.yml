@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: go ${{ matrix.go }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.25", "stable"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: true
+      - name: Check formatting
+        run: test -z "$(gofmt -l .)"
+      - name: Test
+        run: go test -count=1 -timeout 180s ./...
+      - name: Test release script
+        run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts/release_test.py scripts/audit_test.py scripts/public_github_test.py
+
+  formula:
+    name: formula
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the formula
+        run: |
+          ruby -c Formula/ai9s.rb
+          grep -E 'url "https://github.com/AymanZahran/ai9s/archive/refs/tags/v[0-9]+\.[0-9]+\.[0-9]+\.tar\.gz"' Formula/ai9s.rb
+          grep -E 'sha256 "[0-9a-f]{64}"' Formula/ai9s.rb
+          grep -E 'license "MIT"' Formula/ai9s.rb
+
+  # golang.org/x/vuln v1.8.0 requires Go 1.26.
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+      - name: Scan for known vulnerabilities
+        env:
+          GOTOOLCHAIN: local
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+
+  audit:
+    name: audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan tracked files
+        run: PYTHONDONTWRITEBYTECODE=1 python3 scripts/audit.py

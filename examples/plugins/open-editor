@@ -1,0 +1,43 @@
+#!/bin/sh
+# Open the session directory in an editor.
+# AI9S_EDITOR is one program name, not a shell line.
+# A terminal editor takes this screen. A GUI editor is started and this returns.
+set -eu
+dir=${1:-}
+if [ -z "$dir" ] || [ ! -d "$dir" ]; then
+  echo "open-editor: no session directory" >&2
+  exit 1
+fi
+
+gui=0
+is_gui() {
+  case $(basename "$1") in
+    code|cursor|zed|zeditor|subl|sublime_text|windsurf|goland|idea|pycharm|webstorm|rider|clion|rubymine|phpstorm|rustrover)
+      gui=1
+      ;;
+    *)
+      gui=0
+      ;;
+  esac
+}
+
+launch() {
+  is_gui "$1"
+  if [ "$gui" -eq 1 ]; then
+    nohup "$1" "$dir" >/dev/null 2>&1 &
+    exit 0
+  fi
+  exec "$1" "$dir"
+}
+
+if [ -n "${AI9S_EDITOR:-}" ]; then
+  launch "$AI9S_EDITOR"
+fi
+
+for candidate in code cursor zed hx nvim vim vi; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    launch "$candidate"
+  fi
+done
+echo "open-editor: set AI9S_EDITOR to a program name" >&2
+exit 1

@@ -1,0 +1,10 @@
+/ai9s
+/dist
+*.db
+*.db-*
+.DS_Store
+__pycache__/
+*.pyc
+.env
+.env.*
+*.pem

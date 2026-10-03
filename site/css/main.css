@@ -1,0 +1,210 @@
+:root {
+  --text: #333;
+  --muted: #555;
+  --link: #2390ff;
+  --link-hover: #4c49ff;
+  --blue: #2a55f4;
+  --line: #e8e8e8;
+  --code: #f5f5f5;
+  --footer: #333;
+  --max: 860px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+img { max-width: 100%; height: auto; }
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: #fff;
+  font: 400 16px/1.55 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+a { color: var(--link); text-decoration: none; }
+a:hover { color: var(--link-hover); text-decoration: underline; }
+
+.site-header,
+main,
+.site-footer {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.site-header {
+  text-align: center;
+  padding: 28px 16px 6px;
+}
+
+.site-logo {
+  color: #333;
+  font-size: clamp(3rem, 8vw, 4.6rem);
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  line-height: 1;
+}
+
+.site-logo:hover { color: var(--blue); text-decoration: none; }
+
+.cite {
+  margin: 12px auto 0;
+  max-width: min(18em, 100%);
+  color: #444;
+  font-style: italic;
+  font-size: clamp(1.15rem, 4vw, 1.75rem);
+  line-height: 1.25;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 14px;
+  width: 100%;
+  margin: 16px auto 0;
+  max-width: 720px;
+  font-size: 15px;
+}
+
+.site-nav a[aria-current="page"] {
+  color: #333;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.hero {
+  display: block;
+  width: min(640px, calc(100% - 8px));
+  max-width: 100%;
+  height: auto;
+  margin: 22px auto 4px;
+  filter: drop-shadow(6px 6px 8px #373831);
+}
+
+main {
+  flex: 1;
+  width: min(var(--max), calc(100% - 32px));
+  margin: 0 auto 48px;
+}
+
+h1, h2, h3 { font-weight: 500; letter-spacing: -0.4px; line-height: 1.2; }
+h1 { font-size: 2rem; margin: 1.5em 0 0.45em; }
+h2 { font-size: 1.45rem; margin: 1.5em 0 0.4em; }
+h3 { font-size: 1.15rem; margin: 1.3em 0 0.35em; }
+
+h1 .mark, h2 .mark { color: var(--blue); margin-right: 0.25em; }
+
+p { margin: 0 0 0.9em; }
+
+ul, ol { margin: 0 0 1em 1.25em; padding: 0; }
+li { margin: 0.25em 0; }
+li > ul { margin-bottom: 0.2em; }
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+}
+
+p code, li code, td code {
+  background: var(--code);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+pre,
+.term,
+.table-wrap {
+  max-width: 100%;
+}
+
+pre {
+  background: var(--code);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
+
+.table-wrap { overflow-x: auto; margin: 0 0 1.2em; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 640px;
+  color: #444;
+  font-size: 14.5px;
+}
+
+th, td {
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th { background: #f0f0f0; color: #333; }
+tr:nth-child(even) td { background: #fafafa; }
+
+.note {
+  border: 1px dashed #e0a100;
+  color: #7a5200;
+  padding: 8px 12px;
+  margin: 0 0 1em;
+  font-style: italic;
+}
+
+.term {
+  background: #000;
+  color: #fff;
+  border-radius: 8px;
+  margin: 8px 0 16px;
+  padding: 14px 16px 12px;
+  overflow-x: auto;
+  filter: drop-shadow(8px 8px 10px #373831);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.term .row { white-space: pre; }
+.term .y { color: #e6c200; }
+.term .num { color: #ffdead; }
+.term .key { color: #fff; }
+.term .crumbs { background: #000; color: #fff; }
+.term .dim { color: #808080; }
+.term .b { color: #fff; font-weight: 700; }
+.term .sel { background: #fff; color: #000; }
+.term .pane {
+  margin-top: 8px;
+  border-top: 1px solid #333;
+  padding-top: 8px;
+}
+
+.claude { color: #e8a04a; }
+.codex { color: #3ddc84; }
+.hermes { color: #ffd700; }
+.kiro { color: #a78bfa; }
+
+.site-footer {
+  background: var(--footer);
+  color: #ccc;
+  text-align: center;
+  padding: 26px 16px 30px;
+}
+
+.site-footer a { color: #fff; }
+.site-footer p { margin: 0.25em 0; }
+
+@media (max-width: 600px) {
+  main { width: min(var(--max), calc(100% - 24px)); }
+  h1 { font-size: 1.6rem; }
+}

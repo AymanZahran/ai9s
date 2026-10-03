@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="500" viewBox="0 0 1000 500" role="img" aria-labelledby="title desc">
+  <title id="title">ai9s</title>
+  <desc id="desc">Two blue octagons joined by a bar, each holding a white propeller.</desc>
+  <g fill="#2A55F4">
+    <polygon points="437.97,189.54 352.46,104.03 231.54,104.03 146.03,189.54 146.03,310.46 231.54,395.97 352.46,395.97 437.97,310.46"/>
+    <polygon points="853.97,189.54 768.46,104.03 647.54,104.03 562.03,189.54 562.03,310.46 647.54,395.97 768.46,395.97 853.97,310.46"/>
+    <rect x="437.97" y="189.54" width="124.06" height="120.92"/>
+  </g>
+  <g transform="translate(292 250)">
+    <circle r="90" fill="none" stroke="#fff" stroke-width="8"/>
+    <g fill="#fff" transform="rotate(15)">
+      <path d="M0,-16 C22,-18 24,-50 10,-76 C6,-84 -2,-84 -6,-76 C-16,-48 -8,-24 0,-16 Z"/>
+      <path d="M0,-16 C22,-18 24,-50 10,-76 C6,-84 -2,-84 -6,-76 C-16,-48 -8,-24 0,-16 Z" transform="rotate(90)"/>
+      <path d="M0,-16 C22,-18 24,-50 10,-76 C6,-84 -2,-84 -6,-76 C-16,-48 -8,-24 0,-16 Z" transform="rotate(180)"/>
+      <path d="M0,-16 C22,-18 24,-50 10,-76 C6,-84 -2,-84 -6,-76 C-16,-48 -8,-24 0,-16 Z" transform="rotate(270)"/>
+    </g>
+    <circle r="16" fill="#fff"/>
+    <circle r="6.5" fill="#2A55F4"/>
+  </g>
+  <g transform="translate(708 250)">
+    <circle r="90" fill="none" stroke="#fff" stroke-width="8"/>
+    <g fill="#fff" transform="rotate(15)">
+      <path d="M0,-16 C22,-18 24,-50 10,-76 C6,-84 -2,-84 -6,-76 C-16,-48 -8,-24 0,-16 Z"/>
+      <path d="M0,-16 C22,-18 24,-50 10,-76 C6,-84 -2,-84 -6,-76 C-16,-48 -8,-24 0,-16 Z" transform="rotate(90)"/>
+      <path d="M0,-16 C22,-18 24,-50 10,-76 C6,-84 -2,-84 -6,-76 C-16,-48 -8,-24 0,-16 Z" transform="rotate(180)"/>
+      <path d="M0,-16 C22,-18 24,-50 10,-76 C6,-84 -2,-84 -6,-76 C-16,-48 -8,-24 0,-16 Z" transform="rotate(270)"/>
+    </g>
+    <circle r="16" fill="#fff"/>
+    <circle r="6.5" fill="#2A55F4"/>
+  </g>
+</svg>

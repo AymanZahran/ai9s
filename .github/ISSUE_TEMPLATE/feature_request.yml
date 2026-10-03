@@ -1,0 +1,24 @@
+name: Feature request
+description: An agent, command, or behavior ai9s should grow
+title: ""
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard to do with ai9s today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent
+      description: If this is a new agent, link the CLI help or file layout. Do not paste a real session.
+      placeholder: agent name

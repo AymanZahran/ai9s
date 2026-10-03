@@ -1,0 +1,9 @@
+# Open a terminal in the session directory without resuming the agent.
+# Set AI9S_TERMINAL to one program name (kitty, wezterm, alacritty, iTerm).
+# Leave it empty for Terminal.app on macOS.
+shortCut: t
+description: shell
+scopes: [sessions, directories]
+command: new-terminal
+args:
+  - $CWD

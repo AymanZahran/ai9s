@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ai9s — Resume your AI coding sessions in style</title>
+  <meta name="description" content="ai9s is a terminal UI for the AI coding sessions already on your machine. Search, preview, filter, resume, and delete them from one list.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://ai9scli.io/">
+  <meta property="og:title" content="ai9s — Resume your AI coding sessions in style">
+  <meta property="og:description" content="A terminal UI for the AI coding sessions already on your machine.">
+  <meta property="og:image" content="https://ai9scli.io/assets/logo.png">
+  <meta property="og:type" content="website">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="index.html">ai9s</a>
+    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <nav class="site-nav" aria-label="Documentation">
+      <a href="install.html">Install</a>
+      <a href="commands.html">Commands</a>
+      <a href="keys.html">Keys</a>
+      <a href="agents.html">Agents</a>
+      <a href="filters.html">Filters</a>
+      <a href="config.html">Config</a>
+      <a href="contributing.html">Contributing</a>
+      <a href="https://github.com/AymanZahran/ai9s">GitHub</a>
+    </nav>
+  </header>
+
+  <img class="hero" src="assets/logo.svg" alt="ai9s logo: two blue octagons joined like a bone, each with a white propeller">
+
+  <main>
+    <h1><span class="mark" aria-hidden="true">⌘</span> Who left the agents running?</h1>
+    <p>ai9s is a terminal UI for the AI coding sessions already on your machine. It indexes them locally, then lets you search, preview, filter, resume, and — where it is safe — delete them.</p>
+    <p>The list works like a cluster browser: a hotkey menu, a crumbs bar, and one framed table. <code>d</code> describes the selected row. Ctrl-D deletes. Colors and plugins live in a config file, the same way k9s does. Nothing is uploaded.</p>
+
+    <pre><code>brew tap AymanZahran/ai9s https://github.com/AymanZahran/ai9s
+brew trust aymanzahran/ai9s
+brew install ai9s</code></pre>
+    <p>Source and <code>go install</code> are on the <a href="install.html">install</a> page. Building from source requires Go 1.25 or newer.</p>
+
+    <h1><span class="mark" aria-hidden="true">▣</span> Features</h1>
+    <ul>
+      <li>Sessions at your fingertips
+        <ul>
+          <li>Claude, Codex, Copilot CLI, Grok, Antigravity, Gemini CLI, Cursor, OpenCode, Hermes, OpenClaw, Junie, Jules, Goose, Cline, Aider, and Kiro.</li>
+        </ul>
+      </li>
+      <li>The directory you start in
+        <ul>
+        </ul>
+      </li>
+      <li>Keyboard first
+        <ul>
+          <li>Hotkeys stay on the top row. <code>/</code> edits the filter. <code>:</code> opens views and filter tokens. <code>?</code> opens a scrollable manual.</li>
+        </ul>
+      </li>
+      <li>Five views
+        <ul>
+          <li><code>1</code> through <code>5</code> switch sessions, providers, directories, branches, and models. Branches shows the git branch and the worktree. Enter on a group applies that filter.</li>
+        </ul>
+      </li>
+      <li>Preview you can actually read
+        <ul>
+          <li><code>d</code> replaces the list with the excerpt. <code>j</code> and <code>k</code> scroll it. Esc returns to the list. Ctrl-D deletes.</li>
+        </ul>
+      </li>
+      <li>Resume in the original directory
+        <ul>
+          <li>Enter runs that agent's own CLI. <code>--yolo</code> adds an approval flag only when the agent documents one.</li>
+        </ul>
+      </li>
+      <li>Delete only when one file, one directory, or one CLI call is enough
+        <ul>
+          <li>Grok, Gemini, Jules, and Kiro stay read-only. The preview says why.</li>
+        </ul>
+      </li>
+      <li>A local index
+        <ul>
+          <li>SQLite under your cache directory. Files are skipped when their modification time has not changed. One agent failing does not drop the others.</li>
+        </ul>
+      </li>
+      <li>Metadata when the agent recorded it
+        <ul>
+          <li>Context size, window, tokens, cache, reasoning, cost, and premium requests. The CTX column is the latest prompt size, not a sum of every turn.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h1><span class="mark" aria-hidden="true">☰</span> Documentation</h1>
+    <ul>
+      <li><a href="install.html">Installation</a> — source, <code>go install</code>, and the cache directory</li>
+      <li><a href="commands.html">Commands</a> — index, search, show, resume, delete</li>
+      <li><a href="keys.html">Keys</a> — the list, the preview, and command mode</li>
+      <li><a href="agents.html">Agents</a> — where each session lives, and what delete removes</li>
+      <li><a href="filters.html">Filters</a> — agent, directory, branch, model, date, and sort</li>
+      <li><a href="config.html">Config</a> — colors, skins, mouse, read-only, and plugins</li>
+      <li><a href="contributing.html">Contributing</a> — tests, formatting, and how to add an agent</li>
+    </ul>
+
+    <h2><span class="mark" aria-hidden="true">▤</span> Preview</h2>
+    <p>A sketch of the session list. The rows below are examples, not a recording of anyone's sessions.</p>
+    <div class="term" role="img" aria-label="Example ai9s session list">
+      <div class="row"><span class="num">&lt;1&gt;</span> <span class="b">sessions</span>  <span class="num">&lt;2&gt;</span> providers  <span class="num">&lt;3&gt;</span> directories  <span class="num">&lt;4&gt;</span> branches  <span class="num">&lt;5&gt;</span> models</div>
+      <div class="row"><span class="key">&lt;j/k ↑/↓&gt;</span> line  <span class="key">&lt;h/l ←/→&gt;</span> pan  <span class="key">&lt;⌘↑/⌘↓&gt;</span> page  <span class="key">&lt;⌘←/⌘→&gt;</span> page</div>
+      <div class="row"><span class="key">&lt;/&gt;</span> filter  <span class="key">&lt;d&gt;</span> describe  <span class="key">&lt;ctrl-d&gt;</span> delete  <span class="key">&lt;enter&gt;</span> resume  <span class="key">&lt;q&gt;</span> quit</div>
+      <div class="row"><span class="key">&lt;s&gt;</span> stats</div>
+      <div class="row crumbs"> ai9s › Sessions › all    4 sessions · 48 messages    1/4</div>
+      <div class="row"><span class="claude">claude 1</span>   <span class="codex">codex 1</span>   <span class="hermes">hermes 1</span>   <span class="kiro">kiro 1</span></div>
+      <div class="row dim">agent: dir: branch: model: date:&lt;7d sort:recent</div>
+      <div class="row dim"> AGE↓  DATE              AGENT   DIR   BRANCH  CTX  TOKENS  MSGS  NAME</div>
+      <div class="row sel"> 2h    2026-03-02 15:04  claude  demo  main    12k  —       14    sketch the readme</div>
+      <div class="row"> 5h    2026-03-02 12:10  codex   cli   main    8k   —       22    rename the command</div>
+      <div class="row"> 1d    2026-03-01 09:00  hermes  ops   main    —    —       6     check the deploy</div>
+      <div class="row"> 3d    2026-02-27 18:20  kiro    app   main    —    —       6     kiro:btn</div>
+    </div>
+
+    <h2><span class="mark" aria-hidden="true">✉</span> Get in touch</h2>
+    <ul>
+      <li><a href="https://github.com/AymanZahran/ai9s">Repository</a></li>
+      <li><a href="https://github.com/AymanZahran/ai9s/issues">Issues</a> — leave transcripts, tokens, and credentials out of the report</li>
+      <li><a href="contributing.html">Contributing</a></li>
+    </ul>
+  </main>
+
+  <footer class="site-footer">
+    <p><a href="https://github.com/AymanZahran/ai9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/AymanZahran/ai9s/blob/main/LICENSE">MIT</a></p>
+    <p>© 2026 The ai9s authors.</p>
+  </footer>
+</body>
+</html>

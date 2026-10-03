@@ -1,0 +1,8 @@
+# Open the session directory. Set AI9S_EDITOR to one program name
+# (nvim, hx, code, cursor, zed). Leave it empty to try those in that order.
+shortCut: e
+description: edit
+scopes: [sessions, directories]
+command: open-editor
+args:
+  - $CWD

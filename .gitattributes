@@ -1,0 +1,3 @@
+# The formula records the checksum of a tag archive. Leave it out of that
+# archive so the tarball does not ship a stale checksum.
+Formula/ai9s.rb export-ignore
