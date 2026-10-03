@@ -92,8 +92,38 @@ func openStore() (*store.Store, error) {
 }
 
 func runTUI() int {
-	fmt.Fprintln(os.Stderr, "ai9s: no terminal; try 'ai9s search' or 'ai9s stats'")
-	return 1
+	if !isTerm(os.Stdin) {
+		fmt.Fprintln(os.Stderr, "ai9s: no terminal; try 'ai9s search' or 'ai9s stats'")
+		return 1
+	}
+	st, err := openStore()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "ai9s:", err)
+		return 1
+	}
+	defer st.Close()
+	fmt.Fprintln(os.Stderr, "ai9s: indexing sessions")
+	_, warnings, err := index.Rebuild(st)
+	for _, w := range warnings {
+		fmt.Fprintln(os.Stderr, "ai9s:", w)
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "ai9s:", err)
+		return 1
+	}
+	cmd, err := tui.Run(st)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "ai9s:", err)
+		return 1
+	}
+	if cmd == nil {
+		return 0
+	}
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintln(os.Stderr, "ai9s:", err)
+		return 1
+	}
+	return 0
 }
 
 func cmdInfo() int {

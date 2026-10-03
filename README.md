@@ -1,6 +1,22 @@
 # ai9s
 
-ai9s indexes the AI coding sessions already on your machine. This release searches, shows, resumes, and deletes them from the command line.
+<p align="center">
+  <img src="site/assets/logo.svg" alt="ai9s" width="520">
+</p>
+
+<p align="center">
+  <a href="https://ai9scli.io/">Website</a>
+  ·
+  <a href="https://github.com/AymanZahran/ai9s/actions/workflows/ci.yml">CI</a>
+  ·
+  <a href="LICENSE">MIT</a>
+</p>
+
+ai9s is a keyboard-first finder for local AI coding sessions. It indexes the session files already on your machine, then lets you search, preview, filter, resume, and — where it is safe — delete them.
+
+The interface follows the k9s screen: a menu of hotkeys, a crumbs bar (`ai9s › Sessions › all`), and one framed table. The AGENT column is the agent name. NAME is the last column. It is the session title, or the session id when the session has no title. The list has no separate title column. `s` shows counts for every session. `1` through `5` switch the table between sessions, providers, directories, branches, and models. `/` edits the filter and `:` opens a command line for those views and for filter tokens. Esc clears the filter from the list and from the filter line. `?` opens a scrollable manual. `d` replaces the list with a describe view of the selected row; Esc returns to the list. Ctrl-D deletes. The CTX column, describe, and `ai9s show` include context size and token counts when the agent recorded them.
+
+Colors, the mouse, icons, read-only mode, the starting view, and plugins come from `~/.config/ai9s/config.yaml` (or `$AI9S_CONFIG_DIR`, or `$XDG_CONFIG_HOME/ai9s`). `ai9s info` prints the paths.
 
 ## Install
 
