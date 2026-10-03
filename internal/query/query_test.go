@@ -35,10 +35,10 @@ func TestParsePartialAndHome(t *testing.T) {
 		t.Fatalf("empty token %+v", empty)
 	}
 	got := Parse(`agent:clau dir:~/work ~/notes`)
-	if got.Agent != "clau" || got.Dir != home+"/work" {
+	if got.Agent != "clau" || got.Dir != filepath.Join(home, "work") {
 		t.Fatalf("fields %+v", got)
 	}
-	if !strings.Contains(got.Text, home+"/notes") {
+	if !strings.Contains(got.Text, filepath.Join(home, "notes")) {
 		t.Fatalf("text %q", got.Text)
 	}
 	bogus := Parse("sort:bogus date:nope")

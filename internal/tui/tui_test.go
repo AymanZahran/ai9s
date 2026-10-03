@@ -864,7 +864,7 @@ func TestBranchesShowWorktrees(t *testing.T) {
 	if !strings.Contains(lines[0], "BRANCH") || !strings.Contains(lines[0], "WORKTREE") || !strings.Contains(lines[0], "AGE") || !strings.Contains(lines[0], "DATE") {
 		t.Fatalf("header %q", lines[0])
 	}
-	if !strings.Contains(joined, "/repo") || !strings.Contains(joined, "/wt") || !strings.Contains(joined, "-") {
+	if !strings.Contains(joined, string(os.PathSeparator)+"repo") || !strings.Contains(joined, string(os.PathSeparator)+"wt") || !strings.Contains(joined, "-") {
 		t.Fatalf("rows\n%s", joined)
 	}
 	if !strings.Contains(ui.preview.GetText(true), "worktree") {

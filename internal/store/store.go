@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -744,6 +745,21 @@ func decodeUsage(s string) model.Usage {
 	return u
 }
 
+// slashClean compares directories with either separator. filepath.Clean on
+// Windows turns a stored "/work/app" into "\work\app", which then misses.
+func slashClean(root string) string {
+	root = strings.TrimSpace(root)
+	if root == "" {
+		return ""
+	}
+	root = strings.ReplaceAll(root, `\`, `/`)
+	root = path.Clean(root)
+	if root == "." {
+		return ""
+	}
+	return root
+}
+
 func escapeLike(s string) string {
 	s = strings.ReplaceAll(s, `\`, `\\`)
 	s = strings.ReplaceAll(s, `%`, `\%`)
@@ -758,14 +774,18 @@ func rootClause(roots []string) (string, []any) {
 	var args []any
 	seen := map[string]bool{}
 	for _, root := range roots {
-		root = filepath.Clean(strings.TrimSpace(root))
-		if root == "" || root == "." || seen[root] {
+		root = slashClean(root)
+		if root == "" || seen[root] {
 			continue
 		}
 		seen[root] = true
 		exact := escapeLike(root)
-		parts = append(parts, `(s.cwd LIKE ? ESCAPE '\' OR s.cwd LIKE ? ESCAPE '\')`)
-		args = append(args, exact, exact+escapeLike(string(filepath.Separator))+"%")
+		child := exact + "/%"
+		if exact == "/" {
+			child = "/%"
+		}
+		parts = append(parts, `(REPLACE(s.cwd, '\', '/') LIKE ? ESCAPE '\' OR REPLACE(s.cwd, '\', '/') LIKE ? ESCAPE '\')`)
+		args = append(args, exact, child)
 	}
 	if len(parts) == 0 {
 		return "", nil
