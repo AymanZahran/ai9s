@@ -20,6 +20,8 @@ Colors, the mouse, icons, read-only mode, the starting view, and plugins come fr
 
 ## Install
 
+Install release 1.0.0. It is the supported release.
+
 ### Homebrew
 
 ```sh

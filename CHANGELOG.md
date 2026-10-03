@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.0.0
+
+- First release intended for a public repository. Install this version.
+
 ## 0.6.1
 
 - Starting ai9s does not print `ai9s: indexing sessions`.
