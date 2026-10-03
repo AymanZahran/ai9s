@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.6.1
+
+- Starting ai9s does not print `ai9s: indexing sessions`.
+
 ## 0.6.0
 
 - Every column except NAME is cut to a fixed width. A path keeps its ending. NAME stays whole and last, and the row pans. Describe shows the full value.

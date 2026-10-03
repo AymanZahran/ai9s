@@ -102,7 +102,6 @@ func runTUI() int {
 		return 1
 	}
 	defer st.Close()
-	fmt.Fprintln(os.Stderr, "ai9s: indexing sessions")
 	_, warnings, err := index.Rebuild(st)
 	for _, w := range warnings {
 		fmt.Fprintln(os.Stderr, "ai9s:", w)
