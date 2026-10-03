@@ -14,7 +14,7 @@ make build
 gofmt -w .
 ```
 
-GitHub Actions runs on Ubuntu. One job uses Go 1.25 and one uses current stable Go. Each runs `gofmt`, `go test -count=1 -timeout 180s ./...`, and the Python tests under `scripts/`. A separate job runs `govulncheck` with Go 1.26, and another scans tracked files for token-shaped strings and a machine-specific home path. `cmd/integration_test.go` builds the real binary and runs `index`, `search`, `show`, `resume --print`, and `delete` against temporary fixtures. The fixtures override every agent home, so the test does not read your sessions, and Jules is not contacted. The test skips Windows because the command stubs are POSIX shell scripts.
+GitHub Actions runs the required checks on Ubuntu. One job uses Go 1.25 and one uses current stable Go. Each runs `gofmt`, `go test -count=1 -timeout 180s ./...`, and the Python tests under `scripts/`. A separate job runs `govulncheck` with Go 1.26, another scans tracked files for token-shaped strings and a machine-specific home path, and another runs `golangci-lint`. macOS and Windows run `go test` as well. Those extra jobs are not required status checks, so a rename does not change branch protection. `cmd/integration_test.go` builds the real binary and runs `index`, `search`, `show`, `resume --print`, and `delete` against temporary fixtures. The fixtures override every agent home, so the test does not read your sessions, and Jules is not contacted. That test skips Windows because the command stubs are POSIX shell scripts. The example plugin scripts skip Windows for the same reason.
 
 `make install` copies the binary to `~/.local/bin`. Override that with `make install PREFIX=/usr/local`.
 
@@ -45,11 +45,11 @@ A session's `SourcePath` has to be a path the scanner also returns in its file l
 
 ## Documentation
 
-Behavior changes belong in `README.md` and on the matching page under `site/`. The site is static HTML. GitHub Pages publishes the `site` directory. There is no site build step.
+Behavior changes belong in `README.md` and on the matching page under `site/`. The site is static HTML. GitHub Pages publishes the `site` directory. There is no site build step. Interface pictures live in `site/assets/shots/`. They are drawn from fixture sessions by `go test -tags shots -run TestWriteScreenshots ./internal/tui`. They are not recordings of a developer's sessions.
 
 ## Pull requests
 
-Every feature change lands through a pull request. Merge it only after the checks on that pull request have passed. Do not push feature commits straight to `main`. A release tag is not a pull request.
+Every feature change lands through a pull request. Merge it only after the checks on that pull request have passed. Do not push feature commits straight to `main`. A release tag is pushed after its pull requests merge.
 
 Keep the change focused. Run `gofmt` and `go test ./...` before you push. Commit subjects in this repository are sentence case and end with a period.
 
@@ -63,17 +63,27 @@ Write the notes under `## Unreleased` in `CHANGELOG.md` and merge that commit fi
 make release
 ```
 
-`make release` reads the latest `vX.Y.Z` tag and pushes the next annotated tag once the checks on `main` have passed. GoReleaser, in [`.github/workflows/release.yml`](.github/workflows/release.yml), builds the binaries and the GitHub Release from that tag. Nothing in the source file stores the release number. `make build` and the formula pass it with `-ldflags -X`.
+`make release` reads the latest `vX.Y.Z` tag. When `## Unreleased` has notes, it opens a pull request that moves those notes under the new version, waits for the checks, and squash-merges it. It then tags that main commit and pushes the tag. GoReleaser, in [`.github/workflows/release.yml`](.github/workflows/release.yml), builds the binaries, the checksum file, and the GitHub Release. From that tag onward, Cosign signs the checksum file with the GitHub Actions identity. Nothing in the source file stores the release number. `make build` and the formula pass it with `-ldflags -X`.
 
-If `## Unreleased` has notes, the command moves them under the new version, pushes that changelog commit to `main`, waits for its checks, and then tags. It does not open a pull request. The formula update is the next commit on `main`, also with no pull request. `Formula/ai9s.rb` still builds the tagged source, including the private-archive download header, and passes `-X github.com/AymanZahran/ai9s/cmd.version`.
+The formula update is a second pull request, after the tag archive exists, so the checksum matches the bytes GitHub serves. `Formula/ai9s.rb` downloads the public tag archive and passes `-X github.com/AymanZahran/ai9s/cmd.version`. A token header is added only when `HOMEBREW_GITHUB_API_TOKEN` is set.
 
 If a check fails, or GitHub reports none, the command stops and does not create the tag.
 
-`make release VERSION=1.2.3` chooses that version. `make release PART=minor` or `PART=major` bumps that component. The default bump is the patch number. `make release DRY=1` prints the version and notes and changes nothing. `make release INSTALL=1` fast-forwards the tapped checkout and reinstalls ai9s after the formula commit.
+`make release VERSION=1.2.3` chooses that version. `make release PART=minor` or `PART=major` bumps that component. The default bump is the patch number. `make release DRY=1` prints the version and notes and changes nothing. `make release INSTALL=1` fast-forwards the tapped checkout and reinstalls ai9s after the formula pull request merges.
 
-## After the repository is public
+Verify a checksum from a signed release:
 
-Branch protection, secret scanning, push protection, and GitHub Pages cannot be saved while this repository is private on the current plan. `scripts/public_github.py` turns those on. It does not change visibility. Run it after the repository is public and a pull request's checks have passed once, so the check names exist:
+```sh
+cosign verify-blob \
+  --certificate-identity "https://github.com/AymanZahran/ai9s/.github/workflows/release.yml@refs/tags/vX.Y.Z" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+  --bundle checksums.sha256.sigstore.json \
+  checksums.sha256
+```
+
+## Repository settings
+
+The repository is public. Branch protection, secret scanning, push protection, private vulnerability reporting, and GitHub Pages are already on. An administrator can merge a pull request without waiting for the required checks. Force pushes stay off. `scripts/public_github.py` reapplies those settings. It does not change visibility.
 
 ```sh
 python3 scripts/public_github.py

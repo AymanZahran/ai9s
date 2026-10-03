@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -23,8 +24,14 @@ func TestIndexFileMode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if fi.Mode().Perm() != 0o600 {
-		t.Fatalf("index mode %o", fi.Mode().Perm())
+	got := fi.Mode().Perm()
+	want := os.FileMode(0o600)
+	if runtime.GOOS == "windows" {
+		// Windows keeps the writable bit and does not store a Unix mode.
+		want = 0o666
+	}
+	if got != want {
+		t.Fatalf("index mode %o", got)
 	}
 }
 
@@ -148,6 +155,7 @@ func storeSource(path string) []Source {
 func TestSearchSubstrings(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
 	st, err := Open(filepath.Join(t.TempDir(), "index.db"))
 	if err != nil {
 		t.Fatal(err)

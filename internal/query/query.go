@@ -3,6 +3,7 @@ package query
 
 import (
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -86,7 +87,11 @@ func expandHome(s string) string {
 	if s == "~" {
 		return home
 	}
-	return home + s[1:]
+	rest := strings.TrimLeft(s[1:], `/\`)
+	if rest == "" {
+		return home
+	}
+	return filepath.Join(home, rest)
 }
 
 func applyDate(f *Filter, val string) {

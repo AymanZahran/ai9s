@@ -13,6 +13,9 @@ import (
 )
 
 func TestResolvePluginCommand(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows has no executable bit, and LookPath requires a PATHEXT suffix")
+	}
 	dir := t.TempDir()
 	plug := filepath.Join(dir, "plugins")
 	if err := os.MkdirAll(plug, 0o700); err != nil {

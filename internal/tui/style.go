@@ -84,13 +84,6 @@ func (ui *ui) mark(agent string) string {
 	return Icon(agent)
 }
 
-func (ui *ui) colorOfAgent(agent string) tcell.Color {
-	if c, ok := ui.cfg.Skin.Agents[strings.ToLower(agent)]; ok && strings.TrimSpace(c) != "" {
-		return paintColor(c, "white")
-	}
-	return colorOf(agent)
-}
-
 func (ui *ui) agentTag(agent string) string {
 	if c, ok := ui.cfg.Skin.Agents[strings.ToLower(agent)]; ok && strings.TrimSpace(c) != "" {
 		return c

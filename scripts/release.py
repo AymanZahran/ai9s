@@ -2,25 +2,28 @@
 """Tag an ai9s release. GoReleaser publishes the GitHub Release.
 
 Version, commit, and date are link-time values (`-ldflags -X`), not a constant
-in the source. Feature changes still land through a pull request. Cutting a
-release does not. From a clean main that matches origin, after checks on that
-commit have passed:
+in the source. Feature changes land through a pull request. A release does too:
+main is protected. An administrator can merge without waiting for the required
+checks. From a clean main that matches
+origin:
 
     make release
 
-That reads the latest vX.Y.Z tag, bumps it, and pushes an annotated tag. The
-tag push runs GoReleaser. The Homebrew formula in this repository is then
-committed straight to main. The formula keeps its private-archive download
-strategy and passes `-X` so `ai9s version` prints the tag.
+That reads the latest vX.Y.Z tag and bumps it. When "## Unreleased" has notes,
+those notes move into the changelog on a pull request. After the checks pass,
+the pull request is squash-merged and the resulting main commit is tagged. The
+tag push runs GoReleaser. Cosign signs the checksum file. The Homebrew formula
+is a second pull request, after the tag archive exists, so its sha256 matches
+the bytes GitHub serves. The formula downloads the public tag archive and
+passes `-X` so `ai9s version` prints the tag.
 
     make release VERSION=1.2.3
     make release PART=minor
     make release INSTALL=1
     make release DRY=1
 
-Notes under "## Unreleased" are moved into the changelog and pushed to main
-before the tag, with no pull request. Empty Unreleased is fine: the GitHub
-Release notes come from the commits. The formula is not a pull request either.
+Empty Unreleased is fine: the GitHub Release notes come from the commits, and
+only the formula opens a pull request.
 """
 
 from __future__ import annotations
@@ -326,16 +329,108 @@ def child_env() -> dict[str, str]:
     return env
 
 
-def commit_and_push(cwd: Path, paths: list[str], message: str) -> str:
-    if git("rev-parse", "--abbrev-ref", "HEAD", cwd=cwd).strip() != "main":
-        die(f"{cwd.name} is not on main")
-    git("add", *paths, cwd=cwd)
-    staged = set(git("diff", "--cached", "--name-only", cwd=cwd).split())
-    if staged != set(paths):
-        die("commit would include unexpected files: " + " ".join(sorted(staged)))
-    git("commit", "-m", message, cwd=cwd)
-    git("push", "origin", "main", cwd=cwd)
-    return git("rev-parse", "HEAD", cwd=cwd).strip()
+def release_branch(kind: str, version: str) -> str:
+    if kind not in {"release", "formula"}:
+        die(f"unknown release branch {kind}")
+    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        die(f"version {version} is not X.Y.Z")
+    return f"{kind}-v{version}"
+
+
+def pull_request_body(message: str) -> str:
+    return (
+        f"{message}\n\n"
+        "Opened by `make release`. Main is protected, so this change is a pull request.\n"
+    )
+
+
+def local_branch(name: str) -> bool:
+    return git("branch", "--list", name).strip() == name
+
+
+def remote_branch(name: str) -> bool:
+    return git("ls-remote", "--heads", "origin", name).strip() != ""
+
+
+def require_fresh_branch(branch: str) -> None:
+    if local_branch(branch) or remote_branch(branch):
+        die(f"{branch} already exists")
+
+
+def discard_local_branch(branch: str) -> None:
+    subprocess.run(
+        ["git", "branch", "-D", branch],
+        cwd=ROOT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def return_to_main(branch: str) -> None:
+    subprocess.run(
+        ["git", "checkout", "main"],
+        cwd=ROOT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    discard_local_branch(branch)
+
+
+def land_through_pull_request(paths: list[str], message: str, branch: str, repo: str) -> str:
+    """Commit paths on branch, wait for checks, squash-merge, and return the main SHA."""
+    if git("rev-parse", "--abbrev-ref", "HEAD").strip() != "main":
+        die("a release pull request starts from main")
+    require_fresh_branch(branch)
+    git("checkout", "-b", branch)
+    try:
+        git("add", *paths)
+        staged = set(git("diff", "--cached", "--name-only").split())
+        if staged != set(paths):
+            die("commit would include unexpected files: " + " ".join(sorted(staged)))
+        git("commit", "-m", message)
+        git("push", "-u", "origin", branch)
+        sha = git("rev-parse", "HEAD").strip()
+        run(
+            [
+                "gh",
+                "pr",
+                "create",
+                "--repo",
+                repo,
+                "--base",
+                "main",
+                "--head",
+                branch,
+                "--title",
+                message,
+                "--body",
+                pull_request_body(message),
+            ]
+        )
+        wait_for_commit(repo, sha)
+        run(
+            [
+                "gh",
+                "pr",
+                "merge",
+                branch,
+                "--repo",
+                repo,
+                "--squash",
+                "--delete-branch",
+                "--subject",
+                message,
+                "--body",
+                "",
+            ]
+        )
+    except ReleaseError:
+        return_to_main(branch)
+        raise
+    git("checkout", "main")
+    git("pull", "--ff-only", "origin", "main")
+    discard_local_branch(branch)
+    return git("rev-parse", "HEAD").strip()
 
 
 def check_bucket(status: str, conclusion: str) -> tuple[str, str]:
@@ -428,11 +523,21 @@ def archive_sha(version: str) -> str:
         path.unlink(missing_ok=True)
 
 
-def publish_formula(version: str, sha256: str) -> None:
+def publish_formula(version: str, sha256: str, repo: str) -> None:
     formula = formula_path()
     formula.write_text(update_formula(formula.read_text(), version, sha256))
     message = f"Point the formula at ai9s {version}."
-    commit_and_push(ROOT, ["Formula/ai9s.rb"], message)
+    branch = release_branch("formula", version)
+    try:
+        land_through_pull_request(["Formula/ai9s.rb"], message, branch, repo)
+    except ReleaseError:
+        subprocess.run(
+            ["git", "checkout", "--", "Formula/ai9s.rb"],
+            cwd=ROOT,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        raise
     print(f"formula {version} {sha256}")
 
 
@@ -465,8 +570,10 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print("release notes come from the commits")
         print(f"tag v{version}")
+        if notes:
+            print("changelog pull request")
         if not skip_formula:
-            print("formula commit on main")
+            print("formula pull request")
         if dry:
             print("dry run")
             return 0
@@ -479,7 +586,12 @@ def main(argv: list[str] | None = None) -> int:
             log_path.write_text(change_log_text(version, notes))
             log_rel = log_path.relative_to(ROOT).as_posix()
             try:
-                sha = commit_and_push(ROOT, ["CHANGELOG.md", log_rel], f"Release {version}.")
+                sha = land_through_pull_request(
+                    ["CHANGELOG.md", log_rel],
+                    f"Release {version}.",
+                    release_branch("release", version),
+                    repo,
+                )
             except ReleaseError:
                 subprocess.run(
                     ["git", "checkout", "--", "CHANGELOG.md", log_rel],
@@ -488,19 +600,19 @@ def main(argv: list[str] | None = None) -> int:
                     stderr=subprocess.DEVNULL,
                 )
                 raise
-            wait_for_commit(repo, sha)
         else:
-            wait_for_commit(repo, git("rev-parse", "HEAD").strip())
+            sha = git("rev-parse", "HEAD").strip()
+            wait_for_commit(repo, sha)
         message = f"ai9s {version}."
         if notes:
             message = f"ai9s {version}.\n\n{notes.rstrip()}"
-        git("tag", "-a", f"v{version}", "-m", message)
+        git("tag", "-a", f"v{version}", sha, "-m", message)
         git("push", "origin", f"v{version}")
         print(f"tag v{version}")
         if skip_formula:
             return 0
         sha256 = archive_sha(version)
-        publish_formula(version, sha256)
+        publish_formula(version, sha256, repo)
         if install:
             reinstall(run(["gh", "auth", "token"]).strip())
             print(run(["ai9s", "version"]).strip())

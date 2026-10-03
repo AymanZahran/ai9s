@@ -34,7 +34,7 @@ class PublicGitHubTests(unittest.TestCase):
         )
         self.assertNotIn("checks", body["required_status_checks"])
         self.assertTrue(body["required_status_checks"]["strict"])
-        self.assertTrue(body["enforce_admins"])
+        self.assertFalse(body["enforce_admins"])
         self.assertIsNone(body["required_pull_request_reviews"])
         self.assertFalse(body["allow_force_pushes"])
 

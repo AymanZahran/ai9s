@@ -173,6 +173,120 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(clock.t, 15)
 
 
+class GitFlow:
+    def __init__(self):
+        self.branch = "main"
+        self.staged = set()
+        self.local = {"main"}
+        self.remote = set()
+        self.head = {"main": "base"}
+        self.calls = []
+        self.ran = []
+
+    def git(self, *args, cwd=None):
+        self.calls.append(args)
+        if args[:2] == ("rev-parse", "--abbrev-ref"):
+            return self.branch + "\n"
+        if args[:2] == ("branch", "--list"):
+            name = args[2]
+            if name in self.local and name != self.branch:
+                return name + "\n"
+            return ""
+        if args[:3] == ("ls-remote", "--heads", "origin"):
+            if args[3] in self.remote:
+                return "x\trefs/heads/%s\n" % args[3]
+            return ""
+        if args[:2] == ("checkout", "-b"):
+            self.branch = args[2]
+            self.local.add(self.branch)
+            self.head.setdefault(self.branch, self.head["main"])
+            return ""
+        if args == ("checkout", "main"):
+            self.branch = "main"
+            return ""
+        if args[0] == "add":
+            self.staged = set(args[1:])
+            return ""
+        if args[:3] == ("diff", "--cached", "--name-only"):
+            return "".join(path + "\n" for path in sorted(self.staged))
+        if args[0] == "commit":
+            self.head[self.branch] = "branchsha"
+            self.staged = set()
+            return ""
+        if args[0] == "push":
+            self.remote.add(self.branch)
+            return ""
+        if args[:2] == ("pull", "--ff-only"):
+            self.head["main"] = "squashsha"
+            return ""
+        if args[:2] == ("rev-parse", "HEAD"):
+            return self.head[self.branch] + "\n"
+        raise AssertionError(args)
+
+    def run(self, args, cwd=None, env=None):
+        self.ran.append(args)
+        return ""
+
+
+class ReleasePullRequestTests(unittest.TestCase):
+    def test_release_branch_names(self):
+        self.assertEqual(release.release_branch("release", "1.2.3"), "release-v1.2.3")
+        self.assertEqual(release.release_branch("formula", "1.2.3"), "formula-v1.2.3")
+        with self.assertRaises(release.ReleaseError):
+            release.release_branch("docs", "1.2.3")
+        with self.assertRaises(release.ReleaseError):
+            release.release_branch("release", "v1.2.3")
+
+    def test_land_opens_a_pull_request_and_does_not_push_main(self):
+        flow = GitFlow()
+        original = (
+            release.git,
+            release.run,
+            release.wait_for_commit,
+            release.discard_local_branch,
+        )
+        release.git = flow.git
+        release.run = flow.run
+        release.wait_for_commit = lambda repo, sha: None
+        release.discard_local_branch = lambda branch: None
+        try:
+            got = release.land_through_pull_request(
+                ["CHANGELOG.md"],
+                "Release 1.2.3.",
+                "release-v1.2.3",
+                "AymanZahran/ai9s",
+            )
+        finally:
+            (
+                release.git,
+                release.run,
+                release.wait_for_commit,
+                release.discard_local_branch,
+            ) = original
+        self.assertEqual(got, "squashsha")
+        self.assertNotIn(("push", "origin", "main"), flow.calls)
+        self.assertTrue(any(args[:3] == ["gh", "pr", "create"] for args in flow.ran))
+        self.assertTrue(any(args[:3] == ["gh", "pr", "merge"] for args in flow.ran))
+        self.assertIn("--squash", flow.ran[-1])
+        self.assertNotIn("origin", [args[1] if len(args) > 1 else "" for args in flow.calls if args[:1] == ("push",) and "main" in args])
+
+    def test_land_refuses_a_branch_other_than_main(self):
+        flow = GitFlow()
+        flow.branch = "public-gaps"
+        original = release.git
+        release.git = flow.git
+        try:
+            with self.assertRaises(release.ReleaseError):
+                release.land_through_pull_request(
+                    ["CHANGELOG.md"],
+                    "Release 1.2.3.",
+                    "release-v1.2.3",
+                    "AymanZahran/ai9s",
+                )
+        finally:
+            release.git = original
+
+
 class Clock:
     def __init__(self):
         self.t = 0

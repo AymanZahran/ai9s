@@ -1,5 +1,14 @@
 # Security
 
+## Supported versions
+
+| Version | Supported |
+| --- | --- |
+| 1.0.x | Yes |
+| Older tags | No |
+
+1.0.0 is the supported release. Tags before 1.0.0 stay in the history and are not patched.
+
 ## Reporting a vulnerability
 
 Report security issues privately through [GitHub Security Advisories](https://github.com/AymanZahran/ai9s/security/advisories/new).

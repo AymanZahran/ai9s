@@ -205,7 +205,7 @@ func assertNoHyperlink(t *testing.T, text string) {
 	}
 	for y := 0; y < 24; y++ {
 		for x := 0; x < 240; x++ {
-			_, _, style, _ := screen.GetContent(x, y)
+			_, style, _ := screen.Get(x, y)
 			if url := reflect.ValueOf(style).FieldByName("url").String(); url != "" {
 				t.Fatalf("hyperlink %q in %q", url, text)
 			}

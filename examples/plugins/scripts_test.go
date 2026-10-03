@@ -10,6 +10,16 @@ import (
 	"time"
 )
 
+func requireSh(t *testing.T) {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("plugin scripts are POSIX shell")
+	}
+	if _, err := exec.LookPath("sh"); err != nil {
+		t.Skip("sh is not on PATH")
+	}
+}
+
 func scriptsDir(t *testing.T) string {
 	t.Helper()
 	_, file, _, ok := runtime.Caller(0)
@@ -33,6 +43,7 @@ func runScript(t *testing.T, name string, args []string, env []string, dir strin
 }
 
 func TestCopySessionDoesNotEval(t *testing.T) {
+	requireSh(t)
 	dir := t.TempDir()
 	stub := filepath.Join(dir, "pbcopy")
 	stamp := filepath.Join(dir, "clip")
@@ -57,6 +68,7 @@ func TestCopySessionDoesNotEval(t *testing.T) {
 }
 
 func TestOpenEditorUsesProgramName(t *testing.T) {
+	requireSh(t)
 	dir := t.TempDir()
 	project := filepath.Join(dir, "proj")
 	if err := os.Mkdir(project, 0o755); err != nil {
@@ -82,6 +94,7 @@ func TestOpenEditorUsesProgramName(t *testing.T) {
 }
 
 func TestGitStoryLogLimit(t *testing.T) {
+	requireSh(t)
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git is not installed")
 	}
@@ -151,6 +164,7 @@ func TestGitStoryLogLimit(t *testing.T) {
 }
 
 func TestNewTerminalStartsInDirectory(t *testing.T) {
+	requireSh(t)
 	dir := t.TempDir()
 	project := filepath.Join(dir, "proj")
 	if err := os.Mkdir(project, 0o755); err != nil {

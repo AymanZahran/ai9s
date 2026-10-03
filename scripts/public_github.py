@@ -40,7 +40,9 @@ def protection_body(contexts: list[str]) -> dict:
             "strict": True,
             "contexts": list(contexts),
         },
-        "enforce_admins": True,
+        # An administrator can merge without waiting for the required checks.
+        # Force pushes stay off.
+        "enforce_admins": False,
         "required_pull_request_reviews": None,
         "restrictions": None,
         "allow_force_pushes": False,

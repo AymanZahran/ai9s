@@ -3,6 +3,7 @@ package discover
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -34,6 +35,9 @@ func searchDashed(body string, absolute bool) string {
 	start := parts[0]
 	if absolute {
 		start = string(os.PathSeparator) + parts[0]
+	} else if runtime.GOOS == "windows" && len(start) == 2 && start[1] == ':' {
+		// Join("C:", "Users") is "C:Users". The drive needs its separator.
+		start += `\`
 	}
 	return consumeDashed(start, parts[1:])
 }

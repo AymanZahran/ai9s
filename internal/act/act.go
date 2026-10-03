@@ -19,6 +19,7 @@ import (
 
 	"github.com/AymanZahran/ai9s/internal/discover"
 	"github.com/AymanZahran/ai9s/internal/model"
+	"github.com/AymanZahran/ai9s/internal/sqliteuri"
 	_ "modernc.org/sqlite"
 )
 
@@ -416,6 +417,11 @@ func rewriteAgy(s model.Session) error {
 		return err
 	}
 	if err := out.Close(); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	// Windows refuses to replace a file that still has a reader.
+	if err := in.Close(); err != nil {
 		os.Remove(tmp)
 		return err
 	}
@@ -1037,8 +1043,7 @@ func tableExists(tx *sql.Tx, name string) (bool, error) {
 }
 
 func openWriteDB(path string) (*sql.DB, error) {
-	u := url.URL{Scheme: "file", Path: path, RawQuery: "_pragma=busy_timeout(3000)"}
-	db, err := sql.Open("sqlite", u.String())
+	db, err := sql.Open("sqlite", sqliteuri.Path(path, "_pragma=busy_timeout(3000)"))
 	if err != nil {
 		return nil, err
 	}

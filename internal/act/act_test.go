@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/AymanZahran/ai9s/internal/model"
+	"github.com/AymanZahran/ai9s/internal/sqliteuri"
 )
 
 func TestRunEcho(t *testing.T) {
@@ -433,7 +434,7 @@ func TestDeleteGrokGeminiJulesKiro(t *testing.T) {
 	if err := Delete(model.Session{Agent: "kiro", NativeID: "conv-1", CanDelete: true, DeleteMode: "kiro", SourcePath: dbPath}); err != nil {
 		t.Fatal(err)
 	}
-	db, err = sql.Open("sqlite", dbPath+"?mode=ro")
+	db, err = sql.Open("sqlite", sqliteuri.Path(dbPath, "mode=ro"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -663,6 +664,9 @@ func main() {
 		t.Fatal(err)
 	}
 
+	if runtime.GOOS == "windows" {
+		return
+	}
 	if _, err := exec.LookPath("sh"); err != nil {
 		t.Skip(err)
 	}
