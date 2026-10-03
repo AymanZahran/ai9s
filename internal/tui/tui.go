@@ -491,6 +491,10 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 		ui.promptDir()
 	case 's':
 		ui.showStats()
+	case 'u':
+		ui.showSessionStats()
+	case 'n':
+		ui.promptRename()
 	case '?':
 		ui.showManual()
 	case 'j':
@@ -588,6 +592,12 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 			return nil
 		case 's':
 			ui.showStats()
+			return nil
+		case 'u':
+			ui.showSessionStats()
+			return nil
+		case 'n':
+			ui.promptRename()
 			return nil
 		case '1', '2', '3', '4', '5':
 			if spec, ok := viewByKey(string(ev.Rune())); ok {

@@ -133,6 +133,8 @@ Esc in describe returns to the list and leaves the filter. Esc after you open se
   p           add a dir: filter
   o           cycle sort
   r           reindex
+  n           rename the selected session. Enter on Save stores it. Esc cancels. An empty name restores the default. The name stays through a reindex. Sessions view only
+  u           usage for the selected session: messages, context, tokens, and the other recorded numbers. Sessions view only
   s           stats for every indexed session
   ?           this manual. It uses the same black screen as the list. j/k scroll a line. The wheel, page keys, and ⌘↑/⌘↓ scroll a page. g/G jump. q, ?, or esc closes it
   q           quit

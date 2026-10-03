@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.5.0
+
+- `n` renames the selected session. The name stays in the index through a reindex. An empty name restores the default.
+- `u` shows usage for the selected session. `s` still shows counts for every session.
+
 ## 0.4.0
 
 - Started in a project directory, the list shows sessions for that directory and its subdirectories. Started in your home directory, the list shows every session.
