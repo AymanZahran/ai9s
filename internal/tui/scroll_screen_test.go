@@ -59,3 +59,47 @@ func TestLongNameStaysOnTheRow(t *testing.T) {
 		t.Fatalf("visible list wide %d\n%s", ui.listWide, before)
 	}
 }
+
+func TestOtherColumnsAreCapped(t *testing.T) {
+	st, err := store.Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	dir := "/work/" + strings.Repeat("dir/", 24) + "ENDDIR"
+	branch := strings.Repeat("b", 40)
+	path := filepath.Join(t.TempDir(), "wide.jsonl")
+	sess := model.Session{
+		ID: "grok:wide", NativeID: "wide", Agent: "grok", Title: "Short",
+		CWD: dir, Branch: branch, Updated: time.Now(),
+		Messages: 2, SourcePath: path, CanDelete: true, DeleteMode: "file",
+	}
+	if err := st.Apply("grok", []model.Session{sess}, []store.Source{{Path: path, Mtime: 1}}); err != nil {
+		t.Fatal(err)
+	}
+	app := tview.NewApplication()
+	ui := newUI(app, st, config.Defaults())
+	ui.reload()
+	if len(ui.lines) < 2 {
+		t.Fatal("no session row")
+	}
+	row := ui.lines[1]
+	if strings.Contains(row, dir) || !strings.Contains(row, "ENDDIR") || !strings.Contains(row, "…") {
+		t.Fatalf("dir row %q", row)
+	}
+	if strings.Contains(row, branch) {
+		t.Fatalf("branch was not capped %q", row)
+	}
+	if !strings.Contains(row, "Short") {
+		t.Fatalf("name missing %q", row)
+	}
+	ui.view = viewDirectories
+	ui.paintGroups()
+	if len(ui.lines) < 2 {
+		t.Fatal("no group row")
+	}
+	group := ui.lines[1]
+	if strings.Contains(group, dir) || !strings.Contains(group, "ENDDIR") {
+		t.Fatalf("group row %q", group)
+	}
+}

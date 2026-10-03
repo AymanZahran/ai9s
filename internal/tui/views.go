@@ -275,9 +275,9 @@ func (ui *ui) paintSuggestions(text string) {
 		return
 	}
 	rows := make([][]cellText, 0, len(ui.suggestions)+1)
-	rows = append(rows, []cellText{{text: "COMMAND"}, {text: "DETAIL"}})
+	rows = append(rows, []cellText{{text: "COMMAND", max: colCommand}, {text: "DETAIL", max: colDetail}})
 	for _, hint := range ui.suggestions {
-		rows = append(rows, []cellText{{text: hint.insert}, {text: hint.hint}})
+		rows = append(rows, []cellText{{text: hint.insert, max: colCommand}, {text: hint.hint, max: colDetail}})
 	}
 	ui.useRows(rows)
 	ui.table.Select(1, 0)
@@ -305,14 +305,14 @@ func (ui *ui) paintSessions() {
 	sortName := querySort(ui.filter.GetText())
 	rows := make([][]cellText, 0, len(ui.rows)+1)
 	rows = append(rows, []cellText{
-		{text: sorted("AGE", sortName, "recent", "oldest")},
-		{text: "DATE"},
-		{text: "AGENT"},
-		{text: "DIR"},
-		{text: "BRANCH"},
-		{text: "CTX", right: true},
-		{text: "TOKENS", right: true},
-		{text: sorted("MSGS", sortName, "messages", ""), right: true},
+		{text: sorted("AGE", sortName, "recent", "oldest"), max: colAge},
+		{text: "DATE", max: colDate},
+		{text: "AGENT", max: colAgent},
+		{text: "DIR", max: colDir},
+		{text: "BRANCH", max: colBranch},
+		{text: "CTX", right: true, max: colCtx},
+		{text: "TOKENS", right: true, max: colTokens},
+		{text: sorted("MSGS", sortName, "messages", ""), right: true, max: colMsgs},
 		{text: sorted("NAME", sortName, "", "title")},
 	})
 	sel := 1
@@ -325,14 +325,14 @@ func (ui *ui) paintSessions() {
 			branch = "-"
 		}
 		rows = append(rows, []cellText{
-			{text: relAge(s.Updated)},
-			{text: absDate(s.Updated)},
-			{text: s.Agent, color: ui.agentTag(s.Agent)},
-			{text: shortPath(s.CWD)},
-			{text: branch},
-			{text: contextLabel(s.Usage), right: true},
-			{text: tokenLabel(s.Usage), right: true},
-			{text: fmt.Sprintf("%d", s.Messages), right: true},
+			{text: relAge(s.Updated), max: colAge},
+			{text: absDate(s.Updated), max: colDate},
+			{text: s.Agent, color: ui.agentTag(s.Agent), max: colAgent},
+			{text: shortPath(s.CWD), max: colDir, tail: true},
+			{text: branch, max: colBranch},
+			{text: contextLabel(s.Usage), right: true, max: colCtx},
+			{text: tokenLabel(s.Usage), right: true, max: colTokens},
+			{text: fmt.Sprintf("%d", s.Messages), right: true, max: colMsgs},
 			{text: sessionName(s)},
 		})
 	}
@@ -441,20 +441,20 @@ func (ui *ui) paintGroups() {
 	rows := make([][]cellText, 0, len(ui.groups)+1)
 	if ui.view == viewBranches {
 		rows = append(rows, []cellText{
-			{text: "BRANCH"},
-			{text: "WORKTREE"},
-			{text: "SESSIONS", right: true},
-			{text: "MSGS", right: true},
-			{text: "AGE"},
-			{text: "DATE"},
+			{text: "BRANCH", max: colBranch},
+			{text: "WORKTREE", max: colDir},
+			{text: "SESSIONS", right: true, max: colSessions},
+			{text: "MSGS", right: true, max: colMsgs},
+			{text: "AGE", max: colAge},
+			{text: "DATE", max: colDate},
 		})
 	} else {
 		rows = append(rows, []cellText{
-			{text: "NAME"},
-			{text: "SESSIONS", right: true},
-			{text: "MSGS", right: true},
-			{text: "AGE"},
-			{text: "DATE"},
+			{text: "NAME", max: colGroup},
+			{text: "SESSIONS", right: true, max: colSessions},
+			{text: "MSGS", right: true, max: colMsgs},
+			{text: "AGE", max: colAge},
+			{text: "DATE", max: colDate},
 		})
 	}
 	sel := 1
@@ -468,12 +468,12 @@ func (ui *ui) paintGroups() {
 				wt = shortPath(g.worktree)
 			}
 			rows = append(rows, []cellText{
-				{text: g.key},
-				{text: wt},
-				{text: fmt.Sprintf("%d", g.sessions), right: true},
-				{text: fmt.Sprintf("%d", g.messages), right: true},
-				{text: relAge(g.updated)},
-				{text: absDate(g.updated)},
+				{text: g.key, max: colBranch},
+				{text: wt, max: colDir, tail: wt != "-"},
+				{text: fmt.Sprintf("%d", g.sessions), right: true, max: colSessions},
+				{text: fmt.Sprintf("%d", g.messages), right: true, max: colMsgs},
+				{text: relAge(g.updated), max: colAge},
+				{text: absDate(g.updated), max: colDate},
 			})
 			continue
 		}
@@ -486,11 +486,11 @@ func (ui *ui) paintGroups() {
 			name = shortPath(g.key)
 		}
 		rows = append(rows, []cellText{
-			{text: name, color: color},
-			{text: fmt.Sprintf("%d", g.sessions), right: true},
-			{text: fmt.Sprintf("%d", g.messages), right: true},
-			{text: relAge(g.updated)},
-			{text: absDate(g.updated)},
+			{text: name, color: color, max: colGroup, tail: ui.view == viewDirectories && g.key != "(none)"},
+			{text: fmt.Sprintf("%d", g.sessions), right: true, max: colSessions},
+			{text: fmt.Sprintf("%d", g.messages), right: true, max: colMsgs},
+			{text: relAge(g.updated), max: colAge},
+			{text: absDate(g.updated), max: colDate},
 		})
 	}
 	ui.useRows(rows)

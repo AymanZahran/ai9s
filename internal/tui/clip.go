@@ -21,6 +21,23 @@ func runeWidth(r rune) int {
 	return w
 }
 
+// Column caps. The session NAME column has no cap: it stays last and the row
+// pans. Group names, paths, and command text do have a cap.
+const (
+	colAge      = 6
+	colDate     = 16
+	colAgent    = 12
+	colDir      = 32
+	colBranch   = 16
+	colCtx      = 13
+	colTokens   = 13
+	colMsgs     = 6
+	colSessions = 8
+	colGroup    = 28
+	colCommand  = 24
+	colDetail   = 40
+)
+
 // cellText is one column in a row that can be wider than the window.
 type cellText struct {
 	text  string

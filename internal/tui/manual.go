@@ -149,7 +149,7 @@ Esc in describe returns to the list and leaves the filter. Esc after you open se
 The list fills the window. Describe uses that same window until you press esc.
 Describe keeps each line intact, so a long line pans sideways instead of wrapping.
 AGE is always a relative age. DATE is the local date and time. Sort follows AGE.
-NAME is the last column. It is the name set with n. Otherwise it is the session title, or the session id when the session has no title. An empty name restores that default. The name stays through a reindex. sort:title sorts this column. The list has no separate title column. A long value stays whole, and the row pans.
+NAME is the last column. It is the name set with n. Otherwise it is the session title, or the session id when the session has no title. An empty name restores that default. The name stays through a reindex. sort:title sorts this column. The list has no separate title column. NAME stays whole, and the row pans. Every other column is cut to a fixed width. A path keeps its ending. Describe shows the full value.
 Each of those views draws a scrollbar on the right.
 When a line is wider than the window, a scrollbar along the bottom pans it.
 Hotkeys are on the top menu. The bottom of the screen is empty, except the scrollbar that pans a line wider than the window.
