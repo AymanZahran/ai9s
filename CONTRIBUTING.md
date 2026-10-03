@@ -83,7 +83,7 @@ cosign verify-blob \
 
 ## Repository settings
 
-The repository is public. Branch protection, secret scanning, push protection, private vulnerability reporting, and GitHub Pages are already on. `scripts/public_github.py` reapplies those settings. It does not change visibility.
+The repository is public. Branch protection, secret scanning, push protection, private vulnerability reporting, and GitHub Pages are already on. An administrator can merge a pull request without waiting for the required checks. Force pushes stay off. `scripts/public_github.py` reapplies those settings. It does not change visibility.
 
 ```sh
 python3 scripts/public_github.py

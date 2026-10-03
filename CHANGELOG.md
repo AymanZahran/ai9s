@@ -10,6 +10,7 @@
 - Windows opens the SQLite index, matches a directory with either slash, replaces an open history file, and restores a dashed drive path.
 - Future releases sign the checksum file with keyless cosign.
 - The security policy names 1.0.x as the supported release.
+- An administrator can merge a pull request without waiting for the required checks.
 
 ## 1.0.0
 

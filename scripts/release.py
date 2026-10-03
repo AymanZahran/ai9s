@@ -3,7 +3,8 @@
 
 Version, commit, and date are link-time values (`-ldflags -X`), not a constant
 in the source. Feature changes land through a pull request. A release does too:
-main is protected, including for administrators. From a clean main that matches
+main is protected. An administrator can merge without waiting for the required
+checks. From a clean main that matches
 origin:
 
     make release
