@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.4.0
+
+- Started in a project directory, the list shows sessions for that directory and its subdirectories. Started in your home directory, the list shows every session.
+
 ## 0.3.0
 
 - The keyboard UI lists, filters, describes, resumes, and deletes sessions.

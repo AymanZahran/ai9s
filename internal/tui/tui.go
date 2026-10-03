@@ -29,7 +29,7 @@ func Run(st *store.Store) (*act.Command, error) {
 	}
 	app := tview.NewApplication()
 	ui := newUI(app, st, cfg)
-	ui.scope, ui.roots = "", nil
+	ui.scope, ui.roots = launchScope()
 	ui.reload()
 	if cfg.Body.NoExitOnCtrlC {
 		app.SetInputCapture(func(ev *tcell.EventKey) *tcell.EventKey {

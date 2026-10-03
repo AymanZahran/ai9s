@@ -98,6 +98,7 @@ const manualText = `[::b]ai9s manual[-]
 
 [::b]Views[-]
   [yellow]<1>[-] sessions      the conversation list. AGE is relative. DATE is the local time. Enter resumes. d describes. ctrl-d deletes.
+                     Started outside your home directory, the list is that directory and its subdirectories. Home lists every session. Esc clears the filter and keeps that directory.
   [yellow]<2>[-] providers     group the current filter by agent
   [yellow]<3>[-] directories   group by working directory
   [yellow]<4>[-] branches      group by git branch and worktree. The worktree is the checkout that holds the session directory. Enter filters by that branch and that checkout.

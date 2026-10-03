@@ -49,7 +49,7 @@
     <h2>In the UI</h2>
     <p><code>/</code> edits the filter text directly. The list updates as you type. Up and down move through the matches while the field stays focused. ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Plain left and right stay in the field. Esc from describe returns to the list and leaves the filter. Esc after opening sessions from a group returns to that group and clears the filter. On that group, or on the sessions list itself, Esc clears the text and stays there. Esc in the manual or command mode leaves the filter alone. <code>:</code> opens command mode, where the same tokens are listed. Up and down select one, and Enter writes it into the filter. Setting a token replaces the previous value of that token. A value with a space is quoted.</p>
     <p>The header shows the token names as a hint: <code>agent: dir: branch: model: date:&lt;7d sort:recent</code>.</p>
-    <p>A <code>dir:</code> token narrows the list. Esc clears the token. <code>ai9s search</code> searches the index.</p>
+    <p>Opening ai9s in a project directory lists sessions whose working directory is that directory or a subdirectory. Opening it in your home directory lists every session. A <code>dir:</code> token narrows the list further. Esc clears the token and leaves the starting directory in place. <code>ai9s search</code> still searches the whole index.</p>
 
     <h2>Metadata</h2>
     <p>The preview and <code>ai9s show</code> print a context line and a token line when the session file has them: latest prompt size, context window, input, output, cache read, cache write, reasoning tokens, cost, premium requests, and reasoning effort. The CTX column is the latest context size, or <code>used/window</code> when both are known.</p>
