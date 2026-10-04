@@ -24,15 +24,15 @@ func (h menuHint) render() string {
 	return menuItem(h.keyColor, h.textColor, h.hi, h.key, h.label, h.active)
 }
 
-// menuCols is how many shortcut columns fit. Five matches the view keys.
+// menuCols is how many shortcut columns fit. Six matches the view keys.
 func menuCols(width int) int {
 	const minCol = 16
 	if width < minCol {
 		return 1
 	}
 	n := width / minCol
-	if n > 5 {
-		return 5
+	if n > 6 {
+		return 6
 	}
 	return n
 }
@@ -170,7 +170,7 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 		}
 	default:
 		enter := "resume"
-		if ui.view != "" && ui.view != viewSessions {
+		if !ui.onSessions() {
 			enter = "filter"
 		}
 		return []menuHint{

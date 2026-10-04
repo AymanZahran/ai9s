@@ -41,7 +41,7 @@
           <tr><td><code>date:&lt;7d</code></td><td>Updated in the last 7 days. Units: <code>m</code>, <code>h</code>, <code>d</code>, <code>w</code>.</td></tr>
           <tr><td><code>date:&gt;30d</code></td><td>Updated more than 30 days ago.</td></tr>
           <tr><td><code>date:2026-03-02</code></td><td>That calendar day. <code>date:2026-03</code> is the whole month.</td></tr>
-          <tr><td><code>mark:yes</code></td><td>Bookmarked sessions. <code>mark:no</code> hides them. Also <code>bookmark:</code>, <code>fav:</code>, and <code>favorite:</code>.</td></tr>
+          <tr><td><code>mark:yes</code></td><td>Bookmarked sessions. <code>mark:no</code> hides them. Also <code>bookmark:</code>, <code>fav:</code>, and <code>favorite:</code>. In the UI, <code>6</code> and <code>:bookmarks</code> open that list.</td></tr>
           <tr><td><code>sort:messages</code></td><td><code>recent</code> (default), <code>oldest</code>, <code>messages</code>, <code>title</code>, or <code>cost</code>. <code>title</code> follows the NAME column. <code>cost</code> follows the recorded USD amount.</td></tr>
         </tbody>
       </table>
@@ -49,7 +49,7 @@
 
     <h2>In the UI</h2>
     <p><code>/</code> edits the filter text directly. The list updates as you type. Up and down move through the matches while the field stays focused. ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Plain left and right stay in the field. Esc from describe returns to the list and leaves the filter. Esc after opening sessions from a group returns to that group and clears the filter. On that group, or on the sessions list itself, Esc clears the text and stays there. Esc in the manual or command mode leaves the filter alone. <code>:</code> opens command mode, where the same tokens are listed. Up and down select one, and Enter writes it into the filter. Setting a token replaces the previous value of that token. A value with a space is quoted.</p>
-    <p>The header shows the token names as a hint: <code>agent: dir: branch: model: mark:yes date:&lt;7d sort:recent</code>.</p>
+    <p>The header shows the token names as a hint: <code>agent: dir: branch: model: date:&lt;7d sort:recent   6 :bookmarks</code>.</p>
     <p>Opening ai9s in a project directory lists sessions whose working directory is that directory or a subdirectory. Opening it in your home directory lists every session. A <code>dir:</code> token narrows the list further. Esc clears the token and leaves the starting directory in place. <code>ai9s search</code> still searches the whole index.</p>
 
     <h2>Metadata</h2>

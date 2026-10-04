@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `6` and `:bookmarks` list bookmarked sessions. Enter, bookmark, rename, usage, and delete work on that list.
+
 ## 1.0.2
 
 - The session list shows a COST column when the agent recorded a USD amount.

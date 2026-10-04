@@ -70,7 +70,7 @@ func (ui *ui) execPlugin(p config.Plugin) {
 		"NAME":   VisibleLine(p.Name),
 	}
 	var cwd string
-	if ui.view == "" || ui.view == viewSessions {
+	if ui.onSessions() {
 		if s, ok := ui.selected(); ok {
 			fillPluginEnv(env, s)
 			cwd = s.CWD

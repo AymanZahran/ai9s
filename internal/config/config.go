@@ -185,7 +185,7 @@ func (l *Loaded) normalize() []string {
 	var warns []string
 	view := strings.ToLower(strings.TrimSpace(l.Body.DefaultView))
 	switch view {
-	case "", "sessions", "providers", "directories", "branches", "models":
+	case "", "sessions", "providers", "directories", "branches", "models", "bookmarks":
 		if view == "" {
 			view = "sessions"
 		}

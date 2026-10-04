@@ -15,6 +15,7 @@ const (
 	viewDirectories = "directories"
 	viewBranches    = "branches"
 	viewModels      = "models"
+	viewBookmarks   = "bookmarks"
 )
 
 type viewSpec struct {
@@ -30,6 +31,13 @@ var viewSpecs = []viewSpec{
 	{"3", viewDirectories, " directories ", "dir"},
 	{"4", viewBranches, " branches ", "branch"},
 	{"5", viewModels, " models ", "model"},
+	{"6", viewBookmarks, " bookmarks ", ""},
+}
+
+// onSessions reports a view that lists sessions rather than groups.
+// Bookmarks is that list limited to starred rows.
+func (ui *ui) onSessions() bool {
+	return ui.view == "" || ui.view == viewSessions || ui.view == viewBookmarks
 }
 
 type groupRow struct {
@@ -143,7 +151,7 @@ func (ui *ui) cycleCommandView() {
 }
 
 func (ui *ui) applyCommand(text string) {
-	text = strings.TrimSpace(text)
+	text = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(text), ":"))
 	if ui.commandMoved {
 		ui.commandMoved = false
 		if row, _ := ui.table.GetSelection(); row > 0 && row-1 < len(ui.suggestions) {
@@ -240,12 +248,12 @@ func allHints(agents []string) []commandHint {
 		{"directories", "group the current filter by directory"},
 		{"branches", "group the current filter by git branch and worktree"},
 		{"models", "group the current filter by model"},
+		{"bookmarks", "list bookmarked sessions"},
 		{"agent:", "filter by agent, then return to sessions"},
 		{"dir:", "filter by directory"},
 		{"branch:", "filter by branch"},
 		{"model:", "filter by model"},
 		{"date:", "filter by date, for example date:<7d"},
-		{"mark:yes", "bookmarked sessions"},
 		{"sort:", "recent, oldest, messages, title, or cost"},
 	}
 	for _, agent := range agents {
@@ -295,11 +303,15 @@ func (ui *ui) emptyList() string {
 
 func (ui *ui) paintSessions() {
 	prev := ""
-	if row, _ := ui.table.GetSelection(); row > 0 && row-1 < len(ui.rows) && ui.view == viewSessions {
+	if row, _ := ui.table.GetSelection(); row > 0 && row-1 < len(ui.rows) && ui.onSessions() {
 		prev = ui.rows[row-1].ID
 	}
 	ui.groups = nil
-	ui.table.SetTitle(viewTitle(viewSessions))
+	title := viewSessions
+	if ui.view == viewBookmarks {
+		title = viewBookmarks
+	}
+	ui.table.SetTitle(viewTitle(title))
 	if len(ui.rows) == 0 {
 		ui.setLines(nil, 0)
 		ui.preview.SetText(ui.emptyList())

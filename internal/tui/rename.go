@@ -19,7 +19,7 @@ func acceptSessionName(text string, last rune) bool {
 // promptRename asks for the NAME of the selected session.
 // An empty name restores the recorded title. Esc cancels.
 func (ui *ui) promptRename() {
-	if ui.view != "" && ui.view != viewSessions {
+	if !ui.onSessions() {
 		ui.alert("Switch to sessions before renaming.")
 		return
 	}
