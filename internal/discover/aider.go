@@ -54,6 +54,12 @@ func aiderFiles() []string {
 	}
 	if v := strings.TrimSpace(os.Getenv("AIDER_CHAT_HISTORY")); v != "" {
 		add(v)
+	} else if strings.TrimSpace(os.Getenv("AIDER_HOME")) == "" && strings.TrimSpace(os.Getenv("AIDER_CHAT_ROOTS")) == "" {
+		// From a directory that is not a git repo, aider writes the chat here.
+		// That file sits beside ~/.aider, not inside it.
+		if home, err := os.UserHomeDir(); err == nil && home != "" {
+			add(filepath.Join(home, ".aider.chat.history.md"))
+		}
 	}
 	for _, root := range roots {
 		root = strings.TrimSpace(root)

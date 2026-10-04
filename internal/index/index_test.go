@@ -32,6 +32,12 @@ func TestRebuildClaude(t *testing.T) {
 	t.Setenv("AIDER_HOME", filepath.Join(root, "aider"))
 	t.Setenv("AIDER_CHAT_HISTORY", filepath.Join(root, "no-aider.md"))
 	t.Setenv("AIDER_SCAN_HOME", "0")
+	t.Setenv("KIMI_CODE_HOME", filepath.Join(root, "kimi-code"))
+	t.Setenv("QWEN_RUNTIME_DIR", filepath.Join(root, "qwen"))
+	t.Setenv("QWEN_HOME", filepath.Join(root, "qwen-home"))
+	t.Setenv("VIBE_HOME", filepath.Join(root, "vibe"))
+	t.Setenv("MINIMAX_DATA_DIR", filepath.Join(root, "minimax"))
+	t.Setenv("MAVIS_DATA_DIR", filepath.Join(root, "minimax-mavis"))
 
 	proj := filepath.Join(root, "claude", "projects", "demo")
 	if err := os.MkdirAll(proj, 0o755); err != nil {

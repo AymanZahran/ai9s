@@ -27,6 +27,20 @@ func decodeDashedPath(encoded string) string {
 	return searchDashed(body, false)
 }
 
+// withinDir reports whether path is strictly inside root.
+func withinDir(root, path string) bool {
+	if root == "" || path == "" {
+		return false
+	}
+	root = filepath.Clean(root)
+	path = filepath.Clean(path)
+	rel, err := filepath.Rel(root, path)
+	if err != nil {
+		return false
+	}
+	return rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator))
+}
+
 func searchDashed(body string, absolute bool) string {
 	parts := strings.Split(body, "-")
 	if len(parts) == 0 || parts[0] == "" {

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AymanZahran/ai9s/internal/act"
+	"github.com/AymanZahran/ai9s/internal/discover"
 	"github.com/AymanZahran/ai9s/internal/query"
 )
 
@@ -455,6 +457,9 @@ func (ui *ui) paintGroups() {
 		snaps[i] = sessionSnap{id: s.ID, agent: s.Agent, cwd: s.CWD, branch: s.Branch, model: s.Model, messages: s.Messages, updated: s.Updated}
 	}
 	ui.groups = groupSessions(snaps, ui.view)
+	if ui.view == viewProviders {
+		ui.groups = ui.withIdleProviders(ui.groups)
+	}
 	ui.table.SetTitle(viewTitle(ui.view))
 	if len(ui.groups) == 0 {
 		ui.setLines(nil, 0)
@@ -548,7 +553,9 @@ func (ui *ui) showGroup(row int) {
 		fmt.Fprintf(&b, "worktree  %s\n", wt)
 	}
 	fmt.Fprintf(&b, "%d sessions   %d messages   %s   %s\n", g.sessions, g.messages, relAge(g.updated), absDate(g.updated))
-	if g.key == "(none)" && g.worktree == "" {
+	if ui.view == viewProviders && g.sessions == 0 {
+		fmt.Fprintf(&b, "\n%s\n", markup(providerGap(g.key)))
+	} else if g.key == "(none)" && g.worktree == "" {
 		b.WriteString("\n[gray]This group has an empty value, so enter will not add a filter.[-]\n")
 	} else if spec, ok := viewByName(ui.view); ok && spec.token != "" {
 		fmt.Fprintf(&b, "\nenter applies %s and returns to sessions\n", groupFilterText(spec, g))
@@ -573,6 +580,10 @@ func (ui *ui) activateGroup() {
 	if !ok || spec.token == "" {
 		return
 	}
+	if spec.name == viewProviders && g.sessions == 0 {
+		ui.alert(providerGap(g.key))
+		return
+	}
 	if g.key == "(none)" && g.worktree == "" {
 		ui.alert("That group has an empty value, so there is no filter to apply.")
 		return
@@ -589,6 +600,62 @@ func (ui *ui) activateGroup() {
 	ui.filter.SetText(text)
 	ui.focusSessions()
 	ui.reload()
+}
+
+// withIdleProviders keeps supported agents on the providers list when the
+// index has no sessions for them. A directory, branch, model, text, mark, or
+// date filter stays a grouping of the sessions that matched.
+func (ui *ui) withIdleProviders(groups []groupRow) []groupRow {
+	f := query.Parse(ui.filter.GetText())
+	if providerFilterNarrows(f) {
+		return groups
+	}
+	indexed := map[string]struct{}{}
+	for _, agent := range ui.agents {
+		indexed[agent] = struct{}{}
+		if agent == "agy" {
+			indexed["antigravity"] = struct{}{}
+		}
+	}
+	have := map[string]struct{}{}
+	for _, g := range groups {
+		have[g.key] = struct{}{}
+	}
+	for _, sc := range discover.Scanners() {
+		if _, ok := have[sc.Agent]; ok {
+			continue
+		}
+		if _, ok := indexed[sc.Agent]; ok {
+			continue
+		}
+		if f.Agent != "" && !strings.Contains(sc.Agent, f.Agent) {
+			continue
+		}
+		groups = append(groups, groupRow{key: sc.Agent})
+	}
+	return groups
+}
+
+func providerFilterNarrows(f query.Filter) bool {
+	return f.Dir != "" || f.Branch != "" || f.Model != "" || f.Text != "" || f.Mark != "" || !f.Since.IsZero() || !f.Until.IsZero()
+}
+
+// agentInstalled is the PATH check for an empty provider. Tests replace it.
+var agentInstalled = act.Installed
+
+func providerGap(agent string) string {
+	bin, ok := agentInstalled(agent)
+	if bin == "" {
+		bin = agent
+	}
+	who := bin
+	if bin != agent {
+		who = agent + " (" + bin + ")"
+	}
+	if !ok {
+		return who + " is not on PATH. Install it and log in, then start a session."
+	}
+	return who + " is installed, and there are no sessions yet. Log in and start a session."
 }
 
 func groupFilterText(spec viewSpec, g groupRow) string {

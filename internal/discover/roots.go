@@ -44,3 +44,17 @@ func JunieSessions() string {
 }
 
 func ClineHome() string { return clineHome() }
+
+func KimiSessions() string { return kimiSessions() }
+
+func KimiIndex() string { return kimiIndexPath() }
+
+func QwenRoot() string { return qwenRoot() }
+
+func VibeSessions() string { return vibeSessions() }
+
+func MinimaxData() string { return minimaxData() }
+
+func MinimaxDB() string { return minimaxDB() }
+
+func MinimaxSessions() string { return minimaxSessions() }
