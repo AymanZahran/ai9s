@@ -47,8 +47,12 @@
           <tr><td><code>jules</code></td><td><code>$JULES_HOME/sessions.json</code> or <code>sessions.txt</code></td><td><code>jules teleport &lt;id&gt;</code></td><td>that row, or the cloud session when <code>JULES_API_KEY</code> is set</td><td><code>JULES_HOME</code></td></tr>
           <tr><td><code>goose</code></td><td><code>$GOOSE_HOME/sessions/sessions.db</code></td><td><code>goose session --resume --session-id &lt;id&gt;</code></td><td><code>goose session remove --session-id &lt;id&gt;</code></td><td><code>GOOSE_HOME</code></td></tr>
           <tr><td><code>cline</code></td><td><code>$CLINE_HOME/data/state/taskHistory.json</code></td><td><code>cline task open &lt;id&gt;</code></td><td>rewrite the history, then remove the task directory</td><td><code>CLINE_HOME</code></td></tr>
-          <tr><td><code>aider</code></td><td><code>.aider.chat.history.md</code> under the configured roots</td><td><code>aider --restore-chat-history</code></td><td>that history file</td><td><code>AIDER_CHAT_ROOTS</code>, <code>AIDER_HOME</code>, <code>AIDER_CHAT_HISTORY</code></td></tr>
+          <tr><td><code>aider</code></td><td><code>.aider.chat.history.md</code> under the configured roots, and <code>~/.aider.chat.history.md</code> when those are unset</td><td><code>aider --restore-chat-history</code></td><td>that history file</td><td><code>AIDER_CHAT_ROOTS</code>, <code>AIDER_HOME</code>, <code>AIDER_CHAT_HISTORY</code></td></tr>
           <tr><td><code>kiro</code></td><td><code>kiro-cli</code> <code>data.sqlite3</code> (<code>conversations_v2</code>)</td><td><code>kiro-cli chat --resume-id &lt;id&gt;</code></td><td>that conversation; the shell history table stays</td><td><code>KIRO_CLI_DB</code>, else <code>KIRO_HOME</code></td></tr>
+          <tr><td><code>kimi</code></td><td><code>$KIMI_CODE_HOME/sessions/&lt;workDirKey&gt;/&lt;id&gt;/state.json</code> and <code>agents/main/wire.jsonl</code></td><td><code>kimi --session &lt;id&gt;</code></td><td>that session directory and its <code>session_index.jsonl</code> line</td><td><code>KIMI_CODE_HOME</code></td></tr>
+          <tr><td><code>minimax</code></td><td><code>$MINIMAX_DATA_DIR/v2/sqlite/runtime-state.sqlite</code> (<code>local_runtime_sessions</code>), and <code>v2/sessions/.../messages.jsonl</code> when that database is absent</td><td><code>mcode --session &lt;id&gt;</code></td><td>that session row and its history directory</td><td><code>MINIMAX_DATA_DIR</code>, else <code>MAVIS_DATA_DIR</code></td></tr>
+          <tr><td><code>qwen</code></td><td><code>$QWEN_RUNTIME_DIR/projects/&lt;sanitized-cwd&gt;/chats/&lt;id&gt;.jsonl</code> (also <code>chats/archive</code>; <code>$QWEN_HOME</code> when the runtime dir is unset)</td><td><code>qwen --resume &lt;id&gt;</code></td><td>that chat file</td><td><code>QWEN_RUNTIME_DIR</code>, else <code>QWEN_HOME</code></td></tr>
+          <tr><td><code>mistral</code></td><td><code>$VIBE_HOME/logs/session/&lt;dir&gt;/</code> (<code>meta.json</code>, <code>messages.jsonl</code>)</td><td><code>vibe --resume &lt;id&gt;</code></td><td>that session directory</td><td><code>VIBE_HOME</code></td></tr>
         </tbody>
       </table>
     </div>
@@ -64,8 +68,10 @@
       <li>Junie: <code>--brave</code></li>
       <li>Cline: <code>--yolo</code> on <code>task open</code></li>
       <li>Kiro: <code>--trust-all-tools</code> before the subcommand</li>
+      <li>Qwen: <code>--yolo</code></li>
+      <li>Mistral: <code>--yolo</code> (<code>--auto-approve</code> is the same flag)</li>
     </ul>
-    <p>Codex, Gemini, OpenCode, OpenClaw, Jules, Goose, and Aider resume without an extra approval flag.</p>
+    <p>Codex, Gemini, OpenCode, OpenClaw, Jules, Goose, Aider, Kimi, and MiniMax resume without an extra approval flag.</p>
 
     <h2>Read limits</h2>
     <ul>
@@ -73,7 +79,11 @@
       <li>Kiro's shell <code>history</code> table is skipped. Resume uses <code>kiro-cli</code>, which is separate from the Kiro IDE.</li>
       <li>Goose resume and delete need the <code>goose</code> command on <code>PATH</code>.</li>
       <li>Jules listing talks to Google only when <code>AI9S_JULES_REMOTE=1</code>. Otherwise ai9s reads the local snapshot and does not run <code>jules</code>. Deleting a remote session uses the Jules API when <code>JULES_API_KEY</code> is set.</li>
-      <li>Aider does not walk the home directory unless <code>AIDER_SCAN_HOME=1</code>.</li>
+      <li>Aider does not walk the home directory unless <code>AIDER_SCAN_HOME=1</code>. It does read <code>~/.aider.chat.history.md</code>, the chat aider writes when it is started from home outside a git repo. A chat inside another project is read when that project is listed in <code>AIDER_CHAT_ROOTS</code>.</li>
+      <li>Kimi Code is read from <code>KIMI_CODE_HOME</code> (default <code>~/.kimi-code</code>). The archived kimi-cli store <code>~/.kimi</code> is not read. Resume uses <code>kimi</code>.</li>
+      <li>MiniMax is read from <code>MINIMAX_DATA_DIR</code>, or from <code>MAVIS_DATA_DIR</code> when that is unset. The install prefix <code>~/.minimax-code</code> is not the data directory. Resume uses <code>mcode</code>.</li>
+      <li>A <code>[session_logging] save_dir</code> in the Vibe <code>config.toml</code> replaces <code>logs/session</code> when that directory is safe. Resume uses <code>vibe</code>.</li>
+      <li>Child sessions are skipped.</li>
       <li>OpenClaw's working directory is the workspace recorded on the session. ai9s does not read OpenClaw credentials.</li>
     </ul>
 
@@ -81,14 +91,15 @@
     <p>Grok delete removes the one session directory whose name is that session id, when <code>summary.json</code> is a regular file inside it. It also drops that id from <code>active_sessions.json</code> and <code>client-state/session-meta.json</code> when those files exist. The project <code>prompt_history.jsonl</code> stays.</p>
     <p>Gemini delete removes that one <code>session-*.json</code> file under <code>tmp/&lt;project&gt;/chats/</code>, after the file's <code>sessionId</code> matches. Project caches and <code>projects.json</code> stay.</p>
     <p>Kiro delete removes that conversation from <code>conversations_v2</code> and, when the same key is present, from <code>conversations</code>. The shell <code>history</code> table is left as it is. The database file stays.</p>
+    <p>Kimi delete rewrites <code>session_index.jsonl</code> without that session id, then removes that one session directory. A sibling session in the same work directory stays.</p>
+    <p>Qwen delete removes that one chat file under <code>chats/</code> or <code>chats/archive/</code>. Other chats stay.</p>
+    <p>Mistral delete removes that one session directory under the Vibe save directory, when <code>meta.json</code> and <code>messages.jsonl</code> are regular files and the session id matches.</p>
+    <p>MiniMax delete, when the session came from <code>runtime-state.sqlite</code>, removes that session's history directory when the manifest id matches, then deletes that session's rows. The database file stays. A manifest-only session removes that one history directory.</p>
     <p>Jules keeps a local list in <code>sessions.json</code> or <code>sessions.txt</code>. Delete rewrites that file without the chosen id. The <code>jules</code> command has no delete subcommand. A remote session is deleted with the Jules API when <code>JULES_API_KEY</code> is set. Without that key, the cloud session is left in place and delete says so. ai9s does not read the Jules keyring.</p>
     <p>Antigravity stores every conversation in one <code>history.jsonl</code>. Delete rewrites that file without the chosen id. Cline delete rewrites <code>taskHistory.json</code> first, then removes that task's directory. OpenCode, Hermes, OpenClaw, and Goose delete through each CLI. Other deletes remove a single transcript or Aider history file, or one Copilot <code>session-state</code> or Junie <code>session-*</code> directory, and only when the path is still inside that agent's session root.</p>
 
-    <h2>Not indexed yet</h2>
-    <p>These need a stable file layout and a real resume command before an adapter should claim them: Copilot in VS Code, Kimi, Qwen, Pi, Crush, Vibe, and Prime. Adding one is described in <a href="contributing.html">Contributing</a>.</p>
-
     <h2>Marks</h2>
-    <p>Describe and the all-session stats show a two-letter mark: Ca claude, Cx codex, Cp copilot, Gk grok, Ag antigravity, Ge gemini, Cu cursor, Oc opencode, He hermes, Oa openclaw, Jn junie, Ju jules, Go goose, Cl cline, Ai aider, Ki kiro. An unknown agent is <code>??</code>. The session list does not have that column.</p>
+    <p>Describe and the all-session stats show a two-letter mark: Ca claude, Cx codex, Cp copilot, Gk grok, Ag antigravity, Ge gemini, Cu cursor, Oc opencode, He hermes, Oa openclaw, Jn junie, Ju jules, Go goose, Cl cline, Ai aider, Ki kiro, Km kimi, Mm minimax, Qw qwen, Mi mistral. An unknown agent is <code>??</code>. The session list does not have that column.</p>
   </main>
   <footer class="site-footer">
     <p><a href="https://github.com/AymanZahran/ai9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/sponsors/AymanZahran">Sponsor</a> · <a href="https://github.com/AymanZahran/ai9s/blob/main/LICENSE">MIT</a></p>

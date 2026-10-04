@@ -46,6 +46,10 @@ func Scanners() []Scanner {
 		{"cline", scanCline},
 		{"aider", scanAider},
 		{"kiro", scanKiro},
+		{"kimi", scanKimi},
+		{"minimax", scanMinimax},
+		{"qwen", scanQwen},
+		{"mistral", scanMistral},
 	}
 }
 

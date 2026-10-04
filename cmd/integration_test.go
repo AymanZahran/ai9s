@@ -57,17 +57,17 @@ func TestCLIIntegration(t *testing.T) {
 	if err := os.MkdirAll(stub, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"claude", "hermes", "kiro-cli", "jules", "goose"} {
+	for _, name := range []string{"claude", "hermes", "kiro-cli", "jules", "goose", "kimi", "qwen", "vibe", "mcode"} {
 		writeStub(t, filepath.Join(stub, name))
 	}
 	seedFixtures(t, root)
 	env := fixtureEnv(t, root, stub, logPath)
 
 	stats := indexJSON(t, env)
-	if stats.Sessions != 9 {
+	if stats.Sessions != 13 {
 		t.Fatalf("indexed %d sessions, agents %+v, stderr would show warnings above", stats.Sessions, stats.Agents)
 	}
-	wantAgents := []string{"aider", "cline", "claude", "goose", "grok", "hermes", "jules", "junie", "kiro"}
+	wantAgents := []string{"aider", "cline", "claude", "goose", "grok", "hermes", "jules", "junie", "kimi", "kiro", "minimax", "mistral", "qwen"}
 	gotAgents := map[string]int{}
 	for _, a := range stats.Agents {
 		gotAgents[a.Agent] = a.Sessions
@@ -106,6 +106,22 @@ func TestCLIIntegration(t *testing.T) {
 	if !kiro.CanDelete || kiro.DeleteMode != "kiro" || kiro.CWD != "/work/kiro" || kiro.Title != "rename the button" {
 		t.Fatalf("show kiro %+v", kiro)
 	}
+	kimiShown := showJSON(t, env, "kimi:k1")
+	if kimiShown.Title != "plan the port" || kimiShown.CWD != "/work/kimi" || !kimiShown.CanDelete || kimiShown.DeleteMode != "kimi" {
+		t.Fatalf("show kimi %+v", kimiShown)
+	}
+	qwenShown := showJSON(t, env, "qwen:0123456789abcdef0123456789abcdef")
+	if qwenShown.Title != "tune the prompt" || qwenShown.CWD != "/work/qwen" || qwenShown.DeleteMode != "qwen" {
+		t.Fatalf("show qwen %+v", qwenShown)
+	}
+	mistralShown := showJSON(t, env, "mistral:session_20260302_150405_abcd")
+	if mistralShown.Title != "review the diff" || mistralShown.CWD != "/work/vibe" || mistralShown.Branch != "main" || mistralShown.DeleteMode != "mistral" {
+		t.Fatalf("show mistral %+v", mistralShown)
+	}
+	minimaxShown := showJSON(t, env, "minimax:mm-1")
+	if minimaxShown.Title != "draft the note" || !minimaxShown.CanDelete || minimaxShown.DeleteMode != "minimax" {
+		t.Fatalf("show minimax %+v", minimaxShown)
+	}
 
 	resume := run(t, env, "resume", "claude:abc", "--yolo", "--print")
 	if resume.code != 0 || !strings.Contains(resume.stdout, "--dangerously-skip-permissions") || !strings.Contains(resume.stdout, "--resume abc") {
@@ -114,6 +130,14 @@ func TestCLIIntegration(t *testing.T) {
 	kiroResume := run(t, env, "resume", "kiro:conv-1", "--yolo", "--print")
 	if kiroResume.code != 0 || !strings.Contains(kiroResume.stdout, "kiro-cli") || !strings.Contains(kiroResume.stdout, "--trust-all-tools") || !strings.Contains(kiroResume.stdout, "--resume-id conv-1") {
 		t.Fatalf("kiro resume code %d\n%s\n%s", kiroResume.code, kiroResume.stdout, kiroResume.stderr)
+	}
+	kimiResume := run(t, env, "resume", "kimi:k1", "--yolo", "--print")
+	if kimiResume.code != 0 || !strings.Contains(kimiResume.stdout, "--session k1") || strings.Contains(kimiResume.stdout, "yolo") {
+		t.Fatalf("kimi resume code %d\n%s\n%s", kimiResume.code, kimiResume.stdout, kimiResume.stderr)
+	}
+	qwenResume := run(t, env, "resume", "qwen:0123456789abcdef0123456789abcdef", "--yolo", "--print")
+	if qwenResume.code != 0 || !strings.Contains(qwenResume.stdout, "--yolo") || !strings.Contains(qwenResume.stdout, "--resume 0123456789abcdef0123456789abcdef") {
+		t.Fatalf("qwen resume code %d\n%s\n%s", qwenResume.code, qwenResume.stdout, qwenResume.stderr)
 	}
 	if log := readLog(t, logPath); strings.TrimSpace(log) != "" {
 		t.Fatalf("resume --print executed a stub:\n%s", log)
@@ -181,12 +205,45 @@ func TestCLIIntegration(t *testing.T) {
 		t.Fatalf("hermes still indexed %+v", left)
 	}
 
+	kimiPath := filepath.Join(root, "kimi-code", "sessions", "wd_work_aaaaaaaaaaaa", "k1")
+	kimiKeep := filepath.Join(root, "kimi-code", "sessions", "wd_work_aaaaaaaaaaaa", "keep.txt")
+	kimiDel := run(t, env, "delete", "kimi:k1", "--yes")
+	if kimiDel.code != 0 {
+		t.Fatalf("delete kimi %s", kimiDel.stderr)
+	}
+	if _, err := os.Stat(kimiPath); !os.IsNotExist(err) {
+		t.Fatal("kimi session still exists")
+	}
+	if _, err := os.Stat(kimiKeep); err != nil {
+		t.Fatal(err)
+	}
+	qwenPath := filepath.Join(root, "qwen", "projects", "-work-qwen", "chats", "0123456789abcdef0123456789abcdef.jsonl")
+	qwenKeep := filepath.Join(root, "qwen", "projects", "-work-qwen", "chats", ".runtime.json")
+	qwenDel := run(t, env, "delete", "qwen:0123456789abcdef0123456789abcdef", "--yes")
+	if qwenDel.code != 0 {
+		t.Fatalf("delete qwen %s", qwenDel.stderr)
+	}
+	if _, err := os.Stat(qwenPath); !os.IsNotExist(err) {
+		t.Fatal("qwen chat still exists")
+	}
+	if _, err := os.Stat(qwenKeep); err != nil {
+		t.Fatal(err)
+	}
+	vibeDir := filepath.Join(root, "vibe", "logs", "session", "session_20260302_150405_abcd")
+	vibeDel := run(t, env, "delete", "mistral:session_20260302_150405_abcd", "--yes")
+	if vibeDel.code != 0 {
+		t.Fatalf("delete mistral %s", vibeDel.stderr)
+	}
+	if _, err := os.Stat(vibeDir); !os.IsNotExist(err) {
+		t.Fatal("mistral session still exists")
+	}
+
 	rebuilt := indexJSON(t, env)
 	after := map[string]int{}
 	for _, a := range rebuilt.Agents {
 		after[a.Agent] = a.Sessions
 	}
-	if after["claude"] != 0 || after["junie"] != 0 || after["grok"] != 0 || after["hermes"] != 1 || after["jules"] != 1 || after["kiro"] != 1 {
+	if after["claude"] != 0 || after["junie"] != 0 || after["grok"] != 0 || after["hermes"] != 1 || after["jules"] != 1 || after["kiro"] != 1 || after["kimi"] != 0 || after["qwen"] != 0 || after["mistral"] != 0 || after["minimax"] != 1 {
 		t.Fatalf("after reindex %+v", after)
 	}
 	if strings.Contains(readLog(t, logPath), "jules") {
@@ -296,6 +353,12 @@ func fixtureEnv(t *testing.T, root, stub, logPath string) []string {
 		"AIDER_CHAT_ROOTS":   filepath.Join(root, "aider-roots"),
 		"AIDER_CHAT_HISTORY": filepath.Join(root, "no-aider.md"),
 		"AIDER_SCAN_HOME":    "0",
+		"KIMI_CODE_HOME":     filepath.Join(root, "kimi-code"),
+		"QWEN_RUNTIME_DIR":   filepath.Join(root, "qwen"),
+		"QWEN_HOME":          filepath.Join(root, "qwen-home"),
+		"VIBE_HOME":          filepath.Join(root, "vibe"),
+		"MINIMAX_DATA_DIR":   filepath.Join(root, "minimax"),
+		"MAVIS_DATA_DIR":     filepath.Join(root, "minimax-mavis"),
 	}
 	env := make([]string, 0, len(vals))
 	for k, v := range vals {
@@ -373,6 +436,30 @@ func seedFixtures(t *testing.T, root string) {
 		`INSERT INTO history VALUES ('echo secret')`,
 		`INSERT INTO conversations_v2 VALUES ('conv-1','k1','`+value+`',1767225600000,1767225600000)`,
 	)
+
+	kimiDir := filepath.Join(root, "kimi-code", "sessions", "wd_work_aaaaaaaaaaaa", "k1")
+	writeFile(t, filepath.Join(kimiDir, "state.json"), `{"id":"k1","title":"plan the port","cwd":"/work/kimi","createdAt":1700000000000,"updatedAt":1700000000000}`)
+	writeFile(t, filepath.Join(kimiDir, "agents", "main", "wire.jsonl"), `{"type":"context.append_message","message":{"role":"user","content":"plan the port"}}`+"\n")
+	writeFile(t, filepath.Join(root, "kimi-code", "sessions", "wd_work_aaaaaaaaaaaa", "keep.txt"), "stay")
+	kimiLine, err := json.Marshal(map[string]string{"sessionId": "k1", "sessionDir": kimiDir, "workDir": "/work/kimi"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(root, "kimi-code", "session_index.jsonl"), string(kimiLine)+"\n")
+
+	qwenID := "0123456789abcdef0123456789abcdef"
+	writeFile(t, filepath.Join(root, "qwen", "projects", "-work-qwen", "chats", qwenID+".jsonl"),
+		`{"type":"user","timestamp":"2026-03-02T15:04:05Z","cwd":"/work/qwen","message":{"role":"user","parts":[{"text":"tune the prompt"}]}}`+"\n"+
+			`{"type":"system","subtype":"custom_title","systemPayload":{"customTitle":"tune the prompt"}}`+"\n")
+	writeFile(t, filepath.Join(root, "qwen", "projects", "-work-qwen", "chats", ".runtime.json"), "{}")
+
+	vibeDir := filepath.Join(root, "vibe", "logs", "session", "session_20260302_150405_abcd")
+	writeFile(t, filepath.Join(vibeDir, "meta.json"), `{"session_id":"session_20260302_150405_abcd","title":"review the diff","git_branch":"main","environment":{"working_directory":"/work/vibe"}}`)
+	writeFile(t, filepath.Join(vibeDir, "messages.jsonl"), `{"role":"user","content":"review the diff"}`+"\n")
+
+	mmDir := filepath.Join(root, "minimax", "v2", "sessions", "aa", "bb", "cc", "mm1")
+	writeFile(t, filepath.Join(mmDir, "manifest.json"), `{"sessionId":"mm-1","updatedAtMs":1700000000000}`)
+	writeFile(t, filepath.Join(mmDir, "messages.jsonl"), `{"message":{"role":"user","content":"draft the note"}}`+"\n")
 }
 
 func writeFile(t *testing.T, path, body string) {

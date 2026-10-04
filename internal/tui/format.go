@@ -31,6 +31,10 @@ func Icon(agent string) string {
 		"cline":       "Cl",
 		"aider":       "Ai",
 		"kiro":        "Ki",
+		"kimi":        "Km",
+		"minimax":     "Mm",
+		"qwen":        "Qw",
+		"mistral":     "Mi",
 	}[agent]
 	if icon == "" {
 		return "??"
@@ -155,6 +159,14 @@ func agentColor(name string) string {
 		return "#fb7185"
 	case "kiro":
 		return "#a78bfa"
+	case "kimi":
+		return "#60a5fa"
+	case "minimax":
+		return "#f97316"
+	case "qwen":
+		return "#6366f1"
+	case "mistral":
+		return "#f43f5e"
 	default:
 		return "white"
 	}

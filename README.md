@@ -241,7 +241,7 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 | Key | Action |
 | --- | --- |
 | `1`–`6` | Sessions, providers, directories, branches, models, bookmarks. Branches lists each git branch with the worktree that contains the session. `6` and `:bookmarks` list bookmarked sessions. The active view is bold in the top hotkey bar. |
-| Enter | Resume the selected session. Quitting that session returns to ai9s, which takes the terminal back. On a group view, apply that group as a filter and return to sessions. |
+| Enter | Resume the selected session. Quitting that session returns to ai9s, which takes the terminal back. On a group view, apply that group as a filter and return to sessions. On a provider with no sessions, ai9s says to install that CLI or to log in and start a session. |
 | `d` | Describe the selected row. The list is replaced by the preview. `j`/`k` or up/down scroll a line. `h`/`l` or left/right pan. ⌘↑/⌘↓ and ⌘←/⌘→ page. `g`/`G` jump to the top or the end. Esc returns to the list. Tab opens and closes the same view. |
 | Ctrl-D | Delete, after confirmation. Sessions and bookmarks. |
 | `/` | Edit the filter. Up and down move the list while the field is open. ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Plain left and right stay in the field. `j` and `k` are letters here. |
@@ -293,7 +293,7 @@ ai9s writes `config.yaml` the first time it starts, when the file is missing. Sk
 
 AGE is always a relative age: now, minutes, hours, days, weeks, months, or years. DATE is the local date and time. Sort follows AGE. NAME is the name set with `n`. Otherwise it is the session title, or the session id when the title is missing or only repeats the native id. An empty name restores that default. The name stays through a reindex. `sort:title` sorts the NAME column. The list has no separate title column. NAME is the last column and is not cut. Every other column is cut to a fixed width. A path keeps its ending. The row pans to show the rest of the name. Describe shows the full value. Describe and `ai9s show` always print a context line and a token line. A dash means the session file did not record that number. The rest of the line appears when it was recorded: input, output, cache read, cache write, reasoning tokens, cost, premium requests, and reasoning effort. The CTX column is the latest prompt size, or `used/window` when both are known. The TOKENS column is the session total, or input plus output when the file has no total. The COST column is the recorded USD amount, or a dash when the file has none. A star in the first column is a bookmark.
 
-Claude records per-turn usage and cost. Codex records token totals and, when present, the context window. Copilot CLI records the latest prompt size, cache, reasoning effort, and premium requests. OpenCode records session token totals, cost, and the latest prompt size. Grok records the latest context and window, token totals, cache, reasoning, cost, and reasoning effort. Hermes records token totals, cost, and the latest prompt size, and does not record a window. Cursor records the latest context and window when composer data has them, and does not record a session token total. Antigravity records the latest context and window and sums per-generation input, output, cache read, and reasoning. OpenClaw records the context window separately from the estimated prompt size, and an estimated cost when the file has one. Goose and Cline record token totals and cost. Gemini, Junie, Jules, Aider, and Kiro leave the token lines empty. Kiro's database does not store those numbers.
+Claude records per-turn usage and cost. Codex records token totals and, when present, the context window. Copilot CLI records the latest prompt size, cache, reasoning effort, and premium requests. OpenCode records session token totals, cost, and the latest prompt size. Grok records the latest context and window, token totals, cache, reasoning, cost, and reasoning effort. Hermes records token totals, cost, and the latest prompt size, and does not record a window. Cursor records the latest context and window when composer data has them, and does not record a session token total. Antigravity records the latest context and window and sums per-generation input, output, cache read, and reasoning. OpenClaw records the context window separately from the estimated prompt size, and an estimated cost when the file has one. Goose and Cline record token totals and cost. Gemini, Junie, Jules, Aider, Kiro, and Mistral leave the token lines empty. Kiro's database does not store those numbers. Qwen records the latest prompt size, the context window, and the sum of assistant output tokens. MiniMax records token totals and cost. Kimi records the latest measured token count as context and does not record a session total.
 
 ## Agents
 
@@ -315,16 +315,16 @@ Paths below are the defaults. Each one can be pointed somewhere else with the en
 | `jules` | `$JULES_HOME/sessions.json` or `sessions.txt` | `jules teleport <id>` | that row, or the cloud session when `JULES_API_KEY` is set | `JULES_HOME` |
 | `goose` | `$GOOSE_HOME/sessions/sessions.db` | `goose session --resume --session-id <id>` | `goose session remove --session-id <id>` | `GOOSE_HOME` |
 | `cline` | `$CLINE_HOME/data/state/taskHistory.json` | `cline task open <id>` | rewrite the history, then remove the task directory | `CLINE_HOME` |
-| `aider` | `.aider.chat.history.md` under the configured roots | `aider --restore-chat-history` | that history file | `AIDER_CHAT_ROOTS`, `AIDER_HOME`, `AIDER_CHAT_HISTORY` |
+| `aider` | `.aider.chat.history.md` under the configured roots, and `~/.aider.chat.history.md` when those are unset | `aider --restore-chat-history` | that history file | `AIDER_CHAT_ROOTS`, `AIDER_HOME`, `AIDER_CHAT_HISTORY` |
 | `kiro` | `kiro-cli` `data.sqlite3` (`conversations_v2`) | `kiro-cli chat --resume-id <id>` | that conversation; the shell history table stays | `KIRO_CLI_DB`, else `KIRO_HOME` |
+| `kimi` | `$KIMI_CODE_HOME/sessions/<workDirKey>/<id>/state.json` and `agents/main/wire.jsonl` | `kimi --session <id>` | that session directory and its `session_index.jsonl` line | `KIMI_CODE_HOME` |
+| `minimax` | `$MINIMAX_DATA_DIR/v2/sqlite/runtime-state.sqlite` (`local_runtime_sessions`), and `v2/sessions/.../messages.jsonl` when that database is absent | `mcode --session <id>` | that session row and its history directory | `MINIMAX_DATA_DIR`, else `MAVIS_DATA_DIR` |
+| `qwen` | `$QWEN_RUNTIME_DIR/projects/<sanitized-cwd>/chats/<id>.jsonl` (also `chats/archive`; `$QWEN_HOME` when the runtime dir is unset) | `qwen --resume <id>` | that chat file | `QWEN_RUNTIME_DIR`, else `QWEN_HOME` |
+| `mistral` | `$VIBE_HOME/logs/session/<dir>/` (`meta.json`, `messages.jsonl`) | `vibe --resume <id>` | that session directory | `VIBE_HOME` |
 
-Yolo maps to a documented flag: Claude and Antigravity `--dangerously-skip-permissions`, Grok `--always-approve`, Copilot `--allow-all-tools`, Cursor `--force`, Hermes `--yolo`, Junie `--brave`, Cline `--yolo`, Kiro `--trust-all-tools`. Codex, Gemini, OpenCode, OpenClaw, Jules, Goose, and Aider are resumed without an extra approval flag.
+Yolo maps to a documented flag: Claude and Antigravity `--dangerously-skip-permissions`, Grok `--always-approve`, Copilot `--allow-all-tools`, Cursor `--force`, Hermes `--yolo`, Junie `--brave`, Cline `--yolo`, Kiro `--trust-all-tools`, Qwen `--yolo`, Mistral `--yolo` (`--auto-approve` is the same flag). Codex, Gemini, OpenCode, OpenClaw, Jules, Goose, Aider, Kimi, and MiniMax are resumed without an extra approval flag.
 
-Subagent transcripts are skipped. Kiro's shell `history` table is skipped on scan and on delete. Resume for Kiro uses `kiro-cli`, which is separate from the Kiro IDE. Goose resume and delete need the `goose` command on `PATH`. Jules listing talks to Google only when `AI9S_JULES_REMOTE=1`; otherwise ai9s reads the local snapshot. Deleting a remote Jules session talks to Google only when `JULES_API_KEY` is set. Aider does not walk the home directory unless `AIDER_SCAN_HOME=1`.
-
-### Not indexed yet
-
-These need a stable file layout and a real resume command before an adapter should claim them: Copilot in VS Code, Kimi, Qwen, Pi, Crush, Vibe, and Prime. Adding one is a scanner that returns `discover.Batch` plus a branch in `act.Plan`.
+Subagent transcripts are skipped. Kiro's shell `history` table is skipped on scan and on delete. Resume for Kiro uses `kiro-cli`, which is separate from the Kiro IDE. Goose resume and delete need the `goose` command on `PATH`. Jules listing talks to Google only when `AI9S_JULES_REMOTE=1`; otherwise ai9s reads the local snapshot. Deleting a remote Jules session talks to Google only when `JULES_API_KEY` is set. Aider does not walk the home directory unless `AIDER_SCAN_HOME=1`. It does read `~/.aider.chat.history.md`, the chat aider writes when it is started from home outside a git repo. A chat inside another project is read when that project is listed in `AIDER_CHAT_ROOTS`. Kimi Code is read from `KIMI_CODE_HOME` (default `~/.kimi-code`). The archived kimi-cli store `~/.kimi` is not read. MiniMax is read from `MINIMAX_DATA_DIR`, or from `MAVIS_DATA_DIR` when that is unset. The MiniMax install prefix `~/.minimax-code` is not the data directory. A `[session_logging] save_dir` in the Vibe `config.toml` replaces `logs/session` when that directory is safe. Child sessions are skipped.
 
 ### What delete removes
 
@@ -333,6 +333,14 @@ Grok delete removes the one session directory whose name is that session id, whe
 Gemini delete removes that one `session-*.json` file under `tmp/<project>/chats/`, after the file's `sessionId` matches. Project caches and `projects.json` stay.
 
 Kiro delete removes that conversation from `conversations_v2` and, when the same key is present, from `conversations`. The shell `history` table is left as it is. The database file stays.
+
+Kimi delete rewrites `session_index.jsonl` without that session id, then removes that one session directory. A sibling session in the same work directory stays.
+
+Qwen delete removes that one chat file under `chats/` or `chats/archive/`. Other chats stay.
+
+Mistral delete removes that one session directory under the Vibe save directory, when `meta.json` and `messages.jsonl` are regular files and the session id matches.
+
+MiniMax delete, when the session came from `runtime-state.sqlite`, removes that session's history directory when the manifest id matches, then deletes that session's rows. The database file stays. A manifest-only session removes that one history directory.
 
 Jules keeps a local list in `sessions.json` or `sessions.txt`. Delete rewrites that file without the chosen id. The `jules` command has no delete subcommand. A remote session (`jules:remote`) is deleted with the Jules API when `JULES_API_KEY` is set. Without that key, the cloud session is left in place and delete says so. ai9s does not read the Jules keyring.
 

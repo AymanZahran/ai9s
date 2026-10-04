@@ -70,31 +70,70 @@ func (c Command) Run() error {
 	return err
 }
 
+// resumeBinary is the CLI Plan looks up for this agent.
+func resumeBinary(agent string) (string, bool) {
+	switch agent {
+	case "claude", "codex", "grok", "copilot", "gemini", "opencode", "hermes", "openclaw", "junie", "jules", "goose", "cline", "aider", "kimi", "qwen":
+		return agent, true
+	case "antigravity", "agy":
+		return "agy", true
+	case "cursor":
+		return "cursor-agent", true
+	case "kiro":
+		return "kiro-cli", true
+	case "minimax":
+		return "mcode", true
+	case "mistral":
+		return "vibe", true
+	default:
+		return "", false
+	}
+}
+
+// Installed reports the resume CLI and whether it is on PATH.
+// Cursor is installed when cursor-agent or agent is on PATH.
+func Installed(agent string) (bin string, ok bool) {
+	bin, known := resumeBinary(agent)
+	if !known {
+		return "", false
+	}
+	if agent == "cursor" {
+		if _, err := LookPath("cursor-agent"); err == nil {
+			return "cursor-agent", true
+		}
+		if _, err := LookPath("agent"); err == nil {
+			return "agent", true
+		}
+		return "cursor-agent", false
+	}
+	_, err := LookPath(bin)
+	return bin, err == nil
+}
+
 // Plan builds the agent's own resume command.
 func Plan(s model.Session, yolo bool) (Command, error) {
 	if err := userArg("session id", s.NativeID); err != nil {
 		return Command{}, err
 	}
-	var name string
+	name, ok := resumeBinary(s.Agent)
+	if !ok {
+		return Command{}, fmt.Errorf("resume is not implemented for %s", s.Agent)
+	}
 	var args []string
 	switch s.Agent {
 	case "claude":
-		name = "claude"
 		if yolo {
 			args = append(args, "--dangerously-skip-permissions")
 		}
 		args = append(args, "--resume", s.NativeID)
 	case "codex":
-		name = "codex"
 		args = []string{"resume", s.NativeID}
 	case "grok":
-		name = "grok"
 		if yolo {
 			args = append(args, "--always-approve")
 		}
 		args = append(args, "--resume", s.NativeID)
 	case "copilot":
-		name = "copilot"
 		if yolo {
 			args = append(args, "--allow-all-tools")
 		}
@@ -102,7 +141,6 @@ func Plan(s model.Session, yolo bool) (Command, error) {
 	case "antigravity", "agy":
 		// The product name is antigravity. The CLI binary is still agy.
 		// "agy" remains so a row indexed before the rename can resume.
-		name = "agy"
 		if yolo {
 			args = append(args, "--dangerously-skip-permissions")
 		}
@@ -114,10 +152,8 @@ func Plan(s model.Session, yolo bool) (Command, error) {
 		if err := userArg("session file", s.SourcePath); err != nil {
 			return Command{}, err
 		}
-		name = "gemini"
 		args = []string{"--session-file", s.SourcePath}
 	case "cursor":
-		name = "cursor-agent"
 		if _, err := LookPath(name); err != nil {
 			name = "agent"
 		}
@@ -126,10 +162,8 @@ func Plan(s model.Session, yolo bool) (Command, error) {
 		}
 		args = append(args, "--resume", s.NativeID)
 	case "opencode":
-		name = "opencode"
 		args = []string{"--session", s.NativeID}
 	case "hermes":
-		name = "hermes"
 		id := s.NativeID
 		if profile, bare, ok := hermesProfile(s.NativeID); ok {
 			if err := userArg("hermes profile", profile); err != nil {
@@ -146,28 +180,22 @@ func Plan(s model.Session, yolo bool) (Command, error) {
 		}
 		args = append(args, "--resume", id)
 	case "openclaw":
-		name = "openclaw"
 		args = []string{"resume", s.NativeID}
 	case "junie":
-		name = "junie"
 		if yolo {
 			args = append(args, "--brave")
 		}
 		args = append(args, "--resume", "--session-id="+s.NativeID)
 	case "jules":
-		name = "jules"
 		args = []string{"teleport", s.NativeID}
 	case "goose":
-		name = "goose"
 		args = []string{"session", "--resume", "--session-id", s.NativeID}
 	case "cline":
-		name = "cline"
 		args = []string{"task", "open", s.NativeID}
 		if yolo {
 			args = append(args, "--yolo")
 		}
 	case "aider":
-		name = "aider"
 		args = []string{"--restore-chat-history"}
 		if s.SourcePath != "" && filepath.Base(s.SourcePath) != ".aider.chat.history.md" {
 			if err := userArg("chat history file", s.SourcePath); err != nil {
@@ -176,11 +204,24 @@ func Plan(s model.Session, yolo bool) (Command, error) {
 			args = append(args, "--chat-history-file", s.SourcePath)
 		}
 	case "kiro":
-		name = "kiro-cli"
 		if yolo {
 			args = append(args, "--trust-all-tools")
 		}
 		args = append(args, "chat", "--resume-id", s.NativeID)
+	case "kimi":
+		args = []string{"--session", s.NativeID}
+	case "minimax":
+		args = []string{"--session", s.NativeID}
+	case "qwen":
+		if yolo {
+			args = append(args, "--yolo")
+		}
+		args = append(args, "--resume", s.NativeID)
+	case "mistral":
+		if yolo {
+			args = append(args, "--yolo")
+		}
+		args = append(args, "--resume", s.NativeID)
 	default:
 		return Command{}, fmt.Errorf("resume is not implemented for %s", s.Agent)
 	}
@@ -232,6 +273,14 @@ func Delete(s model.Session) error {
 		return deleteJules(s)
 	case "kiro":
 		return deleteKiro(s)
+	case "kimi":
+		return deleteKimi(s)
+	case "qwen":
+		return deleteQwen(s)
+	case "mistral":
+		return deleteMistral(s)
+	case "minimax":
+		return deleteMinimax(s)
 	default:
 		return fmt.Errorf("deletion is disabled for %s", s.Agent)
 	}
@@ -1217,4 +1266,392 @@ func inside(root, path string) bool {
 		return false
 	}
 	return rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator))
+}
+
+func deleteKimi(s model.Session) error {
+	if s.Agent != "kimi" {
+		return errors.New("kimi delete is only used for Kimi")
+	}
+	if err := plainID("session id", s.NativeID); err != nil {
+		return err
+	}
+	if filepath.Base(s.SourcePath) != "state.json" {
+		return errors.New("refusing to delete a file that is not a Kimi session")
+	}
+	dir, err := cleanWithin(filepath.Dir(s.SourcePath), discover.KimiSessions())
+	if err != nil {
+		return err
+	}
+	n, err := depthUnder(discover.KimiSessions(), dir)
+	if err != nil {
+		return err
+	}
+	if n != 2 {
+		return errors.New("refusing to delete a Kimi directory that is not one session")
+	}
+	statePath := filepath.Join(dir, "state.json")
+	st, err := os.Lstat(statePath)
+	if err != nil {
+		return err
+	}
+	if st.Mode()&os.ModeSymlink != 0 || !st.Mode().IsRegular() {
+		return errors.New("refusing to delete a non-regular file")
+	}
+	raw, err := readObject(statePath)
+	if err != nil {
+		return err
+	}
+	if jsonString(raw, "id") != s.NativeID && filepath.Base(dir) != s.NativeID {
+		return errors.New("session id does not match the Kimi session")
+	}
+	if err := dropKimiIndexLine(discover.KimiIndex(), s.NativeID); err != nil {
+		return err
+	}
+	return os.RemoveAll(dir)
+}
+
+func dropKimiIndexLine(path, id string) error {
+	if path == "" {
+		return nil
+	}
+	body, err := os.ReadFile(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return err
+	}
+	text := string(body)
+	nl := strings.HasSuffix(text, "\n")
+	lines := strings.Split(strings.TrimRight(text, "\n"), "\n")
+	if len(lines) == 1 && lines[0] == "" {
+		return nil
+	}
+	kept := make([]string, 0, len(lines))
+	removed := 0
+	for _, line := range lines {
+		if kimiLineID(line) == id {
+			removed++
+			continue
+		}
+		kept = append(kept, line)
+	}
+	if removed == 0 {
+		return nil
+	}
+	out := strings.Join(kept, "\n")
+	if nl || out != "" {
+		out += "\n"
+	}
+	return writeAtom(path, []byte(out))
+}
+
+func kimiLineID(line string) string {
+	var raw map[string]any
+	if json.Unmarshal([]byte(line), &raw) != nil {
+		return ""
+	}
+	return jsonString(raw, "sessionId")
+}
+
+func deleteQwen(s model.Session) error {
+	if s.Agent != "qwen" {
+		return errors.New("qwen delete is only used for Qwen")
+	}
+	if err := plainID("session id", s.NativeID); err != nil {
+		return err
+	}
+	path, err := cleanWithin(s.SourcePath, discover.QwenRoot())
+	if err != nil {
+		return err
+	}
+	if filepath.Base(path) != s.NativeID+".jsonl" {
+		return errors.New("refusing to delete a file that is not a Qwen chat")
+	}
+	parent := filepath.Dir(path)
+	switch filepath.Base(parent) {
+	case "chats":
+	case "archive":
+		if filepath.Base(filepath.Dir(parent)) != "chats" {
+			return errors.New("refusing to delete a file that is not a Qwen chat")
+		}
+	default:
+		return errors.New("refusing to delete a file that is not a Qwen chat")
+	}
+	st, err := os.Lstat(path)
+	if err != nil {
+		return err
+	}
+	if !st.Mode().IsRegular() {
+		return errors.New("refusing to delete a non-regular file")
+	}
+	return os.Remove(path)
+}
+
+func deleteMistral(s model.Session) error {
+	if s.Agent != "mistral" {
+		return errors.New("mistral delete is only used for Mistral")
+	}
+	if err := plainID("session id", s.NativeID); err != nil {
+		return err
+	}
+	root := discover.VibeSessions()
+	rawDir := filepath.Clean(filepath.Dir(s.SourcePath))
+	st, err := os.Lstat(rawDir)
+	if err != nil {
+		return err
+	}
+	if st.Mode()&os.ModeSymlink != 0 || !st.IsDir() {
+		return errors.New("refusing to delete a symlink")
+	}
+	msgs, err := cleanWithin(s.SourcePath, root)
+	if err != nil {
+		return err
+	}
+	if filepath.Base(msgs) != "messages.jsonl" {
+		return errors.New("refusing to delete a file that is not a Mistral session")
+	}
+	dir := filepath.Dir(msgs)
+	n, err := depthUnder(root, dir)
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return errors.New("refusing to delete a Mistral directory that is not one session")
+	}
+	meta := filepath.Join(dir, "meta.json")
+	if err := regularSessionFile(meta); err != nil {
+		return err
+	}
+	if err := regularSessionFile(msgs); err != nil {
+		return err
+	}
+	raw, err := readObject(meta)
+	if err != nil {
+		return err
+	}
+	if jsonString(raw, "session_id") != s.NativeID {
+		return errors.New("session id does not match the Mistral session")
+	}
+	return os.RemoveAll(dir)
+}
+
+func deleteMinimax(s model.Session) error {
+	if s.Agent != "minimax" {
+		return errors.New("minimax delete is only used for MiniMax")
+	}
+	if err := plainID("session id", s.NativeID); err != nil {
+		return err
+	}
+	if _, err := sameRegularFile(s.SourcePath, discover.MinimaxDB()); err == nil {
+		return deleteMinimaxDB(s)
+	}
+	return deleteMinimaxDir(s)
+}
+
+// minimaxRowTables are fixed table names. The session id is a bound parameter.
+var minimaxRowTables = []string{
+	"local_runtime_token_usage",
+	"local_runtime_message_rows",
+	"local_runtime_messages",
+	"local_runtime_session_fts_keys",
+	"local_runtime_session_agent_state",
+}
+
+func deleteMinimaxDB(s model.Session) error {
+	path, err := sameRegularFile(s.SourcePath, discover.MinimaxDB())
+	if err != nil {
+		return err
+	}
+	db, err := openWriteDB(path)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	var history string
+	err = db.QueryRow(`SELECT coalesce(history_relative_dir, '') FROM local_runtime_sessions WHERE session_id = ?`, s.NativeID).Scan(&history)
+	if errors.Is(err, sql.ErrNoRows) {
+		return errors.New("session id was not in the MiniMax database")
+	}
+	if err != nil {
+		return err
+	}
+	if err := removeMinimaxHistory(history, s.NativeID); err != nil {
+		return err
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for _, table := range minimaxRowTables {
+		ok, err := tableExists(tx, table)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			continue
+		}
+		if _, err := tx.Exec(`DELETE FROM `+table+` WHERE session_id = ?`, s.NativeID); err != nil {
+			return err
+		}
+	}
+	res, err := tx.Exec(`DELETE FROM local_runtime_sessions WHERE session_id = ?`, s.NativeID)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return errors.New("session id was not in the MiniMax database")
+	}
+	return tx.Commit()
+}
+
+func removeMinimaxHistory(rel, id string) error {
+	rel = strings.TrimSpace(rel)
+	if rel == "" {
+		return nil
+	}
+	dir, ok := minimaxRelDir(rel)
+	if !ok {
+		return errors.New("refusing to delete a MiniMax directory outside the session root")
+	}
+	st, err := os.Lstat(dir)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if st.Mode()&os.ModeSymlink != 0 || !st.IsDir() {
+		return errors.New("refusing to delete a symlink")
+	}
+	resolved, err := cleanWithin(dir, discover.MinimaxSessions())
+	if err != nil {
+		return err
+	}
+	n, err := depthUnder(discover.MinimaxSessions(), resolved)
+	if err != nil {
+		return err
+	}
+	if n != 4 {
+		return errors.New("refusing to delete a MiniMax directory outside the session root")
+	}
+	manifest := filepath.Join(resolved, "manifest.json")
+	if err := regularSessionFile(manifest); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return errors.New("session id does not match the MiniMax session")
+		}
+		return err
+	}
+	raw, err := readObject(manifest)
+	if err != nil {
+		return errors.New("session id does not match the MiniMax session")
+	}
+	if jsonString(raw, "sessionId") != id {
+		return errors.New("session id does not match the MiniMax session")
+	}
+	return os.RemoveAll(resolved)
+}
+
+func minimaxRelDir(rel string) (string, bool) {
+	if strings.Contains(rel, `\`) || strings.Contains(rel, "..") {
+		return "", false
+	}
+	parts := strings.Split(rel, "/")
+	if len(parts) != 4 {
+		return "", false
+	}
+	for _, part := range parts {
+		if part == "" || part == "." || part == ".." || strings.ContainsAny(part, `/\`) {
+			return "", false
+		}
+	}
+	root := discover.MinimaxSessions()
+	if root == "" {
+		return "", false
+	}
+	return filepath.Join(root, parts[0], parts[1], parts[2], parts[3]), true
+}
+
+func deleteMinimaxDir(s model.Session) error {
+	root := discover.MinimaxSessions()
+	rawDir := filepath.Clean(filepath.Dir(s.SourcePath))
+	st, err := os.Lstat(rawDir)
+	if err != nil {
+		return err
+	}
+	if st.Mode()&os.ModeSymlink != 0 || !st.IsDir() {
+		return errors.New("refusing to delete a symlink")
+	}
+	msgs, err := cleanWithin(s.SourcePath, root)
+	if err != nil {
+		return err
+	}
+	if filepath.Base(msgs) != "messages.jsonl" {
+		return errors.New("refusing to delete a file that is not a MiniMax session")
+	}
+	dir := filepath.Dir(msgs)
+	n, err := depthUnder(root, dir)
+	if err != nil {
+		return err
+	}
+	if n != 4 {
+		return errors.New("refusing to delete a MiniMax directory outside the session root")
+	}
+	manifest := filepath.Join(dir, "manifest.json")
+	if err := regularSessionFile(manifest); err != nil {
+		return err
+	}
+	raw, err := readObject(manifest)
+	if err != nil {
+		return err
+	}
+	if jsonString(raw, "sessionId") != s.NativeID {
+		return errors.New("session id does not match the MiniMax session")
+	}
+	return os.RemoveAll(dir)
+}
+
+func regularSessionFile(path string) error {
+	st, err := os.Lstat(path)
+	if err != nil {
+		return err
+	}
+	if st.Mode()&os.ModeSymlink != 0 || !st.Mode().IsRegular() {
+		return errors.New("refusing to delete a non-regular file")
+	}
+	return nil
+}
+
+func readObject(path string) (map[string]any, error) {
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return nil, err
+	}
+	return raw, nil
+}
+
+func jsonString(raw map[string]any, key string) string {
+	s, _ := raw[key].(string)
+	return strings.TrimSpace(s)
+}
+
+func depthUnder(root, path string) (int, error) {
+	resolvedRoot, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return 0, err
+	}
+	rel, err := filepath.Rel(resolvedRoot, path)
+	if err != nil || !inside(resolvedRoot, path) {
+		return 0, errors.New("refusing to delete outside the agent session directory")
+	}
+	return len(strings.Split(rel, string(os.PathSeparator))), nil
 }

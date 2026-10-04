@@ -46,6 +46,36 @@ func TestPlan(t *testing.T) {
 	}
 }
 
+func TestInstalled(t *testing.T) {
+	orig := LookPath
+	t.Cleanup(func() { LookPath = orig })
+	LookPath = func(name string) (string, error) {
+		if name == "agent" || name == "kimi" {
+			return "/usr/bin/" + name, nil
+		}
+		return "", os.ErrNotExist
+	}
+	checks := []struct {
+		agent string
+		bin   string
+		ok    bool
+	}{
+		{"kimi", "kimi", true},
+		{"minimax", "mcode", false},
+		{"qwen", "qwen", false},
+		{"mistral", "vibe", false},
+		{"cursor", "agent", true},
+		{"kiro", "kiro-cli", false},
+		{"nope", "", false},
+	}
+	for _, check := range checks {
+		bin, ok := Installed(check.agent)
+		if bin != check.bin || ok != check.ok {
+			t.Fatalf("%s bin %q ok %v", check.agent, bin, ok)
+		}
+	}
+}
+
 func TestPlanMoreAgents(t *testing.T) {
 	orig := LookPath
 	t.Cleanup(func() { LookPath = orig })
@@ -67,6 +97,10 @@ func TestPlanMoreAgents(t *testing.T) {
 		{model.Session{Agent: "aider", NativeID: filepath.Join(dir, ".aider.chat.history.md"), SourcePath: filepath.Join(dir, ".aider.chat.history.md"), CWD: dir}, true, []string{"--restore-chat-history"}, []string{"--chat-history-file", "yolo"}},
 		{model.Session{Agent: "aider", NativeID: filepath.Join(dir, "custom.md"), SourcePath: filepath.Join(dir, "custom.md"), CWD: dir}, false, []string{"--restore-chat-history", "--chat-history-file"}, nil},
 		{model.Session{Agent: "kiro", NativeID: "sid", CWD: dir}, true, []string{"kiro-cli", "--trust-all-tools", "chat", "--resume-id sid"}, nil},
+		{model.Session{Agent: "kimi", NativeID: "k1", CWD: dir}, true, []string{"/usr/bin/kimi", "--session k1"}, []string{"yolo"}},
+		{model.Session{Agent: "minimax", NativeID: "mm-1", CWD: dir}, true, []string{"/usr/bin/mcode", "--session mm-1"}, []string{"yolo"}},
+		{model.Session{Agent: "qwen", NativeID: "0123456789abcdef0123456789abcdef", CWD: dir}, true, []string{"/usr/bin/qwen", "--yolo --resume 0123456789abcdef0123456789abcdef"}, nil},
+		{model.Session{Agent: "mistral", NativeID: "session_20260302_150405_abcd", CWD: dir}, true, []string{"/usr/bin/vibe", "--yolo --resume session_20260302_150405_abcd"}, nil},
 		{model.Session{Agent: "antigravity", NativeID: "c1", CWD: dir}, true, []string{"/usr/bin/agy", "--dangerously-skip-permissions", "--conversation c1"}, []string{"--resume"}},
 	}
 	for _, tc := range checks {

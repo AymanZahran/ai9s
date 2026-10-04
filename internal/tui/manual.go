@@ -99,13 +99,13 @@ const manualText = `[::b]ai9s manual[-]
 [::b]Views[-]
   [yellow]<1>[-] sessions      the conversation list. AGE is relative. DATE is the local time. Enter resumes. d describes. ctrl-d deletes.
                      Started outside your home directory, the list is that directory and its subdirectories. Home lists every session. Esc clears the filter and keeps that directory.
-  [yellow]<2>[-] providers     group the current filter by agent
+  [yellow]<2>[-] providers     group the current filter by agent. An agent with no sessions stays listed. Enter on that row says to install its CLI or to log in.
   [yellow]<3>[-] directories   group by working directory
   [yellow]<4>[-] branches      group by git branch and worktree. The worktree is the checkout that holds the session directory. Enter filters by that branch and that checkout.
   [yellow]<5>[-] models        group by model
   [yellow]<6>[-] bookmarks     bookmarked sessions. Enter resumes. f, n, u, and ctrl-d work here the same way they do on sessions.
 
-Enter on a group applies that filter and returns to sessions. A group labeled (none) has an empty value, so enter leaves the filter alone, unless that branches row still has a worktree.
+Enter on a group applies that filter and returns to sessions. Enter on a provider with no sessions warns you to install that CLI or to log in and start a session. A group labeled (none) has an empty value, so enter leaves the filter alone, unless that branches row still has a worktree.
 
 [::b]Command line[-]
   [yellow]/[-]   edits the filter. Each word matches when its letters appear in order in the name, title, session id, summary, directory, branch, model, agent, or excerpt. A contiguous match ranks above a match with gaps.
@@ -177,8 +177,14 @@ Quitting the agent returns to this list. ai9s takes the terminal back, so the sh
   cline task open
   aider --restore-chat-history
   kiro-cli chat --resume-id
+  kimi --session
+  mcode --session
+  qwen --resume
+  vibe --resume
 
 The Kiro IDE command is a different program. Resume uses kiro-cli.
+Kimi resume uses kimi. The archived kimi-cli store is not read.
+MiniMax resume uses mcode. Qwen resume uses qwen. Mistral resume uses vibe.
 Goose resume needs the goose command on PATH.
 
 [::b]Delete[-]
@@ -197,6 +203,10 @@ Delete removes one session and refuses a path outside that agent's own root.
   gemini                   that session-*.json chat file
   jules                    the row in sessions.json or sessions.txt; a cloud session needs JULES_API_KEY
   kiro                     that conversation in data.sqlite3; the shell history table stays
+  kimi                     that session directory, and its session_index.jsonl line
+  minimax                  that session row and its history directory, or the history directory alone
+  qwen                     that chat file
+  mistral                  that session directory
 The jules CLI has no delete command. A remote session is deleted through the Jules API when JULES_API_KEY is set.
 
 [::b]Where sessions are read[-]
@@ -215,8 +225,12 @@ Each path can be moved with the environment variable after it. A missing directo
   jules        JULES_HOME. A remote listing runs only when AI9S_JULES_REMOTE=1.
   goose        GOOSE_HOME
   cline        CLINE_HOME
-  aider        AIDER_CHAT_ROOTS, AIDER_HOME, or AIDER_CHAT_HISTORY. AIDER_SCAN_HOME=1 walks the home directory.
+  aider        AIDER_CHAT_ROOTS, AIDER_HOME, or AIDER_CHAT_HISTORY. ~/.aider.chat.history.md is read when those are unset. AIDER_SCAN_HOME=1 walks the home directory.
   kiro         KIRO_CLI_DB or KIRO_HOME
+  kimi         KIMI_CODE_HOME
+  minimax      MINIMAX_DATA_DIR, else MAVIS_DATA_DIR
+  qwen         QWEN_RUNTIME_DIR, else QWEN_HOME
+  mistral      VIBE_HOME
 
 The index is $AI9S_CACHE_DIR/index.db, or $XDG_CACHE_HOME/ai9s/index.db, or ~/.cache/ai9s/index.db.
 
