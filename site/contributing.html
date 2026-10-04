@@ -68,7 +68,7 @@ gofmt -w .</code></pre>
     <p><code>make release</code> opens a pull request for the changelog when <code>## Unreleased</code> has notes, waits for the checks, squash-merges it, and then pushes the annotated tag. GoReleaser builds the GitHub Release from that tag. From that tag onward, Cosign signs the checksum file. The version is a link-time value, not a constant in the source. The Homebrew formula is a second pull request, after the tag archive exists. If a check fails, or GitHub reports none, the command does not create the tag. <code>make release VERSION=1.2.3</code> chooses the version. <code>PART=minor</code> or <code>PART=major</code> bumps that component. <code>DRY=1</code> prints the plan. <code>INSTALL=1</code> reinstalls the formula after the formula pull request merges.</p>
   </main>
   <footer class="site-footer">
-    <p><a href="https://github.com/AymanZahran/ai9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/AymanZahran/ai9s/blob/main/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/AymanZahran/ai9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/sponsors/AymanZahran">Sponsor</a> · <a href="https://github.com/AymanZahran/ai9s/blob/main/LICENSE">MIT</a></p>
     <p>© 2026 The ai9s authors.</p>
   </footer>
 </body>
