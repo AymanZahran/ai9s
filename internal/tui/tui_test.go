@@ -153,7 +153,7 @@ func TestViewsCommandAndManual(t *testing.T) {
 	}
 
 	send(ui.table, tcell.NewEventKey(tcell.KeyRune, '2', tcell.ModNone))
-	if ui.table.GetTitle() != " providers " {
+	if ui.table.GetTitle() != " agents " {
 		t.Fatalf("title %q", ui.table.GetTitle())
 	}
 	send(ui.table, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
@@ -166,7 +166,7 @@ func TestViewsCommandAndManual(t *testing.T) {
 		t.Fatal("colon did not open command mode")
 	}
 	send(ui.command, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
-	if ui.view != viewProviders || ui.table.GetTitle() != " providers " {
+	if ui.view != viewAgents || ui.table.GetTitle() != " agents " {
 		t.Fatalf("cycled view %s title %q", ui.view, ui.table.GetTitle())
 	}
 
@@ -283,25 +283,25 @@ func TestEscapeReturnsToDrilledView(t *testing.T) {
 	app.SetRoot(ui.layout, false)
 
 	send(ui.table, tcell.NewEventKey(tcell.KeyRune, '2', tcell.ModNone))
-	if ui.view != viewProviders {
+	if ui.view != viewAgents {
 		t.Fatalf("providers %s", ui.view)
 	}
 	send(ui.table, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
-	if ui.view != viewSessions || ui.drilled != viewProviders || !strings.Contains(ui.filter.GetText(), "agent:claude") {
+	if ui.view != viewSessions || ui.drilled != viewAgents || !strings.Contains(ui.filter.GetText(), "agent:claude") {
 		t.Fatalf("drill view %s from %s filter %q", ui.view, ui.drilled, ui.filter.GetText())
 	}
 	send(ui.table, tcell.NewEventKey(tcell.KeyRune, 'd', tcell.ModNone))
 	send(ui.preview, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
-	if ui.view != viewSessions || ui.drilled != viewProviders || !strings.Contains(ui.filter.GetText(), "agent:claude") {
+	if ui.view != viewSessions || ui.drilled != viewAgents || !strings.Contains(ui.filter.GetText(), "agent:claude") {
 		t.Fatalf("describe esc view %s from %s filter %q", ui.view, ui.drilled, ui.filter.GetText())
 	}
 	send(ui.table, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
-	if ui.view != viewProviders || ui.drilled != "" || ui.filter.GetText() != "" {
+	if ui.view != viewAgents || ui.drilled != "" || ui.filter.GetText() != "" {
 		t.Fatalf("back view %s from %q filter %q", ui.view, ui.drilled, ui.filter.GetText())
 	}
 	ui.filter.SetText("zzz")
 	send(ui.table, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
-	if ui.view != viewProviders || ui.filter.GetText() != "" {
+	if ui.view != viewAgents || ui.filter.GetText() != "" {
 		t.Fatalf("group root view %s filter %q", ui.view, ui.filter.GetText())
 	}
 	send(ui.table, tcell.NewEventKey(tcell.KeyRune, '1', tcell.ModNone))
@@ -409,7 +409,7 @@ func TestArrowsSelectWhilePromptIsOpen(t *testing.T) {
 
 	send(ui.table, tcell.NewEventKey(tcell.KeyRune, ':', tcell.ModNone))
 	send(ui.command, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
-	if ui.view != viewProviders {
+	if ui.view != viewAgents {
 		t.Fatalf("empty command cycled to %s", ui.view)
 	}
 
@@ -495,7 +495,7 @@ func TestEnterPlansResumeWithoutAScreen(t *testing.T) {
 	}
 
 	ui.pending = nil
-	ui.setView(viewProviders)
+	ui.setView(viewAgents)
 	send(ui.table, tcell.NewEventKey(tcell.KeyRune, 'y', tcell.ModNone))
 	if ui.pending != nil {
 		t.Fatalf("group yolo %#v", ui.pending)

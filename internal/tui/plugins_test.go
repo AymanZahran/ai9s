@@ -142,9 +142,9 @@ func TestPluginHintOnMenu(t *testing.T) {
 	if !sawPlugin {
 		t.Fatalf("plugin row missing %q", text)
 	}
-	ui.view = "providers"
+	ui.view = "agents"
 	ui.paintHeader()
 	if strings.Contains(ui.header.GetText(true), "<e>") {
-		t.Fatal("sessions plugin shown on providers")
+		t.Fatal("sessions plugin shown on agents")
 	}
 }

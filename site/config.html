@@ -49,7 +49,7 @@
         <tbody>
           <tr><td><code>refreshRate</code></td><td>Seconds between reindexes. <code>0</code> uses 30. The minimum is 5. The list always refreshes on that interval.</td></tr>
           <tr><td><code>readOnly</code></td><td>When true, Ctrl-D does not delete. <code>d</code> still opens describe.</td></tr>
-          <tr><td><code>defaultView</code></td><td><code>sessions</code>, <code>providers</code>, <code>directories</code>, <code>branches</code>, <code>models</code>, or <code>bookmarks</code>.</td></tr>
+          <tr><td><code>defaultView</code></td><td><code>sessions</code>, <code>agents</code>, <code>directories</code>, <code>branches</code>, <code>models</code>, or <code>bookmarks</code>. <code>providers</code> is the previous name for <code>agents</code>.</td></tr>
           <tr><td><code>noExitOnCtrlC</code></td><td>When true, Ctrl-C does not quit.</td></tr>
           <tr><td><code>ui.enableMouse</code></td><td>The mouse is on unless this is false.</td></tr>
           <tr><td><code>ui.headless</code></td><td>Hide the menu, the crumbs, and the logo.</td></tr>
@@ -75,7 +75,7 @@
     command: code
     args:
       - $CWD</code></pre>
-    <p>The selected row provides <code>$ID</code>, <code>$NATIVE_ID</code>, <code>$AGENT</code>, <code>$CWD</code>, <code>$TITLE</code>, <code>$BRANCH</code>, <code>$MODEL</code>, <code>$FILTER</code>, and <code>$NAME</code>. Scopes are <code>sessions</code>, <code>bookmarks</code>, <code>providers</code>, <code>directories</code>, <code>branches</code>, <code>models</code>, or <code>all</code>. A plugin scoped to <code>sessions</code> also runs on bookmarks. An empty scope list means every view. A command with no slash is looked up on <code>PATH</code>, then in the config <code>plugins/</code> directory, so a script can sit beside its yaml file.</p>
+    <p>The selected row provides <code>$ID</code>, <code>$NATIVE_ID</code>, <code>$AGENT</code>, <code>$CWD</code>, <code>$TITLE</code>, <code>$BRANCH</code>, <code>$MODEL</code>, <code>$FILTER</code>, and <code>$NAME</code>. Scopes are <code>sessions</code>, <code>bookmarks</code>, <code>agents</code>, <code>directories</code>, <code>branches</code>, <code>models</code>, or <code>all</code>. <code>providers</code> is the previous name for <code>agents</code>. A plugin scoped to <code>sessions</code> also runs on bookmarks. An empty scope list means every view. A command with no slash is looked up on <code>PATH</code>, then in the config <code>plugins/</code> directory, so a script can sit beside its yaml file.</p>
     <h2>Example plugins</h2>
     <p>The repo ships four plugins under <code>examples/plugins</code>. They stay off until you copy the script and the yaml file into <code>plugins/</code> and restart. The new keys are drawn on the menu. Each environment value is one program name, not a shell line.</p>
     <figure class="shot">

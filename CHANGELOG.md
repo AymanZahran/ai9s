@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `2` and `:agents` list agents. `:providers`, `defaultView: providers`, and a plugin scope of `providers` still open that view.
+
 ## 1.0.5
 
 - `y` resumes the selected session with that agent's auto-approve flag. The top menu shows it on sessions and bookmarks.

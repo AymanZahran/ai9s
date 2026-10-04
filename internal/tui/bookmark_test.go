@@ -52,7 +52,7 @@ func TestBookmarkAndCost(t *testing.T) {
 	})
 
 	ui.app.QueueEvent(tcell.NewEventKey(tcell.KeyRune, '2', tcell.ModNone))
-	waitUI(t, ui.app, func() bool { return ui.view == viewProviders })
+	waitUI(t, ui.app, func() bool { return ui.view == viewAgents })
 	ui.app.QueueEvent(tcell.NewEventKey(tcell.KeyRune, 'f', tcell.ModNone))
 	waitUI(t, ui.app, func() bool {
 		return strings.Contains(screenText(screen), "Switch to sessions before bookmarking.")

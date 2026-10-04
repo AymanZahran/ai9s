@@ -99,20 +99,20 @@ const manualText = `[::b]ai9s manual[-]
 [::b]Views[-]
   [yellow]<1>[-] sessions      the conversation list. AGE is relative. DATE is the local time. Enter resumes. y resumes with the auto-approve flag. d describes. ctrl-d deletes.
                      Started outside your home directory, the list is that directory and its subdirectories. Home lists every session. Esc clears the filter and keeps that directory.
-  [yellow]<2>[-] providers     group the current filter by agent. An agent with no sessions stays listed. Enter on that row says to install its CLI or to log in.
+  [yellow]<2>[-] agents        group the current filter by agent. An agent with no sessions stays listed. Enter on that row says to install its CLI or to log in.
   [yellow]<3>[-] directories   group by working directory
   [yellow]<4>[-] branches      group by git branch and worktree. The worktree is the checkout that holds the session directory. Enter filters by that branch and that checkout.
   [yellow]<5>[-] models        group by model
   [yellow]<6>[-] bookmarks     bookmarked sessions. Enter and y resume. f, n, u, and ctrl-d work here the same way they do on sessions.
 
-Enter on a group applies that filter and returns to sessions. Enter on a provider with no sessions warns you to install that CLI or to log in and start a session. A group labeled (none) has an empty value, so enter leaves the filter alone, unless that branches row still has a worktree.
+Enter on a group applies that filter and returns to sessions. Enter on an agent with no sessions warns you to install that CLI or to log in and start a session. A group labeled (none) has an empty value, so enter leaves the filter alone, unless that branches row still has a worktree.
 
 [::b]Command line[-]
   [yellow]/[-]   edits the filter. Each word matches when its letters appear in order in the name, title, session id, summary, directory, branch, model, agent, or excerpt. A contiguous match ranks above a match with gaps.
          Up and down move the list one row while the field is open. j and k are letters here.
          ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Ctrl or Alt with those arrows do the same.
          Plain left and right stay in the field.
-  [yellow]:[-]   opens command mode. The table lists views and filter tokens. bookmarks, or :bookmarks, lists starred sessions.
+  [yellow]:[-]   opens command mode. The table lists views and filter tokens. agents, or :agents, lists agents. :providers still opens that view. bookmarks, or :bookmarks, lists starred sessions.
          Type to narrow that list. Up and down select a row.
          Enter on an empty command cycles the view. After up or down, Enter applies the highlighted row.
          Another : cycles the view name in the field.
