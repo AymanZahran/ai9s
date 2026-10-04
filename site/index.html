@@ -39,7 +39,7 @@
     <pre><code>brew tap AymanZahran/ai9s https://github.com/AymanZahran/ai9s
 brew trust aymanzahran/ai9s
 brew install ai9s</code></pre>
-    <p>Source and <code>go install</code> are on the <a href="install.html">install</a> page. Building from source requires Go 1.25 or newer.</p>
+    <p>Linux packages, Scoop, the Windows zip, source, and <code>go install</code> are on the <a href="install.html">install</a> page. Building from source requires Go 1.25 or newer.</p>
 
     <h1><span class="mark" aria-hidden="true">▣</span> Features</h1>
     <ul>
@@ -80,19 +80,19 @@ brew install ai9s</code></pre>
       </li>
       <li>A local index
         <ul>
-          <li>SQLite under your cache directory. Files are skipped when their modification time has not changed. One agent failing does not drop the others.</li>
+          <li>SQLite under your cache directory. The list reindexes every 30 seconds, and files are skipped when their modification time has not changed. One agent failing does not drop the others. <code>f</code> bookmarks a session.</li>
         </ul>
       </li>
       <li>Metadata when the agent recorded it
         <ul>
-          <li>Context size, window, tokens, cache, reasoning, cost, and premium requests. The CTX column is the latest prompt size, not a sum of every turn.</li>
+          <li>Context size, window, tokens, cache, reasoning, cost, and premium requests. The CTX column is the latest prompt size, not a sum of every turn. The COST column is the recorded USD amount, or a dash.</li>
         </ul>
       </li>
     </ul>
 
     <h1><span class="mark" aria-hidden="true">☰</span> Documentation</h1>
     <ul>
-      <li><a href="install.html">Installation</a> — source, <code>go install</code>, and the cache directory</li>
+      <li><a href="install.html">Installation</a> — Homebrew, Linux packages, Scoop, the Windows zip, and source</li>
       <li><a href="commands.html">Commands</a> — index, search, show, resume, delete</li>
       <li><a href="keys.html">Keys</a> — the list, the preview, and command mode</li>
       <li><a href="agents.html">Agents</a> — where each session lives, and what delete removes</li>

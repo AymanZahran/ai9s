@@ -152,6 +152,78 @@ func storeSource(path string) []Source {
 	return []Source{{Path: path, Mtime: 10}}
 }
 
+func TestFuzzyRankBookmarkAndCost(t *testing.T) {
+	st, err := Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	older := time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)
+	newer := older.Add(48 * time.Hour)
+	shipPath := filepath.Join(t.TempDir(), "ship.jsonl")
+	readPath := filepath.Join(t.TempDir(), "read.jsonl")
+	exactPath := filepath.Join(t.TempDir(), "exact.jsonl")
+	ship := model.Session{
+		ID: "claude:ship", NativeID: "ship", Agent: "claude", Title: "ship the feature",
+		Updated: older, Messages: 2, SourcePath: shipPath, CanDelete: true, DeleteMode: "file",
+		Usage:    model.Usage{CostUSD: 0.25},
+		Snippets: []model.Snippet{{Role: "user", Body: "please fix the auth bug"}},
+	}
+	read := model.Session{
+		ID: "claude:read", NativeID: "read", Agent: "claude", Title: "readme draft",
+		Updated: newer, Messages: 9, SourcePath: readPath, CanDelete: true, DeleteMode: "file",
+		Usage: model.Usage{CostUSD: 1.5},
+	}
+	exact := model.Session{
+		ID: "claude:exact", NativeID: "exact", Agent: "claude", Title: "rdme plan",
+		Updated: older.Add(time.Hour), Messages: 1, SourcePath: exactPath, CanDelete: true, DeleteMode: "file",
+	}
+	if err := st.Apply("claude", []model.Session{ship, read, exact}, []Source{{Path: shipPath, Mtime: 1}, {Path: readPath, Mtime: 1}, {Path: exactPath, Mtime: 1}}); err != nil {
+		t.Fatal(err)
+	}
+	fuzzy, err := st.Search(query.Parse("shp"), 10)
+	if err != nil || len(fuzzy) != 1 || fuzzy[0].ID != "claude:ship" {
+		t.Fatalf("fuzzy %+v %v", ids(fuzzy), err)
+	}
+	ranked, err := st.Search(query.Parse("rdme"), 10)
+	if err != nil || len(ranked) != 2 || ranked[0].ID != "claude:exact" || ranked[1].ID != "claude:read" {
+		t.Fatalf("rank %+v %v", ids(ranked), err)
+	}
+	byCost, err := st.Search(query.Parse("sort:cost"), 10)
+	if err != nil || len(byCost) != 3 || byCost[0].ID != "claude:read" || byCost[0].Usage.CostUSD != 1.5 {
+		t.Fatalf("cost %+v %v", byCost, err)
+	}
+	if err := st.SetBookmark("claude:ship", true); err != nil {
+		t.Fatal(err)
+	}
+	ship.Title = "ship the feature again"
+	if err := st.Apply("claude", []model.Session{ship, read, exact}, []Source{{Path: shipPath, Mtime: 2}, {Path: readPath, Mtime: 2}, {Path: exactPath, Mtime: 2}}); err != nil {
+		t.Fatal(err)
+	}
+	marked, err := st.Search(query.Parse("mark:yes"), 10)
+	if err != nil || len(marked) != 1 || marked[0].ID != "claude:ship" || !marked[0].Bookmarked {
+		t.Fatalf("bookmark %+v %v", marked, err)
+	}
+	if err := st.Forget("claude:ship"); err != nil {
+		t.Fatal(err)
+	}
+	left, err := st.Search(query.Parse("mark:yes"), 10)
+	if err != nil || len(left) != 0 {
+		t.Fatalf("forgotten bookmark %+v %v", left, err)
+	}
+	if err := st.SetBookmark("missing", true); err == nil {
+		t.Fatal("bookmarked a missing session")
+	}
+}
+
+func ids(rows []model.Session) []string {
+	out := make([]string, len(rows))
+	for i, row := range rows {
+		out[i] = row.ID
+	}
+	return out
+}
+
 func TestSearchSubstrings(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)

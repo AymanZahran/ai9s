@@ -98,8 +98,11 @@ func TestUsageLines(t *testing.T) {
 	if contextLabel(model.Usage{Context: 39275, Window: 200000}) != "39.3k/200k" {
 		t.Fatal(contextLabel(model.Usage{Context: 39275, Window: 200000}))
 	}
-	if contextLabel(model.Usage{}) != "-" || tokenLabel(model.Usage{}) != "-" {
+	if contextLabel(model.Usage{}) != "-" || tokenLabel(model.Usage{}) != "-" || costLabel(model.Usage{}) != "-" {
 		t.Fatal("empty labels")
+	}
+	if costLabel(model.Usage{CostUSD: 0.42}) != "$0.42" || costLabel(model.Usage{CostUSD: 1.5}) != "$1.5" {
+		t.Fatalf("cost %s %s", costLabel(model.Usage{CostUSD: 0.42}), costLabel(model.Usage{CostUSD: 1.5}))
 	}
 	if tokenLabel(model.Usage{Total: 1500, Context: 20}) != "1.5k" {
 		t.Fatalf("total %s", tokenLabel(model.Usage{Total: 1500, Context: 20}))

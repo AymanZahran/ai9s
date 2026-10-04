@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -68,10 +69,15 @@ func Dir() (string, error) {
 	return filepath.Join(home, ".config", "ai9s"), nil
 }
 
+// DefaultRefreshRate is how often the list reindexes when the config
+// leaves the interval unset or zero.
+const DefaultRefreshRate = 30
+
 // Defaults is the built-in config used when no file is loaded.
 func Defaults() Loaded {
 	return Loaded{
 		Body: Body{
+			RefreshRate: DefaultRefreshRate,
 			DefaultView: "sessions",
 			UI: UI{
 				Limit: 400,
@@ -88,6 +94,19 @@ func (l Loaded) Mouse() bool {
 		return true
 	}
 	return *l.Body.UI.EnableMouse
+}
+
+// RefreshEvery is the reindex interval. Zero and negative values use
+// DefaultRefreshRate. A value under 5 seconds uses 5.
+func (l Loaded) RefreshEvery() time.Duration {
+	n := l.Body.RefreshRate
+	if n <= 0 {
+		n = DefaultRefreshRate
+	}
+	if n < 5 {
+		n = 5
+	}
+	return time.Duration(n) * time.Second
 }
 
 // Limit is the table cap. Zero uses 400. Values above 2000 are clamped.
@@ -175,9 +194,15 @@ func (l *Loaded) normalize() []string {
 		warns = append(warns, "defaultView "+l.Body.DefaultView+" is unknown; using sessions")
 		l.Body.DefaultView = "sessions"
 	}
-	if l.Body.RefreshRate < 0 {
-		warns = append(warns, "refreshRate must be >= 0; using 0")
-		l.Body.RefreshRate = 0
+	switch {
+	case l.Body.RefreshRate < 0:
+		warns = append(warns, "refreshRate must be >= 0; using 30")
+		l.Body.RefreshRate = DefaultRefreshRate
+	case l.Body.RefreshRate == 0:
+		l.Body.RefreshRate = DefaultRefreshRate
+	case l.Body.RefreshRate < 5:
+		warns = append(warns, "refreshRate is at least 5 seconds; using 5")
+		l.Body.RefreshRate = 5
 	}
 	if l.Body.UI.Limit < 0 {
 		warns = append(warns, "ui.limit must be >= 0; using 400")

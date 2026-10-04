@@ -34,7 +34,7 @@ func TestLoadWritesOnceAndKeepsEdits(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !first.Mouse() || first.Limit() != 400 || first.SkinName != "built-in" {
+	if !first.Mouse() || first.Limit() != 400 || first.SkinName != "built-in" || first.Body.RefreshRate != DefaultRefreshRate {
 		t.Fatalf("defaults %+v mouse %v", first.Body, first.Mouse())
 	}
 	if _, err := os.Stat(filepath.Join(dir, "config.yaml")); err != nil {
@@ -110,7 +110,7 @@ func TestDefaultSkinIsTrueBlack(t *testing.T) {
 }
 
 func TestBlockedShortcuts(t *testing.T) {
-	if !Blocked("ctrl-d") || !Blocked("G") || !Blocked("shift-g") || !Blocked("h") || !Blocked("l") || !Blocked("n") || !Blocked("u") || Blocked("b") || Blocked("y") || Blocked("e") || Blocked("ctrl-e") || Blocked("E") {
+	if !Blocked("ctrl-d") || !Blocked("G") || !Blocked("shift-g") || !Blocked("h") || !Blocked("l") || !Blocked("n") || !Blocked("u") || !Blocked("f") || Blocked("r") || Blocked("b") || Blocked("y") || Blocked("e") || Blocked("ctrl-e") || Blocked("E") {
 		t.Fatal("shortcut reservation")
 	}
 	if c, ok := CanonShortcut("Shift-E"); !ok || c != "shift-e" {

@@ -42,7 +42,14 @@ func TestParsePartialAndHome(t *testing.T) {
 		t.Fatalf("text %q", got.Text)
 	}
 	bogus := Parse("sort:bogus date:nope")
-	if bogus.Sort != "recent" || bogus.Text != "" {
+	if bogus.Sort != "recent" || bogus.Text != "" || bogus.ExplicitSort {
 		t.Fatalf("swallowed %+v", bogus)
+	}
+	marked := Parse("mark:yes bookmark:no fav:1 sort:cost readme")
+	if marked.Mark != "yes" || marked.Sort != "cost" || !marked.ExplicitSort || marked.Text != "readme" {
+		t.Fatalf("mark %+v", marked)
+	}
+	if Parse("mark:no").Mark != "no" || Parse("favorite:off").Mark != "no" {
+		t.Fatal("mark off")
 	}
 }

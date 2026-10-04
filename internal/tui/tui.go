@@ -63,10 +63,7 @@ func Run(st *store.Store) (*act.Command, error) {
 		ui.paintHeader()
 		return false
 	})
-	stopRefresh := func() {}
-	if cfg.Body.RefreshRate > 0 {
-		stopRefresh = ui.startRefresh(time.Duration(cfg.Body.RefreshRate) * time.Second)
-	}
+	stopRefresh := ui.startRefresh(cfg.RefreshEvery())
 	runErr := app.SetRoot(ui.layout, true).EnableMouse(cfg.Mouse()).Run()
 	stopRefresh()
 	if runErr != nil {
@@ -481,8 +478,8 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 		ui.openCommand()
 	case 'd':
 		ui.openDescribe()
-	case 'r':
-		ui.reindex()
+	case 'f':
+		ui.toggleBookmark()
 	case 'a':
 		ui.cycleAgent()
 	case 'o':
@@ -598,6 +595,9 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 			return nil
 		case 'n':
 			ui.promptRename()
+			return nil
+		case 'f':
+			ui.toggleBookmark()
 			return nil
 		case '1', '2', '3', '4', '5':
 			if spec, ok := viewByKey(string(ev.Rune())); ok {
@@ -719,7 +719,7 @@ func (ui *ui) paintInfo() {
 		fmt.Fprintf(&b, "[red]%s[-]\n", markup(ui.warnings[0]))
 		lines = 2
 	}
-	b.WriteString("[gray]agent: dir: branch: model: date:<7d sort:recent[-]")
+	b.WriteString("[gray]agent: dir: branch: model: mark:yes date:<7d sort:recent[-]")
 	ui.info.SetText(b.String())
 	if ui.layout != nil {
 		ui.layout.ResizeItem(ui.info, lines, 0)
@@ -988,7 +988,7 @@ func (ui *ui) cycleAgent() {
 }
 
 func (ui *ui) cycleSort() {
-	order := []string{"", "oldest", "messages", "title"}
+	order := []string{"", "oldest", "messages", "title", "cost"}
 	cur := query.Parse(ui.filter.GetText()).Sort
 	if cur == "recent" {
 		cur = ""
@@ -1013,6 +1013,28 @@ func (ui *ui) promptDir() {
 		ui.filter.SetText(text)
 	}
 	ui.app.SetFocus(ui.filter)
+}
+
+func (ui *ui) toggleBookmark() {
+	if ui.view != "" && ui.view != viewSessions {
+		ui.alert("Switch to sessions before bookmarking.")
+		return
+	}
+	row, _ := ui.table.GetSelection()
+	if row <= 0 || row-1 >= len(ui.rows) {
+		ui.alert("Select a session first.")
+		return
+	}
+	s := ui.rows[row-1]
+	if err := ui.store.SetBookmark(s.ID, !s.Bookmarked); err != nil {
+		ui.alert(err.Error())
+		return
+	}
+	ui.reload()
+	if ui.describing() {
+		row, _ = ui.table.GetSelection()
+		ui.showRow(row)
+	}
 }
 
 func (ui *ui) reindex() {

@@ -31,6 +31,7 @@ const (
 	colBranch   = 16
 	colCtx      = 13
 	colTokens   = 13
+	colCost     = 10
 	colMsgs     = 6
 	colSessions = 8
 	colGroup    = 28

@@ -213,6 +213,9 @@ func previewText(s model.Session, tag string, icons bool) string {
 		fmt.Fprintf(&b, "  [gray]%s[-]", markupLine(s.Model))
 	}
 	fmt.Fprintf(&b, "\n%s   %s   %d messages   %s\n", relAge(s.Updated), absDate(s.Updated), s.Messages, markupLine(s.ID))
+	if s.Bookmarked {
+		b.WriteString("bookmark   yes\n")
+	}
 	for _, line := range UsageLines(s.Usage) {
 		fmt.Fprintf(&b, "%s\n", markupLine(line))
 	}
@@ -329,6 +332,13 @@ func tokenLabel(u model.Usage) string {
 	default:
 		return "-"
 	}
+}
+
+func costLabel(u model.Usage) string {
+	if u.CostUSD <= 0 {
+		return "-"
+	}
+	return "$" + trimCost(u.CostUSD)
 }
 
 func compactCount(n int) string {

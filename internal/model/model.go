@@ -10,6 +10,7 @@ type Session struct {
 	Agent        string    `json:"agent"`
 	Title        string    `json:"title"`
 	Name         string    `json:"name,omitempty"` // display name set in ai9s; Title stays the agent's own title
+	Bookmarked   bool      `json:"bookmarked,omitempty"`
 	Summary      string    `json:"summary,omitempty"`
 	CWD          string    `json:"cwd,omitempty"`
 	Branch       string    `json:"branch,omitempty"`

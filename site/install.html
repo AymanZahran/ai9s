@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Install — ai9s</title>
-  <meta name="description" content="Install ai9s with Homebrew, from source, or with go install.">
+  <meta name="description" content="Install ai9s with Homebrew, Linux packages, Scoop, the Windows zip, source, or go install.">
   <link rel="stylesheet" href="css/main.css">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="canonical" href="https://ai9scli.io/install.html">
@@ -26,13 +26,39 @@
   </header>
   <main>
     <h1><span class="mark" aria-hidden="true">↓</span> Installation</h1>
-    <p>ai9s is a single Go binary. It runs on macOS, Linux, and Windows. GitHub Actions tests it on Ubuntu, macOS, and Windows. Install release 1.0.0. It is the supported release.</p>
+    <p>ai9s is a single Go binary. It runs on macOS, Linux, and Windows. GitHub Actions tests it on Ubuntu, macOS, and Windows. Install the latest 1.0 release. The supported line is 1.0.x.</p>
 
     <h2>Homebrew</h2>
+    <p>Homebrew works on macOS and Linux.</p>
     <pre><code>brew tap AymanZahran/ai9s https://github.com/AymanZahran/ai9s
 brew trust aymanzahran/ai9s
 brew install ai9s</code></pre>
     <p>The formula is <code>Formula/ai9s.rb</code> in this repository. <code>brew tap AymanZahran/ai9s</code> with no URL looks for a repository named <code>homebrew-ai9s</code>, so pass the URL above. <code>brew install --HEAD ai9s</code> builds the latest <code>main</code>.</p>
+
+    <h2>Linux packages</h2>
+    <p>Each command installs the latest published release. Use <code>amd64</code> on x86_64 and <code>arm64</code> on aarch64.</p>
+    <h3>Debian and Ubuntu</h3>
+    <pre><code>curl -fL -o /tmp/ai9s.deb https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.deb
+sudo dpkg -i /tmp/ai9s.deb</code></pre>
+    <h3>Fedora, RHEL, and CentOS</h3>
+    <pre><code>sudo dnf install -y https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.rpm</code></pre>
+    <h3>Alpine</h3>
+    <pre><code>curl -fL -o /tmp/ai9s.apk https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.apk
+sudo apk add --allow-untrusted /tmp/ai9s.apk</code></pre>
+    <h3>Arch Linux</h3>
+    <pre><code>git clone --depth 1 https://github.com/AymanZahran/ai9s.git
+cd ai9s/packaging/arch
+makepkg -si</code></pre>
+
+    <h2>Windows</h2>
+    <h3>Scoop</h3>
+    <pre><code>scoop install https://raw.githubusercontent.com/AymanZahran/ai9s/main/packaging/scoop/ai9s.json</code></pre>
+    <h3>Zip</h3>
+    <p><code>ai9s_Windows_arm64.zip</code> is the arm64 build. Put the extracted <code>ai9s.exe</code> on <code>PATH</code>.</p>
+    <pre><code>$dest = "$env:LOCALAPPDATA\ai9s"
+New-Item -ItemType Directory -Force -Path $dest | Out-Null
+Invoke-WebRequest https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_Windows_amd64.zip -OutFile "$dest\ai9s.zip"
+Expand-Archive "$dest\ai9s.zip" -DestinationPath $dest -Force</code></pre>
 
     <h2>From source</h2>
     <pre><code>git clone https://github.com/AymanZahran/ai9s.git

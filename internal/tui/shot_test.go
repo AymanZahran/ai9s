@@ -36,7 +36,7 @@ func TestWriteScreenshots(t *testing.T) {
 	app := tview.NewApplication()
 	ui := newUI(app, st, config.Defaults())
 	ui.reload()
-	const cols = 148
+	const cols = 168
 	screen := shotStart(t, ui, cols, 22)
 
 	shoot := func(name string, height int, setup func()) {
@@ -198,6 +198,9 @@ func shotStore(t *testing.T) *store.Store {
 		}
 	}
 	if err := st.SetName("claude:readme", "readme draft"); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.SetBookmark("claude:readme", true); err != nil {
 		t.Fatal(err)
 	}
 	return st
