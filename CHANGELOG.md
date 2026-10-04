@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.3
+
 - `6` and `:bookmarks` list bookmarked sessions. Enter, bookmark, rename, usage, and delete work on that list.
 
 ## 1.0.2
