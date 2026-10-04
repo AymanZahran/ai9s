@@ -32,7 +32,7 @@ func (p Plugin) Allows(view string) bool {
 	view = strings.ToLower(view)
 	for _, s := range p.Scopes {
 		s = strings.ToLower(strings.TrimSpace(s))
-		if s == "all" || s == view {
+		if s == "all" || s == view || (view == "bookmarks" && s == "sessions") {
 			return true
 		}
 	}
@@ -152,7 +152,7 @@ func (l *Loaded) prepare(p *Plugin, seenName, seenKey map[string]bool) string {
 	for i, scope := range p.Scopes {
 		s := strings.ToLower(strings.TrimSpace(scope))
 		switch s {
-		case "all", "sessions", "providers", "directories", "branches", "models":
+		case "all", "sessions", "providers", "directories", "branches", "models", "bookmarks":
 			p.Scopes[i] = s
 		default:
 			return fmt.Sprintf("plugin %s has unknown scope %s", p.Name, scope)
@@ -202,7 +202,7 @@ func CanonShortcut(s string) (string, bool) {
 func Blocked(canon string) bool {
 	switch canon {
 	case "q", "/", ":", "d", "f", "s", "n", "u", "?", "a", "p", "o", "j", "k", "h", "l", "g", "G",
-		"1", "2", "3", "4", "5",
+		"1", "2", "3", "4", "5", "6",
 		"enter", "return", "tab", "backtab", "esc", "escape",
 		"ctrl-c", "ctrl-d", "shift-g":
 		return true

@@ -109,8 +109,26 @@ func TestDefaultSkinIsTrueBlack(t *testing.T) {
 	}
 }
 
+func TestDefaultViewBookmarks(t *testing.T) {
+	l := &Loaded{Body: Body{DefaultView: "Bookmarks"}}
+	if warns := l.normalize(); len(warns) != 0 || l.Body.DefaultView != "bookmarks" {
+		t.Fatalf("view %q warns %v", l.Body.DefaultView, warns)
+	}
+}
+
+func TestBookmarksScopeMatchesSessions(t *testing.T) {
+	sessions := Plugin{Scopes: []string{"sessions"}}
+	if !sessions.Allows("bookmarks") || !sessions.Allows("sessions") || sessions.Allows("providers") {
+		t.Fatal("sessions scope")
+	}
+	marks := Plugin{Scopes: []string{"bookmarks"}}
+	if !marks.Allows("bookmarks") || marks.Allows("sessions") {
+		t.Fatal("bookmarks scope")
+	}
+}
+
 func TestBlockedShortcuts(t *testing.T) {
-	if !Blocked("ctrl-d") || !Blocked("G") || !Blocked("shift-g") || !Blocked("h") || !Blocked("l") || !Blocked("n") || !Blocked("u") || !Blocked("f") || Blocked("r") || Blocked("b") || Blocked("y") || Blocked("e") || Blocked("ctrl-e") || Blocked("E") {
+	if !Blocked("ctrl-d") || !Blocked("G") || !Blocked("shift-g") || !Blocked("h") || !Blocked("l") || !Blocked("n") || !Blocked("u") || !Blocked("f") || !Blocked("6") || Blocked("r") || Blocked("b") || Blocked("y") || Blocked("e") || Blocked("ctrl-e") || Blocked("E") {
 		t.Fatal("shortcut reservation")
 	}
 	if c, ok := CanonShortcut("Shift-E"); !ok || c != "shift-e" {

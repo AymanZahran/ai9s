@@ -502,7 +502,7 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 		ui.scrollListX(-hScrollStep)
 	case 'l':
 		ui.scrollListX(hScrollStep)
-	case '1', '2', '3', '4', '5':
+	case '1', '2', '3', '4', '5', '6':
 		if spec, ok := viewByKey(string(ev.Rune())); ok {
 			ui.setView(spec.name)
 		}
@@ -599,7 +599,7 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 		case 'f':
 			ui.toggleBookmark()
 			return nil
-		case '1', '2', '3', '4', '5':
+		case '1', '2', '3', '4', '5', '6':
 			if spec, ok := viewByKey(string(ev.Rune())); ok {
 				ui.setView(spec.name)
 			}
@@ -620,6 +620,9 @@ func (ui *ui) reload() {
 	}
 	f := query.Parse(ui.filter.GetText())
 	f.Roots = ui.roots
+	if ui.view == viewBookmarks {
+		f.Mark = "yes"
+	}
 	rows, err := ui.store.Search(f, ui.cfg.Limit())
 	if err != nil {
 		ui.header.SetText("[red]search failed: " + markup(err.Error()) + "[-]")
@@ -631,7 +634,7 @@ func (ui *ui) reload() {
 	for _, a := range stats.Agents {
 		ui.agents = append(ui.agents, a.Agent)
 	}
-	if ui.view != "" && ui.view != viewSessions {
+	if !ui.onSessions() {
 		ui.paintGroups()
 	} else {
 		ui.paintSessions()
@@ -719,7 +722,7 @@ func (ui *ui) paintInfo() {
 		fmt.Fprintf(&b, "[red]%s[-]\n", markup(ui.warnings[0]))
 		lines = 2
 	}
-	b.WriteString("[gray]agent: dir: branch: model: mark:yes date:<7d sort:recent[-]")
+	b.WriteString("[gray]agent: dir: branch: model: date:<7d sort:recent   6 :bookmarks[-]")
 	ui.info.SetText(b.String())
 	if ui.layout != nil {
 		ui.layout.ResizeItem(ui.info, lines, 0)
@@ -752,7 +755,7 @@ func (ui *ui) counter() string {
 	total := len(ui.rows)
 	if ui.commandOpen {
 		total = len(ui.suggestions)
-	} else if ui.view != "" && ui.view != viewSessions {
+	} else if !ui.onSessions() {
 		total = len(ui.groups)
 	}
 	row, _ := ui.table.GetSelection()
@@ -779,7 +782,7 @@ func (ui *ui) showRow(row int) {
 		ui.preview.ScrollToBeginning()
 		return
 	}
-	if ui.view != "" && ui.view != viewSessions {
+	if !ui.onSessions() {
 		ui.showGroup(row)
 		return
 	}
@@ -810,7 +813,7 @@ func (ui *ui) selected() (model.Session, bool) {
 }
 
 func (ui *ui) resumeSelected() {
-	if ui.view != "" && ui.view != viewSessions {
+	if !ui.onSessions() {
 		ui.activateGroup()
 		return
 	}
@@ -848,7 +851,7 @@ func (ui *ui) resumeSelected() {
 }
 
 func (ui *ui) confirmDelete() {
-	if ui.view != "" && ui.view != viewSessions {
+	if !ui.onSessions() {
 		ui.alert("Switch to sessions before deleting.")
 		return
 	}
@@ -951,7 +954,7 @@ func (ui *ui) showStats() {
 }
 
 func (ui *ui) showSessionStats() {
-	if ui.view != "" && ui.view != viewSessions {
+	if !ui.onSessions() {
 		ui.alert("Switch to sessions for this usage.")
 		return
 	}
@@ -1016,7 +1019,7 @@ func (ui *ui) promptDir() {
 }
 
 func (ui *ui) toggleBookmark() {
-	if ui.view != "" && ui.view != viewSessions {
+	if !ui.onSessions() {
 		ui.alert("Switch to sessions before bookmarking.")
 		return
 	}

@@ -11,7 +11,7 @@ chmod +x ~/.config/ai9s/plugins/open-editor ~/.config/ai9s/plugins/copy-session 
   ~/.config/ai9s/plugins/git-story ~/.config/ai9s/plugins/new-terminal
 ```
 
-Restart ai9s. The keys show on the menu. They work on the session list and the directories view.
+Restart ai9s. The keys show on the menu. They work on the session list, the bookmarks list, and the directories view.
 
 | Key | File | What it does | What you change |
 | --- | --- | --- | --- |

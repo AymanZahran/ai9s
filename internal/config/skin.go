@@ -30,7 +30,7 @@ type SkinBorder struct {
 	Focus string `yaml:"focusColor"`
 }
 
-// SkinMenu is the hotkey bar. NumKey colors the 1–5 view keys.
+// SkinMenu is the hotkey bar. NumKey colors the 1–6 view keys.
 type SkinMenu struct {
 	Fg     string `yaml:"fgColor"`
 	Key    string `yaml:"keyColor"`

@@ -103,6 +103,7 @@ const manualText = `[::b]ai9s manual[-]
   [yellow]<3>[-] directories   group by working directory
   [yellow]<4>[-] branches      group by git branch and worktree. The worktree is the checkout that holds the session directory. Enter filters by that branch and that checkout.
   [yellow]<5>[-] models        group by model
+  [yellow]<6>[-] bookmarks     bookmarked sessions. Enter resumes. f, n, u, and ctrl-d work here the same way they do on sessions.
 
 Enter on a group applies that filter and returns to sessions. A group labeled (none) has an empty value, so enter leaves the filter alone, unless that branches row still has a worktree.
 
@@ -111,7 +112,7 @@ Enter on a group applies that filter and returns to sessions. A group labeled (n
          Up and down move the list one row while the field is open. j and k are letters here.
          ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Ctrl or Alt with those arrows do the same.
          Plain left and right stay in the field.
-  [yellow]:[-]   opens command mode. The table lists views and filter tokens.
+  [yellow]:[-]   opens command mode. The table lists views and filter tokens. bookmarks, or :bookmarks, lists starred sessions.
          Type to narrow that list. Up and down select a row.
          Enter on an empty command cycles the view. After up or down, Enter applies the highlighted row.
          Another : cycles the view name in the field.
@@ -128,13 +129,13 @@ Esc in describe returns to the list and leaves the filter. Esc after you open se
   enter       resume in the session directory. Quitting the agent returns here. On a group, apply that filter
   d           describe. The list is replaced by the preview. j/k or up/down scroll a line, h/l or left/right pan, ⌘↑/⌘↓ and ⌘←/⌘→ page, g/G jump
   esc         from describe, return to the list. From a drilled-in list, return to that group. On a group, or on sessions, clear the filter
-  ctrl-d      delete, after confirmation. Only from the sessions view. d does not delete
+  ctrl-d      delete, after confirmation. Sessions and bookmarks. d does not delete
   a           cycle the agent: filter
   p           add a dir: filter
   o           cycle sort
-  f           bookmark the selected session, or clear that bookmark. A star in the first column marks it. The bookmark stays through a reindex. Sessions view only. mark:yes lists bookmarks
-  n           rename the selected session. Enter on Save stores it. Esc cancels. An empty name restores the default. The name stays through a reindex. Sessions view only
-  u           usage for the selected session: messages, context, tokens, and the other recorded numbers. Sessions view only
+  f           bookmark the selected session, or clear that bookmark. A star in the first column marks it. The bookmark stays through a reindex. Sessions and bookmarks. 6 or :bookmarks lists them
+  n           rename the selected session. Enter on Save stores it. Esc cancels. An empty name restores the default. The name stays through a reindex. Sessions and bookmarks
+  u           usage for the selected session: messages, context, tokens, and the other recorded numbers. Sessions and bookmarks
   s           stats for every indexed session
   ?           this manual. It uses the same black screen as the list. j/k scroll a line. The wheel, page keys, and ⌘↑/⌘↓ scroll a page. g/G jump. q, ?, or esc closes it
   q           quit

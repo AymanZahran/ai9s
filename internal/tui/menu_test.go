@@ -5,6 +5,12 @@ import (
 	"testing"
 )
 
+func TestMenuColsFitsSixViews(t *testing.T) {
+	if menuCols(168) != 6 || menuCols(96) != 6 || menuCols(80) != 5 || menuCols(10) != 1 {
+		t.Fatalf("cols 168=%d 96=%d 80=%d 10=%d", menuCols(168), menuCols(96), menuCols(80), menuCols(10))
+	}
+}
+
 func TestRenderGridAlignsRows(t *testing.T) {
 	views := []menuHint{
 		{key: "1", label: "sessions", keyColor: "fuchsia", textColor: "white", active: true, hi: "fuchsia"},

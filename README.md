@@ -16,7 +16,7 @@
 
 ai9s is a keyboard-first finder for local AI coding sessions. It indexes the session files already on your machine, then lets you search, preview, filter, resume, and — where it is safe — delete them.
 
-The interface follows the k9s screen: a menu of hotkeys, a crumbs bar (`ai9s › Sessions › all`), and one framed table. Started in a project directory, the list shows sessions whose working directory is that directory or a subdirectory. Started in your home directory, the list shows every session. The AGENT column is the agent name. NAME is the last column. It is the session title, or the session id when the session has no title. `n` renames that name. The new name stays through a reindex. The list has no separate title column. Every column except NAME is cut to a fixed width. A path keeps its ending. `u` shows usage for the selected session. `s` shows counts for every session. `1` through `5` switch the table between sessions, providers, directories, branches, and models. `/` edits the filter and `:` opens a command line for those views and for filter tokens. Esc clears the filter from the list and from the filter line. `?` opens a scrollable manual. `d` replaces the list with a describe view of the selected row; Esc returns to the list. Ctrl-D deletes. The CTX column, describe, and `ai9s show` include context size and token counts when the agent recorded them. COST is the recorded USD amount, or a dash. `f` bookmarks the selected session. The list reindexes every 30 seconds.
+The interface follows the k9s screen: a menu of hotkeys, a crumbs bar (`ai9s › Sessions › all`), and one framed table. Started in a project directory, the list shows sessions whose working directory is that directory or a subdirectory. Started in your home directory, the list shows every session. The AGENT column is the agent name. NAME is the last column. It is the session title, or the session id when the session has no title. `n` renames that name. The new name stays through a reindex. The list has no separate title column. Every column except NAME is cut to a fixed width. A path keeps its ending. `u` shows usage for the selected session. `s` shows counts for every session. `1` through `6` switch the table between sessions, providers, directories, branches, models, and bookmarks. `/` edits the filter and `:` opens a command line for those views and for filter tokens. Esc clears the filter from the list and from the filter line. `?` opens a scrollable manual. `d` replaces the list with a describe view of the selected row; Esc returns to the list. Ctrl-D deletes. The CTX column, describe, and `ai9s show` include context size and token counts when the agent recorded them. COST is the recorded USD amount, or a dash. `f` bookmarks the selected session. `6` or `:bookmarks` lists those sessions. The list reindexes every 30 seconds.
 
 Colors, the mouse, icons, read-only mode, the starting view, and plugins come from `~/.config/ai9s/config.yaml` (or `$AI9S_CONFIG_DIR`, or `$XDG_CONFIG_HOME/ai9s`). `ai9s info` prints the paths.
 
@@ -240,19 +240,19 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 
 | Key | Action |
 | --- | --- |
-| `1`–`5` | Sessions, providers, directories, branches, models. Branches lists each git branch with the worktree that contains the session. The active view is bold in the top hotkey bar. |
+| `1`–`6` | Sessions, providers, directories, branches, models, bookmarks. Branches lists each git branch with the worktree that contains the session. `6` and `:bookmarks` list bookmarked sessions. The active view is bold in the top hotkey bar. |
 | Enter | Resume the selected session. Quitting that session returns to ai9s, which takes the terminal back. On a group view, apply that group as a filter and return to sessions. |
 | `d` | Describe the selected row. The list is replaced by the preview. `j`/`k` or up/down scroll a line. `h`/`l` or left/right pan. ⌘↑/⌘↓ and ⌘←/⌘→ page. `g`/`G` jump to the top or the end. Esc returns to the list. Tab opens and closes the same view. |
-| Ctrl-D | Delete, after confirmation. Sessions view only. |
+| Ctrl-D | Delete, after confirmation. Sessions and bookmarks. |
 | `/` | Edit the filter. Up and down move the list while the field is open. ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Plain left and right stay in the field. `j` and `k` are letters here. |
 | Esc | From describe, return to the list and leave the filter. After opening sessions from a group, return to that group and clear the filter. On that group, or on the sessions list itself, clear the filter and stay there. In the manual or command mode, Esc goes back and leaves the filter alone. |
 | `:` | Command mode. Type a view name or a filter token. Up and down select a row. Enter applies the highlighted row. Enter on an empty command cycles the view. Another `:` cycles the view name in the field. Esc closes it. |
 | `a` | Cycle the `agent:` filter |
 | `p` | Add a `dir:` filter |
 | `o` | Cycle sort: recent, oldest, messages, title, cost |
-| `f` | Bookmark the selected session, or clear that bookmark. A star in the first column marks it. The bookmark stays through a reindex. `mark:yes` lists bookmarks. Sessions view only. |
-| `n` | Rename the selected session. Enter on Save stores the name. Esc cancels. An empty name restores the default. The name stays through a reindex. Sessions view only. |
-| `u` | Usage for the selected session: messages, context, tokens, and the other recorded numbers. Sessions view only. |
+| `f` | Bookmark the selected session, or clear that bookmark. A star in the first column marks it. The bookmark stays through a reindex. `6` or `:bookmarks` lists bookmarks. Sessions and bookmarks. |
+| `n` | Rename the selected session. Enter on Save stores the name. Esc cancels. An empty name restores the default. The name stays through a reindex. Sessions and bookmarks. |
+| `u` | Usage for the selected session: messages, context, tokens, and the other recorded numbers. Sessions and bookmarks. |
 | `s` | Stats for every indexed session. |
 | `?` | Scrollable manual. `j`/`k` scroll, `g`/`G` jump, Esc or `q` returns to the list. |
 | `q` | Quit |
@@ -276,14 +276,14 @@ Each free-text word matches when its letters appear in order in the name, title,
 | `date:<7d` | Updated in the last 7 days. Units: `m`, `h`, `d`, `w`. |
 | `date:>30d` | Updated more than 30 days ago. |
 | `date:2026-03-02` | That calendar day. `date:2026-03` is the whole month. |
-| `mark:yes` | Bookmarked sessions. `mark:no` hides them. Also `bookmark:`, `fav:`, and `favorite:`. |
+| `mark:yes` | Bookmarked sessions. `mark:no` hides them. Also `bookmark:`, `fav:`, and `favorite:`. In the UI, `6` and `:bookmarks` open that list. |
 | `sort:messages` | `recent` (default), `oldest`, `messages`, `title`, or `cost`. `title` follows the NAME column. `cost` follows the recorded USD amount. |
 
 Quote a phrase to keep it together: `"auth bug"`. Esc on the session list clears the line.
 
 ## Config
 
-ai9s writes `config.yaml` the first time it starts, when the file is missing. Skins go in `skins/<name>.yaml`. Plugins go in `plugins.yaml` or in `plugins/`. A plugin shortcut that uses `q`, `/`, `:`, `d`, `f`, `s`, `n`, `u`, `?`, `a`, `p`, `o`, `j`, `k`, `h`, `l`, `g`, `G`, `1`–`5`, Enter, Tab, Esc, or Ctrl-D is ignored. The command is a program name, not a shell. A bare name is looked up on `PATH`, then in the config `plugins/` directory. The selected row provides `$ID`, `$NATIVE_ID`, `$AGENT`, `$CWD`, `$TITLE`, `$BRANCH`, `$MODEL`, `$FILTER`, and `$NAME`.
+ai9s writes `config.yaml` the first time it starts, when the file is missing. Skins go in `skins/<name>.yaml`. Plugins go in `plugins.yaml` or in `plugins/`. A plugin shortcut that uses `q`, `/`, `:`, `d`, `f`, `s`, `n`, `u`, `?`, `a`, `p`, `o`, `j`, `k`, `h`, `l`, `g`, `G`, `1`–`6`, Enter, Tab, Esc, or Ctrl-D is ignored. The command is a program name, not a shell. A bare name is looked up on `PATH`, then in the config `plugins/` directory. The selected row provides `$ID`, `$NATIVE_ID`, `$AGENT`, `$CWD`, `$TITLE`, `$BRANCH`, `$MODEL`, `$FILTER`, and `$NAME`.
 
 `examples/plugins` has four plugins you copy in to turn on. `e` opens the directory in `AI9S_EDITOR`. `c` copies the fields you list to the clipboard. `b` shows git status and recent commits (`AI9S_GIT_LOG`). `t` opens a terminal there (`AI9S_TERMINAL`). Enabled keys are drawn on the menu. See `examples/plugins/README.md`.
 
