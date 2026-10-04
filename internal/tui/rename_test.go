@@ -101,7 +101,7 @@ func TestRenameOnGroupAsksForSessions(t *testing.T) {
 	ui.reload()
 	screen, _ := startApp(t, ui)
 	ui.app.QueueEvent(tcell.NewEventKey(tcell.KeyRune, '2', tcell.ModNone))
-	waitUI(t, ui.app, func() bool { return ui.view == viewProviders })
+	waitUI(t, ui.app, func() bool { return ui.view == viewAgents })
 	ui.app.QueueEvent(tcell.NewEventKey(tcell.KeyRune, 'n', tcell.ModNone))
 	waitUI(t, ui.app, func() bool { return strings.Contains(screenText(screen), "Switch to sessions before renaming.") })
 	ui.app.QueueEvent(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))

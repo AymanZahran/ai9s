@@ -14,7 +14,7 @@ func TestMenuColsFitsSixViews(t *testing.T) {
 func TestRenderGridAlignsRows(t *testing.T) {
 	views := []menuHint{
 		{key: "1", label: "sessions", keyColor: "fuchsia", textColor: "white", active: true, hi: "fuchsia"},
-		{key: "2", label: "providers", keyColor: "fuchsia", textColor: "white"},
+		{key: "2", label: "agents", keyColor: "fuchsia", textColor: "white"},
 		{key: "3", label: "directories", keyColor: "fuchsia", textColor: "white"},
 		{key: "4", label: "branches", keyColor: "fuchsia", textColor: "white"},
 		{key: "5", label: "models", keyColor: "fuchsia", textColor: "white"},

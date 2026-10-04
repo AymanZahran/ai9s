@@ -45,7 +45,7 @@ func TestIdleProvidersWarnToInstallOrLogIn(t *testing.T) {
 	ui := newUI(app, st, config.Defaults())
 	ui.reload()
 	app.SetRoot(ui.layout, false)
-	ui.setView(viewProviders)
+	ui.setView(viewAgents)
 
 	if ui.groups[0].key != "claude" || ui.groups[0].sessions != 1 {
 		t.Fatalf("first provider %+v", ui.groups[0])
@@ -73,7 +73,7 @@ func TestIdleProvidersWarnToInstallOrLogIn(t *testing.T) {
 		t.Fatalf("preview %q", preview)
 	}
 	send(ui.table, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
-	if ui.view != viewProviders || ui.filter.GetText() != "" {
+	if ui.view != viewAgents || ui.filter.GetText() != "" {
 		t.Fatalf("enter view %s filter %q", ui.view, ui.filter.GetText())
 	}
 	if !confirmVisible(app) {
@@ -123,4 +123,15 @@ func groupIndex(t *testing.T, groups []groupRow, key string) int {
 	}
 	t.Fatalf("missing %s", key)
 	return 0
+}
+
+func TestProvidersCommandOpensAgents(t *testing.T) {
+	spec, ok := viewByName("providers")
+	if !ok || spec.name != viewAgents || spec.title != " agents " {
+		t.Fatalf("alias %+v %v", spec, ok)
+	}
+	hints := filterHints("prov", nil)
+	if len(hints) != 1 || hints[0].insert != "agents" {
+		t.Fatalf("hints %+v", hints)
+	}
 }

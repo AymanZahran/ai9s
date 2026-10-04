@@ -181,11 +181,20 @@ func Load() (Loaded, error) {
 	return out, nil
 }
 
+// CanonView returns the view name. providers is the previous name for agents.
+func CanonView(name string) string {
+	name = strings.ToLower(strings.TrimSpace(name))
+	if name == "providers" {
+		return "agents"
+	}
+	return name
+}
+
 func (l *Loaded) normalize() []string {
 	var warns []string
-	view := strings.ToLower(strings.TrimSpace(l.Body.DefaultView))
+	view := CanonView(l.Body.DefaultView)
 	switch view {
-	case "", "sessions", "providers", "directories", "branches", "models", "bookmarks":
+	case "", "sessions", "agents", "directories", "branches", "models", "bookmarks":
 		if view == "" {
 			view = "sessions"
 		}

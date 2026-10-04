@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/AymanZahran/ai9s/internal/act"
+	"github.com/AymanZahran/ai9s/internal/config"
 	"github.com/AymanZahran/ai9s/internal/discover"
 	"github.com/AymanZahran/ai9s/internal/query"
 )
 
 const (
 	viewSessions    = "sessions"
-	viewProviders   = "providers"
+	viewAgents      = "agents"
 	viewDirectories = "directories"
 	viewBranches    = "branches"
 	viewModels      = "models"
@@ -29,7 +30,7 @@ type viewSpec struct {
 
 var viewSpecs = []viewSpec{
 	{"1", viewSessions, " sessions ", ""},
-	{"2", viewProviders, " providers ", "agent"},
+	{"2", viewAgents, " agents ", "agent"},
 	{"3", viewDirectories, " directories ", "dir"},
 	{"4", viewBranches, " branches ", "branch"},
 	{"5", viewModels, " models ", "model"},
@@ -70,7 +71,7 @@ func viewByKey(key string) (viewSpec, bool) {
 }
 
 func viewByName(name string) (viewSpec, bool) {
-	name = strings.ToLower(strings.TrimSpace(name))
+	name = config.CanonView(name)
 	for _, spec := range viewSpecs {
 		if spec.name == name {
 			return spec, true
@@ -100,7 +101,7 @@ func (ui *ui) setView(name string) {
 }
 
 func (ui *ui) cycleView() {
-	next := viewProviders
+	next := viewAgents
 	for i, spec := range viewSpecs {
 		if spec.name == ui.view {
 			next = viewSpecs[(i+1)%len(viewSpecs)].name
@@ -246,7 +247,7 @@ func (ui *ui) promptFilterToken(key string) {
 func allHints(agents []string) []commandHint {
 	hints := []commandHint{
 		{"sessions", "show the session list"},
-		{"providers", "group the current filter by agent"},
+		{"agents", "group the current filter by agent"},
 		{"directories", "group the current filter by directory"},
 		{"branches", "group the current filter by git branch and worktree"},
 		{"models", "group the current filter by model"},
@@ -272,11 +273,19 @@ func filterHints(text string, agents []string) []commandHint {
 	}
 	var out []commandHint
 	for _, hint := range all {
-		if strings.Contains(strings.ToLower(hint.insert), text) || strings.Contains(strings.ToLower(hint.hint), text) {
+		if hintMatches(hint, text) {
 			out = append(out, hint)
 		}
 	}
 	return out
+}
+
+// hintMatches keeps the previous providers command as a prefix of agents.
+func hintMatches(hint commandHint, text string) bool {
+	if strings.Contains(strings.ToLower(hint.insert), text) || strings.Contains(strings.ToLower(hint.hint), text) {
+		return true
+	}
+	return hint.insert == viewAgents && text != "" && strings.Contains("providers", text)
 }
 
 func (ui *ui) paintSuggestions(text string) {
@@ -432,7 +441,7 @@ type sessionSnap struct {
 func groupKey(s sessionSnap, kind string) string {
 	var key string
 	switch kind {
-	case viewProviders:
+	case viewAgents:
 		key = s.agent
 	case viewDirectories:
 		key = s.cwd
@@ -457,7 +466,7 @@ func (ui *ui) paintGroups() {
 		snaps[i] = sessionSnap{id: s.ID, agent: s.Agent, cwd: s.CWD, branch: s.Branch, model: s.Model, messages: s.Messages, updated: s.Updated}
 	}
 	ui.groups = groupSessions(snaps, ui.view)
-	if ui.view == viewProviders {
+	if ui.view == viewAgents {
 		ui.groups = ui.withIdleProviders(ui.groups)
 	}
 	ui.table.SetTitle(viewTitle(ui.view))
@@ -507,7 +516,7 @@ func (ui *ui) paintGroups() {
 		}
 		name := g.key
 		color := ""
-		if ui.view == viewProviders {
+		if ui.view == viewAgents {
 			color = ui.agentTag(g.key)
 		}
 		if ui.view == viewDirectories && g.key != "(none)" {
@@ -553,7 +562,7 @@ func (ui *ui) showGroup(row int) {
 		fmt.Fprintf(&b, "worktree  %s\n", wt)
 	}
 	fmt.Fprintf(&b, "%d sessions   %d messages   %s   %s\n", g.sessions, g.messages, relAge(g.updated), absDate(g.updated))
-	if ui.view == viewProviders && g.sessions == 0 {
+	if ui.view == viewAgents && g.sessions == 0 {
 		fmt.Fprintf(&b, "\n%s\n", markup(providerGap(g.key)))
 	} else if g.key == "(none)" && g.worktree == "" {
 		b.WriteString("\n[gray]This group has an empty value, so enter will not add a filter.[-]\n")
@@ -580,7 +589,7 @@ func (ui *ui) activateGroup() {
 	if !ok || spec.token == "" {
 		return
 	}
-	if spec.name == viewProviders && g.sessions == 0 {
+	if spec.name == viewAgents && g.sessions == 0 {
 		ui.alert(providerGap(g.key))
 		return
 	}
@@ -602,7 +611,7 @@ func (ui *ui) activateGroup() {
 	ui.reload()
 }
 
-// withIdleProviders keeps supported agents on the providers list when the
+// withIdleProviders keeps supported agents on the agents list when the
 // index has no sessions for them. A directory, branch, model, text, mark, or
 // date filter stays a grouping of the sessions that matched.
 func (ui *ui) withIdleProviders(groups []groupRow) []groupRow {
@@ -640,7 +649,7 @@ func providerFilterNarrows(f query.Filter) bool {
 	return f.Dir != "" || f.Branch != "" || f.Model != "" || f.Text != "" || f.Mark != "" || !f.Since.IsZero() || !f.Until.IsZero()
 }
 
-// agentInstalled is the PATH check for an empty provider. Tests replace it.
+// agentInstalled is the PATH check for an agent with no sessions. Tests replace it.
 var agentInstalled = act.Installed
 
 func providerGap(agent string) string {
