@@ -133,7 +133,7 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 	}
 	switch ui.focused {
 	case "preview":
-		return []menuHint{
+		return withYolo([]menuHint{
 			item("j/k ↑/↓", "line"),
 			item("h/l ←/→", "pan"),
 			item("⌘↑/⌘↓", "page"),
@@ -148,7 +148,7 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 			item("s", "stats"),
 			item("?", "manual"),
 			item("q", "quit"),
-		}
+		}, item, ui.onSessions())
 	case "filter":
 		return []menuHint{
 			item("↑/↓", "select"),
@@ -173,7 +173,7 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 		if !ui.onSessions() {
 			enter = "filter"
 		}
-		return []menuHint{
+		return withYolo([]menuHint{
 			item("/", "filter"),
 			item(":", "command"),
 			item("d", "describe"),
@@ -195,8 +195,23 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 			item("s", "stats"),
 			item("?", "manual"),
 			item("q", "quit"),
+		}, item, ui.onSessions())
+	}
+}
+
+// withYolo places y next to enter on views that list sessions.
+func withYolo(items []menuHint, item func(k, label string) menuHint, on bool) []menuHint {
+	if !on {
+		return items
+	}
+	out := make([]menuHint, 0, len(items)+1)
+	for _, h := range items {
+		out = append(out, h)
+		if h.key == "enter" {
+			out = append(out, item("y", "yolo"))
 		}
 	}
+	return out
 }
 
 // pluginMenu is every plugin the current view accepts. Command mode hides
