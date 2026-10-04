@@ -10,6 +10,8 @@
   <a href="https://github.com/AymanZahran/ai9s/actions/workflows/ci.yml">CI</a>
   ·
   <a href="LICENSE">MIT</a>
+  ·
+  <a href="https://github.com/sponsors/AymanZahran">Sponsor</a>
 </p>
 
 ai9s is a keyboard-first finder for local AI coding sessions. It indexes the session files already on your machine, then lets you search, preview, filter, resume, and — where it is safe — delete them.
