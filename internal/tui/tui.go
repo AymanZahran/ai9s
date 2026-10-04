@@ -403,7 +403,7 @@ func (ui *ui) closeDescribe() {
 func (ui *ui) previewDone(key tcell.Key) {
 	if key == tcell.KeyEnter {
 		ui.closeDescribe()
-		ui.resumeSelected()
+		ui.resumeSelected(false)
 		return
 	}
 	ui.closeDescribe()
@@ -418,7 +418,7 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 	}
 	switch ev.Key() {
 	case tcell.KeyEnter:
-		ui.resumeSelected()
+		ui.resumeSelected(false)
 		return nil
 	case tcell.KeyCtrlD:
 		ui.confirmDelete()
@@ -480,6 +480,8 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 		ui.openDescribe()
 	case 'f':
 		ui.toggleBookmark()
+	case 'y':
+		ui.resumeSelected(true)
 	case 'a':
 		ui.cycleAgent()
 	case 'o':
@@ -598,6 +600,10 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 			return nil
 		case 'f':
 			ui.toggleBookmark()
+			return nil
+		case 'y':
+			ui.closeDescribe()
+			ui.resumeSelected(true)
 			return nil
 		case '1', '2', '3', '4', '5', '6':
 			if spec, ok := viewByKey(string(ev.Rune())); ok {
@@ -812,8 +818,12 @@ func (ui *ui) selected() (model.Session, bool) {
 	return full, true
 }
 
-func (ui *ui) resumeSelected() {
+func (ui *ui) resumeSelected(yolo bool) {
 	if !ui.onSessions() {
+		if yolo {
+			ui.alert("Switch to sessions before resuming.")
+			return
+		}
 		ui.activateGroup()
 		return
 	}
@@ -821,7 +831,7 @@ func (ui *ui) resumeSelected() {
 	if !ok {
 		return
 	}
-	cmd, err := act.Plan(s, false)
+	cmd, err := act.Plan(s, yolo)
 	if err != nil {
 		ui.alert(err.Error())
 		return

@@ -70,7 +70,7 @@ ai9s:
 
 const defaultPluginsYAML = `# Plugins run a program on the machine. They do not get a shell.
 # List them here, or put one plugin in each file under plugins/.
-# Reserved keys are ignored: q / : d f s n u ? a p o j k h l g G 1-6, enter, tab, esc, ctrl-d.
+# Reserved keys are ignored: q / : d f y s n u ? a p o j k h l g G 1-6, enter, tab, esc, ctrl-d.
 # A selected session provides $ID $NATIVE_ID $AGENT $CWD $TITLE $BRANCH $MODEL.
 # $FILTER is the filter line. $NAME is the row name.
 # scopes: sessions, bookmarks, providers, directories, branches, models, or all.

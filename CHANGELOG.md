@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `y` resumes the selected session with that agent's auto-approve flag. The top menu shows it on sessions and bookmarks.
+
 ## 1.0.4
 
 - Index Kimi Code, MiniMax, Qwen, and Mistral Vibe sessions, and resume them with kimi, mcode, qwen, and vibe.

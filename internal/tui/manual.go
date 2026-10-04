@@ -97,13 +97,13 @@ func (ui *ui) scrollManual(delta int) {
 const manualText = `[::b]ai9s manual[-]
 
 [::b]Views[-]
-  [yellow]<1>[-] sessions      the conversation list. AGE is relative. DATE is the local time. Enter resumes. d describes. ctrl-d deletes.
+  [yellow]<1>[-] sessions      the conversation list. AGE is relative. DATE is the local time. Enter resumes. y resumes with the auto-approve flag. d describes. ctrl-d deletes.
                      Started outside your home directory, the list is that directory and its subdirectories. Home lists every session. Esc clears the filter and keeps that directory.
   [yellow]<2>[-] providers     group the current filter by agent. An agent with no sessions stays listed. Enter on that row says to install its CLI or to log in.
   [yellow]<3>[-] directories   group by working directory
   [yellow]<4>[-] branches      group by git branch and worktree. The worktree is the checkout that holds the session directory. Enter filters by that branch and that checkout.
   [yellow]<5>[-] models        group by model
-  [yellow]<6>[-] bookmarks     bookmarked sessions. Enter resumes. f, n, u, and ctrl-d work here the same way they do on sessions.
+  [yellow]<6>[-] bookmarks     bookmarked sessions. Enter and y resume. f, n, u, and ctrl-d work here the same way they do on sessions.
 
 Enter on a group applies that filter and returns to sessions. Enter on a provider with no sessions warns you to install that CLI or to log in and start a session. A group labeled (none) has an empty value, so enter leaves the filter alone, unless that branches row still has a worktree.
 
@@ -127,6 +127,7 @@ Esc in describe returns to the list and leaves the filter. Esc after you open se
 
 [::b]Other keys[-]
   enter       resume in the session directory. Quitting the agent returns here. On a group, apply that filter
+  y           resume the same way, and pass that agent's auto-approve flag. The top menu shows y yolo on sessions and bookmarks. Describe uses it too. On a group, y says to switch to sessions
   d           describe. The list is replaced by the preview. j/k or up/down scroll a line, h/l or left/right pan, ⌘↑/⌘↓ and ⌘←/⌘→ page, g/G jump
   esc         from describe, return to the list. From a drilled-in list, return to that group. On a group, or on sessions, clear the filter
   ctrl-d      delete, after confirmation. Sessions and bookmarks. d does not delete
@@ -160,6 +161,7 @@ A horizontal wheel pans. Shift with the vertical wheel pans the same way. Drag a
 
 [::b]Resume[-]
 Resume runs that agent's own CLI in the session directory when the directory still exists.
+Enter leaves the agent's permission prompts on. y passes the auto-approve flag when that agent documents one. Codex, Gemini, OpenCode, OpenClaw, Jules, Goose, Aider, Kimi, and MiniMax resume with the same command either way.
 Quitting the agent returns to this list. ai9s takes the terminal back, so the shell does not leave it suspended. The index refreshes so the session you just left is current.
   claude --resume
   codex resume

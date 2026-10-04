@@ -312,7 +312,7 @@ func TestEscapeReturnsToDrilledView(t *testing.T) {
 	}
 	header := ui.header.GetText(true)
 	info := ui.info.GetText(true)
-	if strings.Contains(info, "claude") || strings.Contains(header, "yolo") || strings.Contains(header, "pgup") {
+	if strings.Contains(info, "claude") || !strings.Contains(header, "<y>") || !strings.Contains(header, "yolo") || strings.Contains(header, "pgup") {
 		t.Fatalf("chrome info %q header %q", info, header)
 	}
 	if !strings.Contains(ui.lines[0], "AGE") || !strings.Contains(ui.lines[0], "DATE") || !strings.Contains(ui.lines[0], "TOKENS") {
@@ -457,6 +457,52 @@ func TestEnterPlansResumeWithoutAScreen(t *testing.T) {
 	send(ui.table, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
 	if ui.pending == nil || len(ui.pending.Args) < 2 || ui.pending.Args[0] != "--resume" || ui.pending.Args[1] != "one" {
 		t.Fatalf("pending %#v", ui.pending)
+	}
+	menu, _ := ui.menuText()
+	if !strings.Contains(menu, "<y>") || !strings.Contains(menu, "yolo") {
+		t.Fatalf("menu %s", menu)
+	}
+
+	ui.pending = nil
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, 'y', tcell.ModNone))
+	if ui.pending == nil || len(ui.pending.Args) < 3 || ui.pending.Args[0] != "--dangerously-skip-permissions" || ui.pending.Args[1] != "--resume" || ui.pending.Args[2] != "one" {
+		t.Fatalf("yolo %#v", ui.pending)
+	}
+
+	kimi := model.Session{
+		ID: "kimi:k1", NativeID: "k1", Agent: "kimi", Title: "k1",
+		CWD: sess.CWD, Updated: sess.Updated,
+		SourcePath: path, CanDelete: true, DeleteMode: "kimi",
+	}
+	if err := st.Apply("kimi", []model.Session{kimi}, []store.Source{{Path: path, Mtime: 1}}); err != nil {
+		t.Fatal(err)
+	}
+	ui.reload()
+	kimiRow := -1
+	for i, row := range ui.rows {
+		if row.ID == "kimi:k1" {
+			kimiRow = i + 1
+		}
+	}
+	if kimiRow < 1 {
+		t.Fatal("kimi row missing")
+	}
+	ui.table.Select(kimiRow, 0)
+	ui.pending = nil
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, 'y', tcell.ModNone))
+	if ui.pending == nil || strings.Join(ui.pending.Args, " ") != "--session k1" {
+		t.Fatalf("kimi yolo %#v", ui.pending)
+	}
+
+	ui.pending = nil
+	ui.setView(viewProviders)
+	send(ui.table, tcell.NewEventKey(tcell.KeyRune, 'y', tcell.ModNone))
+	if ui.pending != nil {
+		t.Fatalf("group yolo %#v", ui.pending)
+	}
+	groupMenu, _ := ui.menuText()
+	if strings.Contains(groupMenu, "yolo") {
+		t.Fatalf("group menu %s", groupMenu)
 	}
 }
 

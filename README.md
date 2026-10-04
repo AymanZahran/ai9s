@@ -232,7 +232,7 @@ ai9s resume codex:<session-id> --print   # show the command, do not run it
 ai9s delete claude:<session-id>          # asks you to type the id
 ```
 
-`--json` works on `index`, `stats`, `search`, and `show`. `resume --yolo` adds an auto-approve flag only for agents that document one. `delete --yes` skips the prompt.
+`--json` works on `index`, `stats`, `search`, and `show`. `y` in the session list, and `resume --yolo`, add an auto-approve flag only for agents that document one. `delete --yes` skips the prompt.
 
 Resume runs that agent's own CLI, in the session's directory when that directory still exists.
 
@@ -242,6 +242,7 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 | --- | --- |
 | `1`–`6` | Sessions, providers, directories, branches, models, bookmarks. Branches lists each git branch with the worktree that contains the session. `6` and `:bookmarks` list bookmarked sessions. The active view is bold in the top hotkey bar. |
 | Enter | Resume the selected session. Quitting that session returns to ai9s, which takes the terminal back. On a group view, apply that group as a filter and return to sessions. On a provider with no sessions, ai9s says to install that CLI or to log in and start a session. |
+| `y` | Resume the selected session and pass that agent's auto-approve flag. The top menu shows `y` `yolo` on sessions and bookmarks, and on describe for those lists. Agents without that flag resume with the same command Enter uses. On a group view, `y` says to switch to sessions. |
 | `d` | Describe the selected row. The list is replaced by the preview. `j`/`k` or up/down scroll a line. `h`/`l` or left/right pan. ⌘↑/⌘↓ and ⌘←/⌘→ page. `g`/`G` jump to the top or the end. Esc returns to the list. Tab opens and closes the same view. |
 | Ctrl-D | Delete, after confirmation. Sessions and bookmarks. |
 | `/` | Edit the filter. Up and down move the list while the field is open. ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Plain left and right stay in the field. `j` and `k` are letters here. |
@@ -283,7 +284,7 @@ Quote a phrase to keep it together: `"auth bug"`. Esc on the session list clears
 
 ## Config
 
-ai9s writes `config.yaml` the first time it starts, when the file is missing. Skins go in `skins/<name>.yaml`. Plugins go in `plugins.yaml` or in `plugins/`. A plugin shortcut that uses `q`, `/`, `:`, `d`, `f`, `s`, `n`, `u`, `?`, `a`, `p`, `o`, `j`, `k`, `h`, `l`, `g`, `G`, `1`–`6`, Enter, Tab, Esc, or Ctrl-D is ignored. The command is a program name, not a shell. A bare name is looked up on `PATH`, then in the config `plugins/` directory. The selected row provides `$ID`, `$NATIVE_ID`, `$AGENT`, `$CWD`, `$TITLE`, `$BRANCH`, `$MODEL`, `$FILTER`, and `$NAME`.
+ai9s writes `config.yaml` the first time it starts, when the file is missing. Skins go in `skins/<name>.yaml`. Plugins go in `plugins.yaml` or in `plugins/`. A plugin shortcut that uses `q`, `/`, `:`, `d`, `f`, `y`, `s`, `n`, `u`, `?`, `a`, `p`, `o`, `j`, `k`, `h`, `l`, `g`, `G`, `1`–`6`, Enter, Tab, Esc, or Ctrl-D is ignored. The command is a program name, not a shell. A bare name is looked up on `PATH`, then in the config `plugins/` directory. The selected row provides `$ID`, `$NATIVE_ID`, `$AGENT`, `$CWD`, `$TITLE`, `$BRANCH`, `$MODEL`, `$FILTER`, and `$NAME`.
 
 `examples/plugins` has four plugins you copy in to turn on. `e` opens the directory in `AI9S_EDITOR`. `c` copies the fields you list to the clipboard. `b` shows git status and recent commits (`AI9S_GIT_LOG`). `t` opens a terminal there (`AI9S_TERMINAL`). Enabled keys are drawn on the menu. See `examples/plugins/README.md`.
 
