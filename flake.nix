@@ -5,23 +5,23 @@
 
   outputs = { self, nixpkgs }:
     let
-      version = "1.0.1";
+      version = "1.0.2";
       systems = {
         x86_64-linux = {
           asset = "ai9s_Linux_amd64.tar.gz";
-          hash = "sha256-t+GDPDaZjT/M4FEUFKk8vlQIP1ZBDOTWYNfukkUay0w=";
+          hash = "sha256-bI9uAdO5vcLU1SyVNbpqYR+LquDo6Bd8HCyf/1T2LWA=";
         };
         aarch64-linux = {
           asset = "ai9s_Linux_arm64.tar.gz";
-          hash = "sha256-wopv6g82jARy+xPh0zs7zYjYO3ygL6WsVw9YNoPGBKI=";
+          hash = "sha256-X0xbkIDu5Hwx+O20iXQXiPpsZCmEbKxEkmN9pureq+M=";
         };
         x86_64-darwin = {
           asset = "ai9s_Darwin_amd64.tar.gz";
-          hash = "sha256-I90FjLF5DHgCZtaLUdR42D5MvN/EsmDBkIlHLYIxkzM=";
+          hash = "sha256-fjsA5RzB1zq+tpSZmAwi7na0u2g5n0/uve9+d+/Z4SE=";
         };
         aarch64-darwin = {
           asset = "ai9s_Darwin_arm64.tar.gz";
-          hash = "sha256-FjZc3yQ7CBC2wDKFxDwYhizQr+GEpiVjsFmHQtOECt4=";
+          hash = "sha256-9zkz07xbcnyOr4C27glnLCGKCw9ZrBF0rt4Gydv1B4Y=";
         };
       };
       packagesFor = nixpkgs.lib.mapAttrs (system: src:
