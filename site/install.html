@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Install — ai9s</title>
-  <meta name="description" content="Install ai9s with Homebrew, Linux packages, Scoop, the Windows zip, source, or go install.">
+  <meta name="description" content="Install ai9s with Homebrew, apt, dnf, yum, zypper, apk, pacman, Nix, mise, Scoop, WinGet, Chocolatey, archives, or go install.">
   <link rel="stylesheet" href="css/main.css">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="canonical" href="https://ai9scli.io/install.html">
@@ -27,6 +27,30 @@
   <main>
     <h1><span class="mark" aria-hidden="true">↓</span> Installation</h1>
     <p>ai9s is a single Go binary. It runs on macOS, Linux, and Windows. GitHub Actions tests it on Ubuntu, macOS, and Windows. Install the latest 1.0 release. The supported line is 1.0.x.</p>
+    <p><code>apt</code>, <code>dnf</code>, <code>yum</code>, <code>zypper</code>, <code>apk</code>, and the archives follow the latest GitHub release. Scoop, WinGet, Chocolatey, Nix, and the Arch <code>PKGBUILD</code> install the version named in their files in this repository. Use <code>amd64</code> on x86_64 and <code>arm64</code> on aarch64. Linux package filenames spell the OS in lowercase. Archive filenames spell it <code>Linux</code>, <code>Darwin</code>, or <code>Windows</code>.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Package manager</th><th>Systems</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Homebrew</td><td>macOS, Linux</td></tr>
+          <tr><td>apt</td><td>Debian, Ubuntu, Linux Mint, Pop!_OS, elementary OS</td></tr>
+          <tr><td>dnf</td><td>Fedora, RHEL, CentOS Stream, AlmaLinux, Rocky Linux, Amazon Linux</td></tr>
+          <tr><td>yum</td><td>older RHEL and CentOS</td></tr>
+          <tr><td>zypper</td><td>openSUSE Leap and Tumbleweed</td></tr>
+          <tr><td>apk</td><td>Alpine, postmarketOS</td></tr>
+          <tr><td>pacman</td><td>Arch Linux, Manjaro, EndeavourOS, CachyOS</td></tr>
+          <tr><td>Nix</td><td>macOS, Linux</td></tr>
+          <tr><td>mise</td><td>macOS, Linux, Windows</td></tr>
+          <tr><td>Scoop</td><td>Windows</td></tr>
+          <tr><td>WinGet</td><td>Windows</td></tr>
+          <tr><td>Chocolatey</td><td>Windows</td></tr>
+          <tr><td>Go</td><td>macOS, Linux, Windows</td></tr>
+        </tbody>
+      </table>
+    </div>
 
     <h2>Homebrew</h2>
     <p>Homebrew works on macOS and Linux.</p>
@@ -35,42 +59,86 @@ brew trust aymanzahran/ai9s
 brew install ai9s</code></pre>
     <p>The formula is <code>Formula/ai9s.rb</code> in this repository. <code>brew tap AymanZahran/ai9s</code> with no URL looks for a repository named <code>homebrew-ai9s</code>, so pass the URL above. <code>brew install --HEAD ai9s</code> builds the latest <code>main</code>.</p>
 
-    <h2>Linux packages</h2>
-    <p>Each command installs the latest published release. Use <code>amd64</code> on x86_64 and <code>arm64</code> on aarch64.</p>
-    <h3>Debian and Ubuntu</h3>
+    <h2>apt</h2>
+    <p>Debian, Ubuntu, Linux Mint, Pop!_OS, and elementary OS.</p>
     <pre><code>curl -fL -o /tmp/ai9s.deb https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.deb
-sudo dpkg -i /tmp/ai9s.deb</code></pre>
-    <h3>Fedora, RHEL, and CentOS</h3>
+sudo apt install -y /tmp/ai9s.deb</code></pre>
+    <p><code>sudo dpkg -i /tmp/ai9s.deb</code> installs the same file.</p>
+
+    <h2>dnf</h2>
+    <p>Fedora, RHEL, CentOS Stream, AlmaLinux, Rocky Linux, and Amazon Linux.</p>
     <pre><code>sudo dnf install -y https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.rpm</code></pre>
-    <h3>Alpine</h3>
+
+    <h2>yum</h2>
+    <p>Older RHEL and CentOS.</p>
+    <pre><code>curl -fL -o /tmp/ai9s.rpm https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.rpm
+sudo yum install -y /tmp/ai9s.rpm</code></pre>
+
+    <h2>zypper</h2>
+    <p>openSUSE Leap and Tumbleweed. The rpm is not signed with a zypper key.</p>
+    <pre><code>curl -fL -o /tmp/ai9s.rpm https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.rpm
+sudo zypper --non-interactive install --allow-unsigned-rpm /tmp/ai9s.rpm</code></pre>
+
+    <h2>apk</h2>
+    <p>Alpine and postmarketOS. The apk is not signed with an Alpine key.</p>
     <pre><code>curl -fL -o /tmp/ai9s.apk https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.apk
 sudo apk add --allow-untrusted /tmp/ai9s.apk</code></pre>
-    <h3>Arch Linux</h3>
+
+    <h2>pacman</h2>
+    <p>Arch Linux, Manjaro, EndeavourOS, and CachyOS, from the <code>PKGBUILD</code> in this repository.</p>
     <pre><code>git clone --depth 1 https://github.com/AymanZahran/ai9s.git
 cd ai9s/packaging/arch
 makepkg -si</code></pre>
 
-    <h2>Windows</h2>
-    <h3>Scoop</h3>
+    <h2>Nix</h2>
+    <p>The flake downloads the release archive for the host system.</p>
+    <pre><code>nix profile install github:AymanZahran/ai9s</code></pre>
+
+    <h2>mise</h2>
+    <p>mise installs the release archive. The pattern keeps the <code>.tar.gz</code> and <code>.zip</code> and leaves the deb, rpm, and apk alone.</p>
+    <pre><code>mise use -g 'github:AymanZahran/ai9s[matching_regex=\.(tar\.gz|zip)$]'</code></pre>
+
+    <h2>Scoop</h2>
     <pre><code>scoop install https://raw.githubusercontent.com/AymanZahran/ai9s/main/packaging/scoop/ai9s.json</code></pre>
-    <h3>Zip</h3>
-    <p><code>ai9s_Windows_arm64.zip</code> is the arm64 build. Put the extracted <code>ai9s.exe</code> on <code>PATH</code>.</p>
+
+    <h2>WinGet</h2>
+    <p>WinGet installs from the manifest in this repository. Local manifests have to be turned on once.</p>
+    <pre><code>winget settings --enable LocalManifestFiles
+git clone --depth 1 https://github.com/AymanZahran/ai9s.git $env:TEMP\ai9s
+winget install --manifest $env:TEMP\ai9s\packaging\winget</code></pre>
+
+    <h2>Chocolatey</h2>
+    <p>Chocolatey packs the package in this repository, then installs that package.</p>
+    <pre><code>git clone --depth 1 https://github.com/AymanZahran/ai9s.git $env:TEMP\ai9s
+Set-Location $env:TEMP\ai9s\packaging\chocolatey
+choco pack
+choco install ai9s --yes --source .</code></pre>
+
+    <h2>Archives</h2>
+    <p>macOS, Apple Silicon. Intel Macs use <code>ai9s_Darwin_amd64.tar.gz</code>.</p>
+    <pre><code>mkdir -p ~/.local/bin "$TMPDIR/ai9s"
+curl -fL https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_Darwin_arm64.tar.gz | tar -xz -C "$TMPDIR/ai9s"
+install -m 755 "$TMPDIR/ai9s/ai9s" ~/.local/bin/ai9s</code></pre>
+    <p>Linux. <code>arm64</code> is the aarch64 archive.</p>
+    <pre><code>mkdir -p ~/.local/bin /tmp/ai9s
+curl -fL https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_Linux_amd64.tar.gz | tar -xz -C /tmp/ai9s
+install -m 755 /tmp/ai9s/ai9s ~/.local/bin/ai9s</code></pre>
+    <p>Windows. <code>ai9s_Windows_arm64.zip</code> is the arm64 build. Put the extracted <code>ai9s.exe</code> on <code>PATH</code>.</p>
     <pre><code>$dest = "$env:LOCALAPPDATA\ai9s"
 New-Item -ItemType Directory -Force -Path $dest | Out-Null
 Invoke-WebRequest https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_Windows_amd64.zip -OutFile "$dest\ai9s.zip"
 Expand-Archive "$dest\ai9s.zip" -DestinationPath $dest -Force</code></pre>
 
     <h2>From source</h2>
+    <p>Requires Go 1.25 or newer. <code>make install</code> copies the binary to <code>~/.local/bin</code>. Put that directory on your <code>PATH</code>, or choose another prefix.</p>
     <pre><code>git clone https://github.com/AymanZahran/ai9s.git
 cd ai9s
 make install</code></pre>
-    <p><code>make install</code> copies the binary to <code>~/.local/bin</code>. Put that directory on your <code>PATH</code>, or choose another prefix:</p>
     <pre><code>make install PREFIX=/usr/local</code></pre>
 
     <h2>With the Go tool</h2>
-    <p>Requires Go 1.25 or newer.</p>
+    <p>Requires Go 1.25 or newer. The binary lands in <code>$(go env GOPATH)/bin</code>.</p>
     <pre><code>go install github.com/AymanZahran/ai9s@latest</code></pre>
-    <p>The binary lands in <code>$(go env GOPATH)/bin</code>.</p>
 
     <h2>Check</h2>
     <pre><code>ai9s version

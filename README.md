@@ -58,7 +58,9 @@ Plugins add their own row of keys. The four examples are `e` edit, `c` copy, `b`
 
 ## Install
 
-Install the latest 1.0 release. The supported line is 1.0.x.
+Install the latest 1.0 release. The supported line is 1.0.x. The same instructions are on the [install page](https://ai9scli.io/install.html).
+
+`apt`, `dnf`, `yum`, `zypper`, `apk`, and the archives follow the latest GitHub release. Scoop, WinGet, Chocolatey, Nix, and the Arch `PKGBUILD` install the version named in their files in this repository. Use `amd64` on x86_64 and `arm64` on aarch64. Linux package filenames spell the OS in lowercase. Archive filenames spell it `Linux`, `Darwin`, or `Windows`.
 
 ### Homebrew
 
@@ -72,31 +74,55 @@ brew install ai9s
 
 The formula is `Formula/ai9s.rb` in this repository. `brew tap AymanZahran/ai9s` with no URL looks for a repository named `homebrew-ai9s`, so pass the URL above. `brew install --HEAD ai9s` builds the latest `main`.
 
-### Linux packages
+### apt
 
-Each command installs the latest published release. Use `amd64` on x86_64 and `arm64` on aarch64. The archive names use that spelling.
-
-Debian and Ubuntu:
+Debian, Ubuntu, Linux Mint, Pop!_OS, and elementary OS:
 
 ```sh
 curl -fL -o /tmp/ai9s.deb https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.deb
-sudo dpkg -i /tmp/ai9s.deb
+sudo apt install -y /tmp/ai9s.deb
 ```
 
-Fedora, RHEL, and CentOS:
+`sudo dpkg -i /tmp/ai9s.deb` installs the same file.
+
+### dnf
+
+Fedora, RHEL, CentOS Stream, AlmaLinux, Rocky Linux, and Amazon Linux:
 
 ```sh
 sudo dnf install -y https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.rpm
 ```
 
-Alpine:
+### yum
+
+Older RHEL and CentOS:
+
+```sh
+curl -fL -o /tmp/ai9s.rpm https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.rpm
+sudo yum install -y /tmp/ai9s.rpm
+```
+
+### zypper
+
+openSUSE Leap and Tumbleweed. The rpm is not signed with a zypper key.
+
+```sh
+curl -fL -o /tmp/ai9s.rpm https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.rpm
+sudo zypper --non-interactive install --allow-unsigned-rpm /tmp/ai9s.rpm
+```
+
+### apk
+
+Alpine and postmarketOS. The apk is not signed with an Alpine key.
 
 ```sh
 curl -fL -o /tmp/ai9s.apk https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.apk
 sudo apk add --allow-untrusted /tmp/ai9s.apk
 ```
 
-Arch Linux, from the `PKGBUILD` in this repository:
+### pacman
+
+Arch Linux, Manjaro, EndeavourOS, and CachyOS, from the `PKGBUILD` in this repository:
 
 ```sh
 git clone --depth 1 https://github.com/AymanZahran/ai9s.git
@@ -104,15 +130,68 @@ cd ai9s/packaging/arch
 makepkg -si
 ```
 
-### Windows
+### Nix
 
-Scoop:
+```sh
+nix profile install github:AymanZahran/ai9s
+```
+
+The flake downloads the release archive for the host system.
+
+### mise
+
+mise installs the release archive. The pattern keeps the `.tar.gz` and `.zip` and leaves the deb, rpm, and apk alone.
+
+```sh
+mise use -g 'github:AymanZahran/ai9s[matching_regex=\.(tar\.gz|zip)$]'
+```
+
+### Scoop
 
 ```powershell
 scoop install https://raw.githubusercontent.com/AymanZahran/ai9s/main/packaging/scoop/ai9s.json
 ```
 
-The zip is the other option. `ai9s_Windows_arm64.zip` is the arm64 build. Put the extracted `ai9s.exe` on `PATH`.
+### WinGet
+
+WinGet installs from the manifest in this repository. Local manifests have to be turned on once.
+
+```powershell
+winget settings --enable LocalManifestFiles
+git clone --depth 1 https://github.com/AymanZahran/ai9s.git $env:TEMP\ai9s
+winget install --manifest $env:TEMP\ai9s\packaging\winget
+```
+
+### Chocolatey
+
+Chocolatey packs the package in this repository, then installs that package.
+
+```powershell
+git clone --depth 1 https://github.com/AymanZahran/ai9s.git $env:TEMP\ai9s
+Set-Location $env:TEMP\ai9s\packaging\chocolatey
+choco pack
+choco install ai9s --yes --source .
+```
+
+### Archives
+
+macOS, Apple Silicon. Intel Macs use `ai9s_Darwin_amd64.tar.gz`.
+
+```sh
+mkdir -p ~/.local/bin "$TMPDIR/ai9s"
+curl -fL https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_Darwin_arm64.tar.gz | tar -xz -C "$TMPDIR/ai9s"
+install -m 755 "$TMPDIR/ai9s/ai9s" ~/.local/bin/ai9s
+```
+
+Linux. `arm64` is the aarch64 archive.
+
+```sh
+mkdir -p ~/.local/bin /tmp/ai9s
+curl -fL https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_Linux_amd64.tar.gz | tar -xz -C /tmp/ai9s
+install -m 755 /tmp/ai9s/ai9s ~/.local/bin/ai9s
+```
+
+Windows. `ai9s_Windows_arm64.zip` is the arm64 build. Put the extracted `ai9s.exe` on `PATH`.
 
 ```powershell
 $dest = "$env:LOCALAPPDATA\ai9s"

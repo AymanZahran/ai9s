@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>ai9s</id>
+    <version>1.0.1</version>
+    <title>ai9s</title>
+    <authors>Ayman Zahran</authors>
+    <projectUrl>https://ai9scli.io</projectUrl>
+    <packageSourceUrl>https://github.com/AymanZahran/ai9s</packageSourceUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Keyboard-first finder for local AI coding sessions.</description>
+    <tags>ai9s cli</tags>
+    <license type="expression">MIT</license>
+  </metadata>
+</package>

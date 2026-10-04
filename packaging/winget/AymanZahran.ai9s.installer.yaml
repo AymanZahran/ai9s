@@ -1,0 +1,21 @@
+PackageIdentifier: AymanZahran.ai9s
+PackageVersion: 1.0.1
+Installers:
+  - Architecture: x64
+    InstallerType: zip
+    NestedInstallerType: portable
+    NestedInstallerFiles:
+      - RelativeFilePath: ai9s.exe
+        PortableCommandAlias: ai9s
+    InstallerUrl: https://github.com/AymanZahran/ai9s/releases/download/v1.0.1/ai9s_Windows_amd64.zip
+    InstallerSha256: 222bc709c393125aa426ce8e4649dd66a13fc5071e93af21736a16762489cf67
+  - Architecture: arm64
+    InstallerType: zip
+    NestedInstallerType: portable
+    NestedInstallerFiles:
+      - RelativeFilePath: ai9s.exe
+        PortableCommandAlias: ai9s
+    InstallerUrl: https://github.com/AymanZahran/ai9s/releases/download/v1.0.1/ai9s_Windows_arm64.zip
+    InstallerSha256: 429b230dafa02e0a386a27656a6d0c93f4f391a45172dd3f3e99d8e7623e908a
+ManifestType: installer
+ManifestVersion: 1.6.0

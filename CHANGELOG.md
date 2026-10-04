@@ -6,7 +6,7 @@
 - `f` bookmarks a session. The mark stays through a reindex. `mark:yes` lists bookmarks.
 - Free-text search matches letters in order and ranks a contiguous match first.
 - The list reindexes on an interval. The default is 30 seconds. `r` no longer reindexes.
-- Linux installs from the deb, rpm, and apk packages, and from the Arch `PKGBUILD`. Windows installs with Scoop or the zip.
+- Install from Homebrew, apt, dnf, yum, zypper, apk, pacman, Nix, mise, Scoop, WinGet, Chocolatey, the archives, or `go install`.
 
 ## 1.0.1
 
