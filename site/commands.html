@@ -39,13 +39,13 @@ ai9s help</code></pre>
 
     <h2>index</h2>
     <p><code>ai9s index</code> scans every configured agent store and refreshes the local database. Files whose modification time has not changed are skipped. A scan error for one agent is printed as <code>warning:</code> and does not remove the other agents. <code>--json</code> prints session and message counts.</p>
-    <p>Opening the UI runs the same refresh first.</p>
+    <p>Opening the UI runs the same refresh first, then repeats it on the refresh interval. The default is 30 seconds.</p>
 
     <h2>stats</h2>
     <p><code>ai9s stats</code> prints counts from the index. It does not scan again. Agents with zero sessions are omitted. <code>--json</code> prints the same counts as objects.</p>
 
     <h2>search</h2>
-    <p>Each word is a substring of the title, summary, directory, branch, model, agent, or excerpt. Tokens such as <code>agent:</code> and <code>dir:</code> narrow the list the same way. A leading <code>~</code> expands. See <a href="filters.html">Filters</a>.</p>
+    <p>Each word matches when its letters appear in order in the name, title, session id, summary, directory, branch, model, agent, or excerpt. A contiguous match ranks above a match with gaps. Tokens such as <code>agent:</code>, <code>dir:</code>, and <code>mark:yes</code> narrow the list the same way. A leading <code>~</code> expands. See <a href="filters.html">Filters</a>.</p>
     <pre><code>ai9s search 'agent:claude dir:my-repo date:&lt;7d auth'</code></pre>
     <p><code>--json</code> prints sessions without excerpts. <code>--limit</code> caps the rows. The UI caps a search at <code>ui.limit</code> in the config, which defaults to 400.</p>
 

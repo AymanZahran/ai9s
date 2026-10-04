@@ -3,8 +3,8 @@ package config
 const defaultConfigYAML = `# ai9s config. Created once; later edits are kept.
 # Directory: $AI9S_CONFIG_DIR, or $XDG_CONFIG_HOME/ai9s, or ~/.config/ai9s.
 ai9s:
-  # Seconds between automatic reindexes. 0 reindexes only when you press r.
-  refreshRate: 0
+  # Seconds between automatic reindexes. 0 uses 30. The minimum is 5.
+  refreshRate: 30
   # When true, ctrl-d does not delete. d still opens describe.
   readOnly: false
   # sessions, providers, directories, branches, or models.
@@ -70,7 +70,7 @@ ai9s:
 
 const defaultPluginsYAML = `# Plugins run a program on the machine. They do not get a shell.
 # List them here, or put one plugin in each file under plugins/.
-# Reserved keys are ignored: q / : d r s n u ? a p o j k h l g G 1-5, enter, tab, esc, ctrl-d.
+# Reserved keys are ignored: q / : d f s n u ? a p o j k h l g G 1-5, enter, tab, esc, ctrl-d.
 # A selected session provides $ID $NATIVE_ID $AGENT $CWD $TITLE $BRANCH $MODEL.
 # $FILTER is the filter line. $NAME is the row name.
 # scopes: sessions, providers, directories, branches, models, or all.

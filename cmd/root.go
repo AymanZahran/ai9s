@@ -290,6 +290,9 @@ func cmdShow(args []string) int {
 	fmt.Printf("model      %s\n", tui.VisibleLine(emptyDash(sess.Model)))
 	fmt.Printf("updated    %s\n", formatTime(sess.Updated))
 	fmt.Printf("messages   %d\n", sess.Messages)
+	if sess.Bookmarked {
+		fmt.Printf("bookmark   yes\n")
+	}
 	for _, line := range tui.UsageLines(sess.Usage) {
 		fmt.Println(tui.VisibleLine(line))
 	}

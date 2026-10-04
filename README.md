@@ -14,7 +14,7 @@
 
 ai9s is a keyboard-first finder for local AI coding sessions. It indexes the session files already on your machine, then lets you search, preview, filter, resume, and — where it is safe — delete them.
 
-The interface follows the k9s screen: a menu of hotkeys, a crumbs bar (`ai9s › Sessions › all`), and one framed table. Started in a project directory, the list shows sessions whose working directory is that directory or a subdirectory. Started in your home directory, the list shows every session. The AGENT column is the agent name. NAME is the last column. It is the session title, or the session id when the session has no title. `n` renames that name. The new name stays through a reindex. The list has no separate title column. Every column except NAME is cut to a fixed width. A path keeps its ending. `u` shows usage for the selected session. `s` shows counts for every session. `1` through `5` switch the table between sessions, providers, directories, branches, and models. `/` edits the filter and `:` opens a command line for those views and for filter tokens. Esc clears the filter from the list and from the filter line. `?` opens a scrollable manual. `d` replaces the list with a describe view of the selected row; Esc returns to the list. Ctrl-D deletes. The CTX column, describe, and `ai9s show` include context size and token counts when the agent recorded them.
+The interface follows the k9s screen: a menu of hotkeys, a crumbs bar (`ai9s › Sessions › all`), and one framed table. Started in a project directory, the list shows sessions whose working directory is that directory or a subdirectory. Started in your home directory, the list shows every session. The AGENT column is the agent name. NAME is the last column. It is the session title, or the session id when the session has no title. `n` renames that name. The new name stays through a reindex. The list has no separate title column. Every column except NAME is cut to a fixed width. A path keeps its ending. `u` shows usage for the selected session. `s` shows counts for every session. `1` through `5` switch the table between sessions, providers, directories, branches, and models. `/` edits the filter and `:` opens a command line for those views and for filter tokens. Esc clears the filter from the list and from the filter line. `?` opens a scrollable manual. `d` replaces the list with a describe view of the selected row; Esc returns to the list. Ctrl-D deletes. The CTX column, describe, and `ai9s show` include context size and token counts when the agent recorded them. COST is the recorded USD amount, or a dash. `f` bookmarks the selected session. The list reindexes every 30 seconds.
 
 Colors, the mouse, icons, read-only mode, the starting view, and plugins come from `~/.config/ai9s/config.yaml` (or `$AI9S_CONFIG_DIR`, or `$XDG_CONFIG_HOME/ai9s`). `ai9s info` prints the paths.
 
@@ -58,9 +58,13 @@ Plugins add their own row of keys. The four examples are `e` edit, `c` copy, `b`
 
 ## Install
 
-Install release 1.0.0. It is the supported release.
+Install the latest 1.0 release. The supported line is 1.0.x. The same instructions are on the [install page](https://ai9scli.io/install.html).
+
+`apt`, `dnf`, `yum`, `zypper`, `apk`, and the archives follow the latest GitHub release. Scoop, WinGet, Chocolatey, Nix, and the Arch `PKGBUILD` install the version named in their files in this repository. Use `amd64` on x86_64 and `arm64` on aarch64. Linux package filenames spell the OS in lowercase. Archive filenames spell it `Linux`, `Darwin`, or `Windows`.
 
 ### Homebrew
+
+Homebrew works on macOS and Linux.
 
 ```sh
 brew tap AymanZahran/ai9s https://github.com/AymanZahran/ai9s
@@ -69,6 +73,132 @@ brew install ai9s
 ```
 
 The formula is `Formula/ai9s.rb` in this repository. `brew tap AymanZahran/ai9s` with no URL looks for a repository named `homebrew-ai9s`, so pass the URL above. `brew install --HEAD ai9s` builds the latest `main`.
+
+### apt
+
+Debian, Ubuntu, Linux Mint, Pop!_OS, and elementary OS:
+
+```sh
+curl -fL -o /tmp/ai9s.deb https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.deb
+sudo apt install -y /tmp/ai9s.deb
+```
+
+`sudo dpkg -i /tmp/ai9s.deb` installs the same file.
+
+### dnf
+
+Fedora, RHEL, CentOS Stream, AlmaLinux, Rocky Linux, and Amazon Linux:
+
+```sh
+sudo dnf install -y https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.rpm
+```
+
+### yum
+
+Older RHEL and CentOS:
+
+```sh
+curl -fL -o /tmp/ai9s.rpm https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.rpm
+sudo yum install -y /tmp/ai9s.rpm
+```
+
+### zypper
+
+openSUSE Leap and Tumbleweed. The rpm is not signed with a zypper key.
+
+```sh
+curl -fL -o /tmp/ai9s.rpm https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.rpm
+sudo zypper --non-interactive install --allow-unsigned-rpm /tmp/ai9s.rpm
+```
+
+### apk
+
+Alpine and postmarketOS. The apk is not signed with an Alpine key.
+
+```sh
+curl -fL -o /tmp/ai9s.apk https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_linux_amd64.apk
+sudo apk add --allow-untrusted /tmp/ai9s.apk
+```
+
+### pacman
+
+Arch Linux, Manjaro, EndeavourOS, and CachyOS, from the `PKGBUILD` in this repository:
+
+```sh
+git clone --depth 1 https://github.com/AymanZahran/ai9s.git
+cd ai9s/packaging/arch
+makepkg -si
+```
+
+### Nix
+
+```sh
+nix profile install github:AymanZahran/ai9s
+```
+
+The flake downloads the release archive for the host system.
+
+### mise
+
+mise installs the release archive. The pattern keeps the `.tar.gz` and `.zip` and leaves the deb, rpm, and apk alone.
+
+```sh
+mise use -g 'github:AymanZahran/ai9s[matching_regex=\.(tar\.gz|zip)$]'
+```
+
+### Scoop
+
+```powershell
+scoop install https://raw.githubusercontent.com/AymanZahran/ai9s/main/packaging/scoop/ai9s.json
+```
+
+### WinGet
+
+WinGet installs from the manifest in this repository. Local manifests have to be turned on once.
+
+```powershell
+winget settings --enable LocalManifestFiles
+git clone --depth 1 https://github.com/AymanZahran/ai9s.git $env:TEMP\ai9s
+winget install --manifest $env:TEMP\ai9s\packaging\winget
+```
+
+### Chocolatey
+
+Chocolatey packs the package in this repository, then installs that package.
+
+```powershell
+git clone --depth 1 https://github.com/AymanZahran/ai9s.git $env:TEMP\ai9s
+Set-Location $env:TEMP\ai9s\packaging\chocolatey
+choco pack
+choco install ai9s --yes --source .
+```
+
+### Archives
+
+macOS, Apple Silicon. Intel Macs use `ai9s_Darwin_amd64.tar.gz`.
+
+```sh
+mkdir -p ~/.local/bin "$TMPDIR/ai9s"
+curl -fL https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_Darwin_arm64.tar.gz | tar -xz -C "$TMPDIR/ai9s"
+install -m 755 "$TMPDIR/ai9s/ai9s" ~/.local/bin/ai9s
+```
+
+Linux. `arm64` is the aarch64 archive.
+
+```sh
+mkdir -p ~/.local/bin /tmp/ai9s
+curl -fL https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_Linux_amd64.tar.gz | tar -xz -C /tmp/ai9s
+install -m 755 /tmp/ai9s/ai9s ~/.local/bin/ai9s
+```
+
+Windows. `ai9s_Windows_arm64.zip` is the arm64 build. Put the extracted `ai9s.exe` on `PATH`.
+
+```powershell
+$dest = "$env:LOCALAPPDATA\ai9s"
+New-Item -ItemType Directory -Force -Path $dest | Out-Null
+Invoke-WebRequest https://github.com/AymanZahran/ai9s/releases/latest/download/ai9s_Windows_amd64.zip -OutFile "$dest\ai9s.zip"
+Expand-Archive "$dest\ai9s.zip" -DestinationPath $dest -Force
+```
 
 ### From source
 
@@ -117,8 +247,8 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 | `:` | Command mode. Type a view name or a filter token. Up and down select a row. Enter applies the highlighted row. Enter on an empty command cycles the view. Another `:` cycles the view name in the field. Esc closes it. |
 | `a` | Cycle the `agent:` filter |
 | `p` | Add a `dir:` filter |
-| `o` | Cycle sort: recent, oldest, messages, title |
-| `r` | Reindex |
+| `o` | Cycle sort: recent, oldest, messages, title, cost |
+| `f` | Bookmark the selected session, or clear that bookmark. A star in the first column marks it. The bookmark stays through a reindex. `mark:yes` lists bookmarks. Sessions view only. |
 | `n` | Rename the selected session. Enter on Save stores the name. Esc cancels. An empty name restores the default. The name stays through a reindex. Sessions view only. |
 | `u` | Usage for the selected session: messages, context, tokens, and the other recorded numbers. Sessions view only. |
 | `s` | Stats for every indexed session. |
@@ -133,7 +263,7 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 
 ## Filters
 
-Each free-text word is a substring of the title, summary, directory, branch, model, agent, excerpt, or the name set with `n`. A leading `~` expands to the home directory. These tokens are filters:
+Each free-text word matches when its letters appear in order in the name, title, session id, summary, directory, branch, model, agent, or excerpt. A contiguous match ranks above a match with gaps. With no `sort:` token, the closest matches come first. `sort:recent` keeps the newest sessions first. A leading `~` expands to the home directory. These tokens are filters:
 
 | Token | Meaning |
 | --- | --- |
@@ -144,23 +274,24 @@ Each free-text word is a substring of the title, summary, directory, branch, mod
 | `date:<7d` | Updated in the last 7 days. Units: `m`, `h`, `d`, `w`. |
 | `date:>30d` | Updated more than 30 days ago. |
 | `date:2026-03-02` | That calendar day. `date:2026-03` is the whole month. |
-| `sort:messages` | `recent` (default), `oldest`, `messages`, or `title`. `title` follows the NAME column. |
+| `mark:yes` | Bookmarked sessions. `mark:no` hides them. Also `bookmark:`, `fav:`, and `favorite:`. |
+| `sort:messages` | `recent` (default), `oldest`, `messages`, `title`, or `cost`. `title` follows the NAME column. `cost` follows the recorded USD amount. |
 
 Quote a phrase to keep it together: `"auth bug"`. Esc on the session list clears the line.
 
 ## Config
 
-ai9s writes `config.yaml` the first time it starts, when the file is missing. Skins go in `skins/<name>.yaml`. Plugins go in `plugins.yaml` or in `plugins/`. A plugin shortcut that uses `q`, `/`, `:`, `d`, `r`, `s`, `n`, `u`, `?`, `a`, `p`, `o`, `j`, `k`, `h`, `l`, `g`, `G`, `1`–`5`, Enter, Tab, Esc, or Ctrl-D is ignored. The command is a program name, not a shell. A bare name is looked up on `PATH`, then in the config `plugins/` directory. The selected row provides `$ID`, `$NATIVE_ID`, `$AGENT`, `$CWD`, `$TITLE`, `$BRANCH`, `$MODEL`, `$FILTER`, and `$NAME`.
+ai9s writes `config.yaml` the first time it starts, when the file is missing. Skins go in `skins/<name>.yaml`. Plugins go in `plugins.yaml` or in `plugins/`. A plugin shortcut that uses `q`, `/`, `:`, `d`, `f`, `s`, `n`, `u`, `?`, `a`, `p`, `o`, `j`, `k`, `h`, `l`, `g`, `G`, `1`–`5`, Enter, Tab, Esc, or Ctrl-D is ignored. The command is a program name, not a shell. A bare name is looked up on `PATH`, then in the config `plugins/` directory. The selected row provides `$ID`, `$NATIVE_ID`, `$AGENT`, `$CWD`, `$TITLE`, `$BRANCH`, `$MODEL`, `$FILTER`, and `$NAME`.
 
 `examples/plugins` has four plugins you copy in to turn on. `e` opens the directory in `AI9S_EDITOR`. `c` copies the fields you list to the clipboard. `b` shows git status and recent commits (`AI9S_GIT_LOG`). `t` opens a terminal there (`AI9S_TERMINAL`). Enabled keys are drawn on the menu. See `examples/plugins/README.md`.
 
-`ui.skin` names a file in `skins/` without `.yaml`. `AI9S_SKIN` overrides it. An empty skin uses true black (`#000000`) with the k9s accent colors: blue text, an orange logo, a blue border, fuchsia view keys, and an aqua selection bar. The crumbs line stays black. The named `stock` skin is the older white-on-black palette. A skin file replaces the fields it sets. The menu is a grid. View keys are the first row, actions continue under them, and installed plugin keys get their own rows. `readOnly: true` blocks delete. `refreshRate` is seconds between reindexes; `0` waits for `r`.
+`ui.skin` names a file in `skins/` without `.yaml`. `AI9S_SKIN` overrides it. An empty skin uses true black (`#000000`) with the k9s accent colors: blue text, an orange logo, a blue border, fuchsia view keys, and an aqua selection bar. The crumbs line stays black. The named `stock` skin is the older white-on-black palette. A skin file replaces the fields it sets. The menu is a grid. View keys are the first row, actions continue under them, and installed plugin keys get their own rows. `readOnly: true` blocks delete. `refreshRate` is seconds between reindexes. `0` uses 30. The minimum is 5. The list always refreshes on that interval.
 
 ## Metadata
 
-AGE is always a relative age: now, minutes, hours, days, weeks, months, or years. DATE is the local date and time. Sort follows AGE. NAME is the name set with `n`. Otherwise it is the session title, or the session id when the title is missing or only repeats the native id. An empty name restores that default. The name stays through a reindex. `sort:title` sorts the NAME column. The list has no separate title column. NAME is the last column and is not cut. Every other column is cut to a fixed width. A path keeps its ending. The row pans to show the rest of the name. Describe shows the full value. Describe and `ai9s show` always print a context line and a token line. A dash means the session file did not record that number. The rest of the line appears when it was recorded: input, output, cache read, cache write, reasoning tokens, cost, premium requests, and reasoning effort. The CTX column is the latest prompt size, or `used/window` when both are known. The TOKENS column is the session total, or input plus output when the file has no total.
+AGE is always a relative age: now, minutes, hours, days, weeks, months, or years. DATE is the local date and time. Sort follows AGE. NAME is the name set with `n`. Otherwise it is the session title, or the session id when the title is missing or only repeats the native id. An empty name restores that default. The name stays through a reindex. `sort:title` sorts the NAME column. The list has no separate title column. NAME is the last column and is not cut. Every other column is cut to a fixed width. A path keeps its ending. The row pans to show the rest of the name. Describe shows the full value. Describe and `ai9s show` always print a context line and a token line. A dash means the session file did not record that number. The rest of the line appears when it was recorded: input, output, cache read, cache write, reasoning tokens, cost, premium requests, and reasoning effort. The CTX column is the latest prompt size, or `used/window` when both are known. The TOKENS column is the session total, or input plus output when the file has no total. The COST column is the recorded USD amount, or a dash when the file has none. A star in the first column is a bookmark.
 
-Claude records per-turn usage and cost. Codex records token totals and, when present, the context window. Copilot CLI records the latest prompt size, cache, reasoning effort, and premium requests. OpenCode records session token totals and the latest prompt size. Grok records the latest context and window, token totals, cache, reasoning, cost, and reasoning effort. Hermes records token totals, cost, and the latest prompt size, and does not record a window. Cursor records the latest context and window when composer data has them, and does not record a session token total. Antigravity records the latest context and window and sums per-generation input, output, cache read, and reasoning. OpenClaw records the context window separately from the estimated prompt size. Goose and Cline record token totals, and Cline records cost. Gemini, Junie, Jules, Aider, and Kiro leave the token lines empty. Kiro's database does not store those numbers.
+Claude records per-turn usage and cost. Codex records token totals and, when present, the context window. Copilot CLI records the latest prompt size, cache, reasoning effort, and premium requests. OpenCode records session token totals, cost, and the latest prompt size. Grok records the latest context and window, token totals, cache, reasoning, cost, and reasoning effort. Hermes records token totals, cost, and the latest prompt size, and does not record a window. Cursor records the latest context and window when composer data has them, and does not record a session token total. Antigravity records the latest context and window and sums per-generation input, output, cache read, and reasoning. OpenClaw records the context window separately from the estimated prompt size, and an estimated cost when the file has one. Goose and Cline record token totals and cost. Gemini, Junie, Jules, Aider, and Kiro leave the token lines empty. Kiro's database does not store those numbers.
 
 ## Agents
 

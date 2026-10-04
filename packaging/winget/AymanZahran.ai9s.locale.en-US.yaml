@@ -1,0 +1,12 @@
+PackageIdentifier: AymanZahran.ai9s
+PackageVersion: 1.0.1
+PackageLocale: en-US
+Publisher: Ayman Zahran
+PublisherUrl: https://github.com/AymanZahran
+PackageName: ai9s
+PackageUrl: https://ai9scli.io
+License: MIT
+LicenseUrl: https://github.com/AymanZahran/ai9s/blob/main/LICENSE
+ShortDescription: Keyboard-first finder for local AI coding sessions
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

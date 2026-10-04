@@ -19,7 +19,12 @@ type Filter struct {
 	Model  string
 	Since  time.Time
 	Until  time.Time
-	Sort   string // recent, oldest, messages, title
+	Sort   string // recent, oldest, messages, title, cost
+	// ExplicitSort is set when the line contains a sort: token.
+	// A text search with no sort token ranks the closest matches first.
+	ExplicitSort bool
+	// Mark is "yes", "no", or empty. It is set by mark:, bookmark:, or fav:.
+	Mark string
 	// Roots limits the list to those directories and their children.
 	// It is set by the program, not by a filter token.
 	Roots []string
@@ -53,8 +58,16 @@ func Parse(raw string) Filter {
 			f.Model = val
 		case "sort":
 			switch strings.ToLower(val) {
-			case "recent", "oldest", "messages", "title":
+			case "recent", "oldest", "messages", "title", "cost":
 				f.Sort = strings.ToLower(val)
+				f.ExplicitSort = true
+			}
+		case "mark", "bookmark", "fav", "favorite":
+			switch strings.ToLower(val) {
+			case "1", "y", "yes", "true", "on":
+				f.Mark = "yes"
+			case "0", "n", "no", "false", "off":
+				f.Mark = "no"
 			}
 		case "date":
 			applyDate(&f, val)
@@ -68,7 +81,8 @@ func Parse(raw string) Filter {
 
 func knownKey(key string) bool {
 	switch strings.ToLower(key) {
-	case "agent", "a", "dir", "directory", "cwd", "d", "branch", "b", "model", "m", "sort", "date":
+	case "agent", "a", "dir", "directory", "cwd", "d", "branch", "b", "model", "m", "sort", "date",
+		"mark", "bookmark", "fav", "favorite":
 		return true
 	default:
 		return false

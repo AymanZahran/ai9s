@@ -22,7 +22,7 @@ import (
 // MaxSessionName is the longest custom session name, counted in runes.
 const MaxSessionName = 200
 
-const cols = `s.id, s.native_id, s.agent, s.title, s.summary, s.cwd, s.branch, s.model, s.updated, s.messages, s.source_path, s.source_mtime, s.can_delete, s.delete_mode, s.delete_reason, s.usage, COALESCE((SELECT name FROM names WHERE id = s.id), '')`
+const cols = `s.id, s.native_id, s.agent, s.title, s.summary, s.cwd, s.branch, s.model, s.updated, s.messages, s.source_path, s.source_mtime, s.can_delete, s.delete_mode, s.delete_reason, s.usage, COALESCE((SELECT name FROM names WHERE id = s.id), ''), COALESCE((SELECT 1 FROM bookmarks WHERE id = s.id), 0)`
 
 // Source is one on-disk file or directory the indexer visited.
 type Source struct {
@@ -133,6 +133,9 @@ CREATE INDEX IF NOT EXISTS sessions_updated ON sessions(updated);
 CREATE TABLE IF NOT EXISTS names (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS bookmarks (
+  id TEXT PRIMARY KEY
 );
 `)
 	if err != nil {
@@ -442,6 +445,9 @@ func (s *Store) Forget(id string) error {
 	if err := deleteName(tx, id); err != nil {
 		return err
 	}
+	if err := deleteBookmark(tx, id); err != nil {
+		return err
+	}
 	if path != "" {
 		if _, err := tx.Exec(`UPDATE files SET mtime = 0 WHERE path = ?`, path); err != nil {
 			return err
@@ -486,6 +492,31 @@ func deleteName(tx *sql.Tx, id string) error {
 	return err
 }
 
+// SetBookmark stores or clears the bookmark for one session.
+// The mark lives outside the session row, so the next scan keeps it.
+func (s *Store) SetBookmark(id string, on bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var n int
+	if err := s.db.QueryRow(`SELECT COUNT(*) FROM sessions WHERE id = ?`, id).Scan(&n); err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("session %s not found", id)
+	}
+	if !on {
+		_, err := s.db.Exec(`DELETE FROM bookmarks WHERE id = ?`, id)
+		return err
+	}
+	_, err := s.db.Exec(`INSERT INTO bookmarks(id) VALUES (?) ON CONFLICT(id) DO NOTHING`, id)
+	return err
+}
+
+func deleteBookmark(tx *sql.Tx, id string) error {
+	_, err := tx.Exec(`DELETE FROM bookmarks WHERE id = ?`, id)
+	return err
+}
+
 // Search lists sessions that match f. Snippets are not loaded.
 func (s *Store) Search(f query.Filter, limit int) ([]model.Session, error) {
 	if limit <= 0 {
@@ -499,13 +530,19 @@ func (s *Store) Search(f query.Filter, limit int) ([]model.Session, error) {
 	var b strings.Builder
 	args := []any{}
 	b.WriteString(`SELECT ` + cols + ` FROM sessions s WHERE 1=1`)
+	var rankParts []string
+	var rankArgs []any
 	for _, w := range query.Tokens(f.Text) {
 		if strings.TrimSpace(w) == "" {
 			continue
 		}
-		p := "%" + escapeLike(w) + "%"
-		b.WriteString(` AND (s.title LIKE ? ESCAPE '\' OR s.summary LIKE ? ESCAPE '\' OR s.cwd LIKE ? ESCAPE '\' OR s.branch LIKE ? ESCAPE '\' OR s.model LIKE ? ESCAPE '\' OR s.agent LIKE ? ESCAPE '\' OR s.id IN (SELECT session_id FROM snippets WHERE body LIKE ? ESCAPE '\') OR s.id IN (SELECT id FROM names WHERE name LIKE ? ESCAPE '\'))`)
-		args = append(args, p, p, p, p, p, p, p, p)
+		expr, exprArgs := textScore(w)
+		b.WriteString(` AND (`)
+		b.WriteString(expr)
+		b.WriteString(`) > 0`)
+		args = append(args, exprArgs...)
+		rankParts = append(rankParts, "("+expr+")")
+		rankArgs = append(rankArgs, exprArgs...)
 	}
 	if f.Agent != "" {
 		b.WriteString(` AND s.agent LIKE ? ESCAPE '\'`)
@@ -535,6 +572,12 @@ func (s *Store) Search(f query.Filter, limit int) ([]model.Session, error) {
 		b.WriteString(` AND s.updated < ?`)
 		args = append(args, f.Until.Unix())
 	}
+	switch f.Mark {
+	case "yes":
+		b.WriteString(` AND EXISTS (SELECT 1 FROM bookmarks WHERE id = s.id)`)
+	case "no":
+		b.WriteString(` AND NOT EXISTS (SELECT 1 FROM bookmarks WHERE id = s.id)`)
+	}
 	switch f.Sort {
 	case "oldest":
 		b.WriteString(` ORDER BY s.updated ASC`)
@@ -542,8 +585,15 @@ func (s *Store) Search(f query.Filter, limit int) ([]model.Session, error) {
 		b.WriteString(` ORDER BY s.messages DESC, s.updated DESC`)
 	case "title":
 		b.WriteString(` ORDER BY COALESCE(NULLIF((SELECT name FROM names WHERE id = s.id), ''), s.title) COLLATE NOCASE ASC`)
+	case "cost":
+		b.WriteString(` ORDER BY CAST(COALESCE(json_extract(CASE WHEN json_valid(s.usage) THEN s.usage ELSE '{}' END, '$.cost_usd'), 0) AS REAL) DESC, s.updated DESC`)
 	default:
-		b.WriteString(` ORDER BY s.updated DESC`)
+		if len(rankParts) > 0 && !f.ExplicitSort {
+			b.WriteString(` ORDER BY ` + strings.Join(rankParts, " + ") + ` DESC, s.updated DESC`)
+			args = append(args, rankArgs...)
+		} else {
+			b.WriteString(` ORDER BY s.updated DESC`)
+		}
 	}
 	b.WriteString(` LIMIT ?`)
 	args = append(args, limit)
@@ -687,11 +737,13 @@ func scanSession(sc scanner) (model.Session, error) {
 	var updated int64
 	var can int
 	var usage string
-	err := sc.Scan(&sess.ID, &sess.NativeID, &sess.Agent, &sess.Title, &sess.Summary, &sess.CWD, &sess.Branch, &sess.Model, &updated, &sess.Messages, &sess.SourcePath, &sess.SourceMtime, &can, &sess.DeleteMode, &sess.DeleteReason, &usage, &sess.Name)
+	var mark int
+	err := sc.Scan(&sess.ID, &sess.NativeID, &sess.Agent, &sess.Title, &sess.Summary, &sess.CWD, &sess.Branch, &sess.Model, &updated, &sess.Messages, &sess.SourcePath, &sess.SourceMtime, &can, &sess.DeleteMode, &sess.DeleteReason, &usage, &sess.Name, &mark)
 	if err != nil {
 		return model.Session{}, err
 	}
 	sess.Usage = decodeUsage(usage)
+	sess.Bookmarked = mark != 0
 	sess.CanDelete = can != 0
 	if updated > 0 {
 		sess.Updated = time.Unix(updated, 0)
@@ -758,6 +810,43 @@ func slashClean(root string) string {
 		return ""
 	}
 	return root
+}
+
+// textScore ranks one free-text word. A contiguous match scores higher than
+// the same letters with gaps. The letters still have to appear in order.
+func textScore(word string) (string, []any) {
+	sub := "%" + escapeLike(word) + "%"
+	var fuzzy strings.Builder
+	fuzzy.WriteByte('%')
+	for _, r := range word {
+		fuzzy.WriteString(escapeLike(string(r)))
+		fuzzy.WriteByte('%')
+	}
+	gap := fuzzy.String()
+	fields := []struct {
+		expr   string
+		sub    int
+		fuzzyW int
+	}{
+		{`COALESCE((SELECT name FROM names WHERE id = s.id), '')`, 48, 24},
+		{`s.title`, 40, 20},
+		{`s.native_id`, 32, 16},
+		{`s.id`, 32, 16},
+		{`s.agent`, 24, 12},
+		{`s.cwd`, 20, 10},
+		{`s.branch`, 16, 8},
+		{`s.model`, 16, 8},
+		{`s.summary`, 12, 6},
+	}
+	var parts []string
+	var args []any
+	for _, field := range fields {
+		parts = append(parts, fmt.Sprintf(`(CASE WHEN %s LIKE ? ESCAPE '\' THEN %d WHEN %s LIKE ? ESCAPE '\' THEN %d ELSE 0 END)`, field.expr, field.sub, field.expr, field.fuzzyW))
+		args = append(args, sub, gap)
+	}
+	parts = append(parts, `(CASE WHEN EXISTS (SELECT 1 FROM snippets sn WHERE sn.session_id = s.id AND sn.body LIKE ? ESCAPE '\') THEN 12 WHEN EXISTS (SELECT 1 FROM snippets sn WHERE sn.session_id = s.id AND sn.body LIKE ? ESCAPE '\') THEN 6 ELSE 0 END)`)
+	args = append(args, sub, gap)
+	return strings.Join(parts, " + "), args
 }
 
 func escapeLike(s string) string {

@@ -29,7 +29,7 @@
     <p>The config directory is <code>$AI9S_CONFIG_DIR</code>, or <code>$XDG_CONFIG_HOME/ai9s</code>, or <code>~/.config/ai9s</code>. The first <code>ai9s</code> or <code>ai9s info</code> creates <code>config.yaml</code>, <code>skins/stock.yaml</code>, and <code>plugins.yaml</code> when they are missing, and does not overwrite them later. <code>ai9s info</code> prints the paths.</p>
 
     <pre><code>ai9s:
-  refreshRate: 0
+  refreshRate: 30
   readOnly: false
   defaultView: sessions
   noExitOnCtrlC: false
@@ -47,7 +47,7 @@
           <tr><th>Key</th><th>Meaning</th></tr>
         </thead>
         <tbody>
-          <tr><td><code>refreshRate</code></td><td>Seconds between reindexes. <code>0</code> reindexes only when you press <code>r</code>.</td></tr>
+          <tr><td><code>refreshRate</code></td><td>Seconds between reindexes. <code>0</code> uses 30. The minimum is 5. The list always refreshes on that interval.</td></tr>
           <tr><td><code>readOnly</code></td><td>When true, Ctrl-D does not delete. <code>d</code> still opens describe.</td></tr>
           <tr><td><code>defaultView</code></td><td><code>sessions</code>, <code>providers</code>, <code>directories</code>, <code>branches</code>, or <code>models</code>.</td></tr>
           <tr><td><code>noExitOnCtrlC</code></td><td>When true, Ctrl-C does not quit.</td></tr>

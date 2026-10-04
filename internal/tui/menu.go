@@ -189,7 +189,7 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 			item("a", "agent"),
 			item("p", "directory"),
 			item("o", "sort"),
-			item("r", "reindex"),
+			item("f", "bookmark"),
 			item("n", "rename"),
 			item("u", "usage"),
 			item("s", "stats"),

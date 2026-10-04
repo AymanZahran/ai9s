@@ -214,6 +214,8 @@ func filterToken(text string) (key, val string, ok bool) {
 		return "date", val, true
 	case "sort":
 		return "sort", val, true
+	case "mark", "bookmark", "fav", "favorite":
+		return "mark", val, true
 	default:
 		return "", "", false
 	}
@@ -243,7 +245,8 @@ func allHints(agents []string) []commandHint {
 		{"branch:", "filter by branch"},
 		{"model:", "filter by model"},
 		{"date:", "filter by date, for example date:<7d"},
-		{"sort:", "recent, oldest, messages, or title"},
+		{"mark:yes", "bookmarked sessions"},
+		{"sort:", "recent, oldest, messages, title, or cost"},
 	}
 	for _, agent := range agents {
 		hints = append(hints, commandHint{insert: "agent:" + agent, hint: "show " + agent + " sessions"})
@@ -305,6 +308,7 @@ func (ui *ui) paintSessions() {
 	sortName := querySort(ui.filter.GetText())
 	rows := make([][]cellText, 0, len(ui.rows)+1)
 	rows = append(rows, []cellText{
+		{text: "*", max: 1},
 		{text: sorted("AGE", sortName, "recent", "oldest"), max: colAge},
 		{text: "DATE", max: colDate},
 		{text: "AGENT", max: colAgent},
@@ -312,6 +316,7 @@ func (ui *ui) paintSessions() {
 		{text: "BRANCH", max: colBranch},
 		{text: "CTX", right: true, max: colCtx},
 		{text: "TOKENS", right: true, max: colTokens},
+		{text: sorted("COST", sortName, "cost", ""), right: true, max: colCost},
 		{text: sorted("MSGS", sortName, "messages", ""), right: true, max: colMsgs},
 		{text: sorted("NAME", sortName, "", "title")},
 	})
@@ -324,7 +329,12 @@ func (ui *ui) paintSessions() {
 		if branch == "" {
 			branch = "-"
 		}
+		mark := ""
+		if s.Bookmarked {
+			mark = "*"
+		}
 		rows = append(rows, []cellText{
+			{text: mark, max: 1},
 			{text: relAge(s.Updated), max: colAge},
 			{text: absDate(s.Updated), max: colDate},
 			{text: s.Agent, color: ui.agentTag(s.Agent), max: colAgent},
@@ -332,6 +342,7 @@ func (ui *ui) paintSessions() {
 			{text: branch, max: colBranch},
 			{text: contextLabel(s.Usage), right: true, max: colCtx},
 			{text: tokenLabel(s.Usage), right: true, max: colTokens},
+			{text: costLabel(s.Usage), right: true, max: colCost},
 			{text: fmt.Sprintf("%d", s.Messages), right: true, max: colMsgs},
 			{text: sessionName(s)},
 		})

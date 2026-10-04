@@ -107,7 +107,7 @@ const manualText = `[::b]ai9s manual[-]
 Enter on a group applies that filter and returns to sessions. A group labeled (none) has an empty value, so enter leaves the filter alone, unless that branches row still has a worktree.
 
 [::b]Command line[-]
-  [yellow]/[-]   edits the filter. Each word is a substring of the title, summary, directory, branch, model, agent, or excerpt.
+  [yellow]/[-]   edits the filter. Each word matches when its letters appear in order in the name, title, session id, summary, directory, branch, model, agent, or excerpt. A contiguous match ranks above a match with gaps.
          Up and down move the list one row while the field is open. j and k are letters here.
          ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Ctrl or Alt with those arrows do the same.
          Plain left and right stay in the field.
@@ -117,7 +117,7 @@ Enter on a group applies that filter and returns to sessions. A group labeled (n
          Another : cycles the view name in the field.
          Esc closes command mode and leaves the filter as it is.
 
-Tokens: agent:  dir:  branch:  model:  date:<7d  date:>30d  date:YYYY-MM-DD  sort:recent|oldest|messages|title
+Tokens: agent:  dir:  branch:  model:  mark:yes  mark:no  date:<7d  date:>30d  date:YYYY-MM-DD  sort:recent|oldest|messages|title|cost
 agent:, dir:, branch:, and model: match a substring, so agent:clau finds claude while you type.
 A leading ~ in dir: or in free text expands to your home directory.
 A token with no value, such as dir:, is ignored until you finish it. Pressing p still drops you into the filter.
@@ -132,7 +132,7 @@ Esc in describe returns to the list and leaves the filter. Esc after you open se
   a           cycle the agent: filter
   p           add a dir: filter
   o           cycle sort
-  r           reindex
+  f           bookmark the selected session, or clear that bookmark. A star in the first column marks it. The bookmark stays through a reindex. Sessions view only. mark:yes lists bookmarks
   n           rename the selected session. Enter on Save stores it. Esc cancels. An empty name restores the default. The name stays through a reindex. Sessions view only
   u           usage for the selected session: messages, context, tokens, and the other recorded numbers. Sessions view only
   s           stats for every indexed session
@@ -150,6 +150,7 @@ The list fills the window. Describe uses that same window until you press esc.
 Describe keeps each line intact, so a long line pans sideways instead of wrapping.
 AGE is always a relative age. DATE is the local date and time. Sort follows AGE.
 NAME is the last column. It is the name set with n. Otherwise it is the session title, or the session id when the session has no title. An empty name restores that default. The name stays through a reindex. sort:title sorts this column. The list has no separate title column. NAME stays whole, and the row pans. Every other column is cut to a fixed width. A path keeps its ending. Describe shows the full value.
+The first column is a star when the session is bookmarked. COST is the USD amount the agent recorded, or a dash when the file has none. sort:cost orders by that amount. The list reindexes on the refresh interval. The default is 30 seconds.
 Each of those views draws a scrollbar on the right.
 When a line is wider than the window, a scrollbar along the bottom pans it.
 Hotkeys are on the top menu. The bottom of the screen is empty, except the scrollbar that pans a line wider than the window.
