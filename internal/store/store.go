@@ -545,8 +545,9 @@ func (s *Store) Search(f query.Filter, limit int) ([]model.Session, error) {
 		rankArgs = append(rankArgs, exprArgs...)
 	}
 	if f.Agent != "" {
-		b.WriteString(` AND s.agent LIKE ? ESCAPE '\'`)
-		args = append(args, "%"+escapeLike(f.Agent)+"%")
+		b.WriteString(` AND (s.agent LIKE ? ESCAPE '\' OR ` + harnessNameSQL("s.agent") + ` LIKE ? ESCAPE '\')`)
+		pat := "%" + escapeLike(f.Agent) + "%"
+		args = append(args, pat, pat)
 	}
 	if f.Dir != "" {
 		b.WriteString(` AND s.cwd LIKE ? ESCAPE '\'`)
@@ -812,41 +813,48 @@ func slashClean(root string) string {
 	return root
 }
 
-// textScore ranks one free-text word. A contiguous match scores higher than
-// the same letters with gaps. The letters still have to appear in order.
+// textScore ranks one free-text word. The word has to appear as typed in a
+// column on the row. A match in the name ranks above a match in the path.
 func textScore(word string) (string, []any) {
 	sub := "%" + escapeLike(word) + "%"
-	var fuzzy strings.Builder
-	fuzzy.WriteByte('%')
-	for _, r := range word {
-		fuzzy.WriteString(escapeLike(string(r)))
-		fuzzy.WriteByte('%')
-	}
-	gap := fuzzy.String()
 	fields := []struct {
 		expr   string
-		sub    int
-		fuzzyW int
+		weight int
 	}{
-		{`COALESCE((SELECT name FROM names WHERE id = s.id), '')`, 48, 24},
-		{`s.title`, 40, 20},
-		{`s.native_id`, 32, 16},
-		{`s.id`, 32, 16},
-		{`s.agent`, 24, 12},
-		{`s.cwd`, 20, 10},
-		{`s.branch`, 16, 8},
-		{`s.model`, 16, 8},
-		{`s.summary`, 12, 6},
+		{`COALESCE((SELECT name FROM names WHERE id = s.id), '')`, 64},
+		{`s.title`, 56},
+		{`s.native_id`, 40},
+		{`s.id`, 40},
+		{harnessNameSQL("s.agent"), 36},
+		{`s.agent`, 32},
+		{`s.cwd`, 24},
+		{`s.branch`, 16},
+		{`s.model`, 16},
 	}
 	var parts []string
 	var args []any
 	for _, field := range fields {
-		parts = append(parts, fmt.Sprintf(`(CASE WHEN %s LIKE ? ESCAPE '\' THEN %d WHEN %s LIKE ? ESCAPE '\' THEN %d ELSE 0 END)`, field.expr, field.sub, field.expr, field.fuzzyW))
-		args = append(args, sub, gap)
+		parts = append(parts, fmt.Sprintf(`(CASE WHEN %s LIKE ? ESCAPE '\' THEN %d ELSE 0 END)`, field.expr, field.weight))
+		args = append(args, sub)
 	}
-	parts = append(parts, `(CASE WHEN EXISTS (SELECT 1 FROM snippets sn WHERE sn.session_id = s.id AND sn.body LIKE ? ESCAPE '\') THEN 12 WHEN EXISTS (SELECT 1 FROM snippets sn WHERE sn.session_id = s.id AND sn.body LIKE ? ESCAPE '\') THEN 6 ELSE 0 END)`)
-	args = append(args, sub, gap)
 	return strings.Join(parts, " + "), args
+}
+
+func harnessNameSQL(column string) string {
+	var b strings.Builder
+	b.WriteString("(CASE ")
+	b.WriteString(column)
+	for _, pair := range model.HarnessNames() {
+		b.WriteString(" WHEN '")
+		b.WriteString(pair[0])
+		b.WriteString("' THEN '")
+		b.WriteString(pair[1])
+		b.WriteString("'")
+	}
+	b.WriteString(" ELSE ")
+	b.WriteString(column)
+	b.WriteString(" END)")
+	return b.String()
 }
 
 func escapeLike(s string) string {

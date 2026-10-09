@@ -9,12 +9,13 @@ import (
 	"github.com/AymanZahran/ai9s/internal/act"
 	"github.com/AymanZahran/ai9s/internal/config"
 	"github.com/AymanZahran/ai9s/internal/discover"
+	"github.com/AymanZahran/ai9s/internal/model"
 	"github.com/AymanZahran/ai9s/internal/query"
 )
 
 const (
 	viewSessions    = "sessions"
-	viewAgents      = "agents"
+	viewAgents      = "harnesses"
 	viewDirectories = "directories"
 	viewBranches    = "branches"
 	viewModels      = "models"
@@ -30,7 +31,7 @@ type viewSpec struct {
 
 var viewSpecs = []viewSpec{
 	{"1", viewSessions, " sessions ", ""},
-	{"2", viewAgents, " agents ", "agent"},
+	{"2", viewAgents, " harnesses ", "harness"},
 	{"3", viewDirectories, " directories ", "dir"},
 	{"4", viewBranches, " branches ", "branch"},
 	{"5", viewModels, " models ", "model"},
@@ -88,13 +89,17 @@ func viewTitle(name string) string {
 }
 
 func (ui *ui) setView(name string) {
-	if _, ok := viewByName(name); !ok {
+	spec, ok := viewByName(name)
+	if !ok {
 		name = viewSessions
+	} else {
+		name = spec.name
 	}
 	if ui.describing() {
 		ui.closeDescribe()
 	}
 	ui.drilled = ""
+	ui.within = listWithin{}
 	ui.listX = 0
 	ui.view = name
 	ui.reload()
@@ -109,6 +114,7 @@ func (ui *ui) cycleView() {
 		}
 	}
 	ui.drilled = ""
+	ui.within = listWithin{}
 	ui.view = next
 }
 
@@ -172,6 +178,7 @@ func (ui *ui) applyCommand(text string) {
 	}
 	if spec, ok := viewByName(text); ok {
 		ui.drilled = ""
+		ui.within = listWithin{}
 		ui.view = spec.name
 		ui.closeCommand()
 		return
@@ -213,8 +220,8 @@ func filterToken(text string) (key, val string, ok bool) {
 		return "", "", false
 	}
 	switch strings.ToLower(key) {
-	case "agent", "a":
-		return "agent", val, true
+	case "harness", "agent", "a", "h":
+		return "harness", val, true
 	case "dir", "directory", "cwd", "d":
 		return "dir", val, true
 	case "branch", "b":
@@ -247,12 +254,12 @@ func (ui *ui) promptFilterToken(key string) {
 func allHints(agents []string) []commandHint {
 	hints := []commandHint{
 		{"sessions", "show the session list"},
-		{"agents", "group the current filter by agent"},
+		{"harnesses", "group the current filter by harness"},
 		{"directories", "group the current filter by directory"},
 		{"branches", "group the current filter by git branch and worktree"},
 		{"models", "group the current filter by model"},
 		{"bookmarks", "list bookmarked sessions"},
-		{"agent:", "filter by agent, then return to sessions"},
+		{"harness:", "filter by harness, then return to sessions"},
 		{"dir:", "filter by directory"},
 		{"branch:", "filter by branch"},
 		{"model:", "filter by model"},
@@ -260,7 +267,7 @@ func allHints(agents []string) []commandHint {
 		{"sort:", "recent, oldest, messages, title, or cost"},
 	}
 	for _, agent := range agents {
-		hints = append(hints, commandHint{insert: "agent:" + agent, hint: "show " + agent + " sessions"})
+		hints = append(hints, commandHint{insert: "harness:" + agent, hint: "show " + model.HarnessName(agent) + " sessions"})
 	}
 	return hints
 }
@@ -280,12 +287,15 @@ func filterHints(text string, agents []string) []commandHint {
 	return out
 }
 
-// hintMatches keeps the previous providers command as a prefix of agents.
+// hintMatches keeps providers and agents as names for the harnesses view.
 func hintMatches(hint commandHint, text string) bool {
 	if strings.Contains(strings.ToLower(hint.insert), text) || strings.Contains(strings.ToLower(hint.hint), text) {
 		return true
 	}
-	return hint.insert == viewAgents && text != "" && strings.Contains("providers", text)
+	if hint.insert != viewAgents || text == "" {
+		return false
+	}
+	return strings.Contains("providers", text) || strings.Contains("agents", text) || strings.Contains("harnesses", text)
 }
 
 func (ui *ui) paintSuggestions(text string) {
@@ -306,7 +316,7 @@ func (ui *ui) paintSuggestions(text string) {
 }
 
 func (ui *ui) emptyList() string {
-	if strings.TrimSpace(ui.filter.GetText()) == "" && ui.scope != "" {
+	if strings.TrimSpace(ui.filter.GetText()) == "" && ui.scope != "" && ui.within.empty() {
 		return "\n[gray]No sessions in this directory.[-]"
 	}
 	return "\n[gray]No sessions match this filter.[-]"
@@ -334,7 +344,7 @@ func (ui *ui) paintSessions() {
 		{text: "*", max: 1},
 		{text: sorted("AGE", sortName, "recent", "oldest"), max: colAge},
 		{text: "DATE", max: colDate},
-		{text: "AGENT", max: colAgent},
+		{text: "HARNESS", max: colAgent},
 		{text: "DIR", max: colDir},
 		{text: "BRANCH", max: colBranch},
 		{text: "CTX", right: true, max: colCtx},
@@ -360,7 +370,7 @@ func (ui *ui) paintSessions() {
 			{text: mark, max: 1},
 			{text: relAge(s.Updated), max: colAge},
 			{text: absDate(s.Updated), max: colDate},
-			{text: s.Agent, color: ui.agentTag(s.Agent), max: colAgent},
+			{text: model.HarnessName(s.Agent), color: ui.agentTag(s.Agent), max: colAgent},
 			{text: shortPath(s.CWD), max: colDir, tail: true},
 			{text: branch, max: colBranch},
 			{text: contextLabel(s.Usage), right: true, max: colCtx},
@@ -517,6 +527,7 @@ func (ui *ui) paintGroups() {
 		name := g.key
 		color := ""
 		if ui.view == viewAgents {
+			name = model.HarnessName(g.key)
 			color = ui.agentTag(g.key)
 		}
 		if ui.view == viewDirectories && g.key != "(none)" {
@@ -553,7 +564,11 @@ func (ui *ui) showGroup(row int) {
 	}
 	g := ui.groups[row-1]
 	var b strings.Builder
-	fmt.Fprintf(&b, "[::b]%s[-]\n", markupLine(g.key))
+	title := g.key
+	if ui.view == viewAgents {
+		title = model.HarnessName(g.key)
+	}
+	fmt.Fprintf(&b, "[::b]%s[-]\n", markupLine(title))
 	if ui.view == viewBranches {
 		wt := "-"
 		if g.worktree != "" {
@@ -597,25 +612,54 @@ func (ui *ui) activateGroup() {
 		ui.alert("That group has an empty value, so there is no filter to apply.")
 		return
 	}
-	text := ui.filter.GetText()
-	if g.key != "(none)" {
-		text = setToken(text, spec.token, quoteTok(g.key))
-	}
-	if spec.name == viewBranches && g.worktree != "" {
-		text = setToken(text, "dir", quoteTok(g.worktree))
-	}
 	ui.drilled = ui.view
 	ui.view = viewSessions
-	ui.filter.SetText(text)
+	switch spec.name {
+	case viewAgents:
+		if g.key != "(none)" {
+			ui.within.agent = g.key
+		}
+	case viewDirectories:
+		if g.key != "(none)" {
+			ui.within.dir = g.key
+		}
+	case viewBranches:
+		if g.key != "(none)" {
+			ui.within.branch = g.key
+		}
+		if g.worktree != "" {
+			ui.within.dir = g.worktree
+		}
+	case viewModels:
+		if g.key != "(none)" {
+			ui.within.model = g.key
+		}
+	}
+	text := ui.filter.GetText()
+	switch spec.name {
+	case viewAgents:
+		text = setToken(text, "harness", "")
+	case viewDirectories:
+		text = setToken(text, "dir", "")
+	case viewBranches:
+		text = setToken(text, "branch", "")
+		text = setToken(text, "dir", "")
+	case viewModels:
+		text = setToken(text, "model", "")
+	}
 	ui.focusSessions()
-	ui.reload()
+	if text == ui.filter.GetText() {
+		ui.reload()
+		return
+	}
+	ui.filter.SetText(text)
 }
 
 // withIdleProviders keeps supported agents on the agents list when the
 // index has no sessions for them. A directory, branch, model, text, mark, or
 // date filter stays a grouping of the sessions that matched.
 func (ui *ui) withIdleProviders(groups []groupRow) []groupRow {
-	f := query.Parse(ui.filter.GetText())
+	f := ui.searchFilter()
 	if providerFilterNarrows(f) {
 		return groups
 	}
@@ -637,7 +681,7 @@ func (ui *ui) withIdleProviders(groups []groupRow) []groupRow {
 		if _, ok := indexed[sc.Agent]; ok {
 			continue
 		}
-		if f.Agent != "" && !strings.Contains(sc.Agent, f.Agent) {
+		if f.Agent != "" && !harnessListed(sc.Agent, f.Agent) {
 			continue
 		}
 		groups = append(groups, groupRow{key: sc.Agent})
@@ -652,14 +696,25 @@ func providerFilterNarrows(f query.Filter) bool {
 // agentInstalled is the PATH check for an agent with no sessions. Tests replace it.
 var agentInstalled = act.Installed
 
+func harnessListed(id, q string) bool {
+	q = strings.ToLower(strings.TrimSpace(q))
+	if q == "" {
+		return true
+	}
+	if strings.Contains(strings.ToLower(id), q) {
+		return true
+	}
+	return strings.Contains(strings.ToLower(model.HarnessName(id)), q)
+}
+
 func providerGap(agent string) string {
 	bin, ok := agentInstalled(agent)
 	if bin == "" {
 		bin = agent
 	}
-	who := bin
+	who := model.HarnessName(agent)
 	if bin != agent {
-		who = agent + " (" + bin + ")"
+		who = who + " (" + bin + ")"
 	}
 	if !ok {
 		return who + " is not on PATH. Install it and log in, then start a session."
@@ -670,7 +725,11 @@ func providerGap(agent string) string {
 func groupFilterText(spec viewSpec, g groupRow) string {
 	var parts []string
 	if g.key != "(none)" && spec.token != "" {
-		parts = append(parts, "[yellow]"+spec.token+":"+markupLine(g.key)+"[-]")
+		shown := g.key
+		if spec.name == viewAgents {
+			shown = g.key + " (" + model.HarnessName(g.key) + ")"
+		}
+		parts = append(parts, "[yellow]"+spec.token+":"+markupLine(shown)+"[-]")
 	}
 	if spec.name == viewBranches && g.worktree != "" {
 		parts = append(parts, "[yellow]dir:"+markupLine(shortPath(g.worktree))+"[-]")

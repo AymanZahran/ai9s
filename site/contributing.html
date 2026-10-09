@@ -12,12 +12,12 @@
 <body>
   <header class="site-header">
     <a class="site-logo" href="index.html">ai9s</a>
-    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <p class="cite">AI session CLI to resume your harnesses in style!</p>
     <nav class="site-nav" aria-label="Documentation">
       <a href="install.html">Install</a>
       <a href="commands.html">Commands</a>
       <a href="keys.html">Keys</a>
-      <a href="agents.html">Agents</a>
+      <a href="agents.html">Harnesses</a>
       <a href="filters.html">Filters</a>
       <a href="config.html">Config</a>
       <a href="contributing.html" aria-current="page">Contributing</a>
@@ -48,14 +48,14 @@ gofmt -w .</code></pre>
       <li><code>examples/plugins</code> — opt-in plugins. Copy a script and its yaml into the config <code>plugins/</code> directory</li>
     </ul>
 
-    <h2>Adding an agent</h2>
+    <h2>Adding a harness</h2>
     <ol>
       <li>Add a scanner that returns <code>discover.Batch</code>. Register it in <code>Scanners()</code>.</li>
       <li>Point the test homes at temporary directories in <code>scan_test.go</code>, <code>index_test.go</code>, and the CLI integration environment. A missing override must not scan the developer's real store, and it must not call the network.</li>
       <li>Teach <code>act.Plan</code> the resume command. Add a yolo flag only when that CLI documents one. Do not guess.</li>
       <li>Enable delete only when the removal is one file, one directory inside that agent's session root, a careful rewrite, or one CLI command. Otherwise set <code>CanDelete</code> false and say why.</li>
       <li>Add a unique two-letter mark in <code>tui.Icon</code>. Letters only, two columns wide. An unknown agent stays <code>??</code>.</li>
-      <li>Update the agents table in the README and on this website.</li>
+      <li>Update the harnesses table in the README and on this website.</li>
     </ol>
 
     <h2>Pull requests</h2>

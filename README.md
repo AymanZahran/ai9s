@@ -16,7 +16,7 @@
 
 ai9s is a keyboard-first finder for local AI coding sessions. It indexes the session files already on your machine, then lets you search, preview, filter, resume, and — where it is safe — delete them.
 
-The interface follows the k9s screen: a menu of hotkeys, a crumbs bar (`ai9s › Sessions › all`), and one framed table. Started in a project directory, the list shows sessions whose working directory is that directory or a subdirectory. Started in your home directory, the list shows every session. The AGENT column is the agent name. NAME is the last column. It is the session title, or the session id when the session has no title. `n` renames that name. The new name stays through a reindex. The list has no separate title column. Every column except NAME is cut to a fixed width. A path keeps its ending. `u` shows usage for the selected session. `s` shows counts for every session. `1` through `6` switch the table between sessions, agents, directories, branches, models, and bookmarks. `2` and `:agents` list agents. `:providers` still opens that view. `/` edits the filter and `:` opens a command line for those views and for filter tokens. Esc clears the filter from the list and from the filter line. `?` opens a scrollable manual. `d` replaces the list with a describe view of the selected row; Esc returns to the list. Ctrl-D deletes. The CTX column, describe, and `ai9s show` include context size and token counts when the agent recorded them. COST is the recorded USD amount, or a dash. `f` bookmarks the selected session. `6` or `:bookmarks` lists those sessions. The list reindexes every 30 seconds.
+The interface follows the k9s screen: a menu of hotkeys, a crumbs bar (`ai9s › Sessions › all`), and one framed table. Started in a project directory, the list shows sessions whose working directory is that directory or a subdirectory. Started in your home directory, the list shows every session. The HARNESS column is the program name. NAME is the last column. It is the session title, or the session id when the session has no title. `n` renames that name. The new name stays through a reindex. The list has no separate title column. Every column except NAME is cut to a fixed width. A path keeps its ending. `u` shows usage for the selected session. `s` shows counts for every session. `1` through `6` switch the table between sessions, harnesses, directories, branches, models, and bookmarks. `2` and `:harnesses` list harnesses. `:agents` and `:providers` still open that view. Enter on a harness keeps that harness selected while `/` searches inside it. `/` edits the search and `:` opens a command line for those views and for filter tokens. Esc clears the search first. Inside a harness, a second Esc returns to the harness list. `?` opens a scrollable manual. `d` replaces the list with a describe view of the selected row; Esc returns to the list. Ctrl-D deletes. The CTX column, describe, and `ai9s show` include context size and token counts when the agent recorded them. COST is the recorded USD amount, or a dash. `f` bookmarks the selected session. `6` or `:bookmarks` lists those sessions. The list reindexes every 30 seconds.
 
 Colors, the mouse, icons, read-only mode, the starting view, and plugins come from `~/.config/ai9s/config.yaml` (or `$AI9S_CONFIG_DIR`, or `$XDG_CONFIG_HOME/ai9s`). `ai9s info` prints the paths.
 
@@ -224,7 +224,7 @@ go install github.com/AymanZahran/ai9s@latest
 ai9s                 # open the list
 ai9s index           # refresh the local index
 ai9s stats
-ai9s search 'agent:clau dir:~/my-repo date:<7d auth'
+ai9s search 'harness:claude dir:~/my-repo date:<7d feature'
 ai9s info
 ai9s show claude:<session-id>
 ai9s resume claude:<session-id>
@@ -232,23 +232,23 @@ ai9s resume codex:<session-id> --print   # show the command, do not run it
 ai9s delete claude:<session-id>          # asks you to type the id
 ```
 
-`--json` works on `index`, `stats`, `search`, and `show`. `y` in the session list, and `resume --yolo`, add an auto-approve flag only for agents that document one. `delete --yes` skips the prompt.
+`--json` works on `index`, `stats`, `search`, and `show`. `y` in the session list, and `resume --yolo`, add an auto-approve flag only for harnesses that document one. `delete --yes` skips the prompt.
 
-Resume runs that agent's own CLI, in the session's directory when that directory still exists.
+Resume runs that harness's own CLI, in the session's directory when that directory still exists.
 
 ## Keys
 
 | Key | Action |
 | --- | --- |
-| `1`–`6` | Sessions, agents, directories, branches, models, bookmarks. Branches lists each git branch with the worktree that contains the session. `2` and `:agents` list agents. `:providers` still opens that view. `6` and `:bookmarks` list bookmarked sessions. The active view is bold in the top hotkey bar. |
-| Enter | Resume the selected session. Quitting that session returns to ai9s, which takes the terminal back. On a group view, apply that group as a filter and return to sessions. On an agent with no sessions, ai9s says to install that CLI or to log in and start a session. |
+| `1`–`6` | Sessions, harnesses, directories, branches, models, bookmarks. Branches lists each git branch with the worktree that contains the session. `2` and `:harnesses` list harnesses. `:agents` and `:providers` still open that view. `6` and `:bookmarks` list bookmarked sessions. The active view is bold in the top hotkey bar. |
+| Enter | Resume the selected session. Quitting that session returns to ai9s, which takes the terminal back. On a group view, keep that group selected and return to sessions. `/` then searches inside it. On a harness with no sessions, ai9s says to install that CLI or to log in and start a session. |
 | `y` | Resume the selected session and pass that agent's auto-approve flag. The top menu shows `y` `yolo` on sessions and bookmarks, and on describe for those lists. Agents without that flag resume with the same command Enter uses. On a group view, `y` says to switch to sessions. |
 | `d` | Describe the selected row. The list is replaced by the preview. `j`/`k` or up/down scroll a line. `h`/`l` or left/right pan. ⌘↑/⌘↓ and ⌘←/⌘→ page. `g`/`G` jump to the top or the end. Esc returns to the list. Tab opens and closes the same view. |
 | Ctrl-D | Delete, after confirmation. Sessions and bookmarks. |
 | `/` | Edit the filter. Up and down move the list while the field is open. ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Plain left and right stay in the field. `j` and `k` are letters here. |
-| Esc | From describe, return to the list and leave the filter. After opening sessions from a group, return to that group and clear the filter. On that group, or on the sessions list itself, clear the filter and stay there. In the manual or command mode, Esc goes back and leaves the filter alone. |
+| Esc | From describe, return to the list and leave the search. On sessions inside a group, clear the search first and stay there. A second Esc returns to that group. On a group, or on the sessions list itself, clear the filter and stay there. In the manual or command mode, Esc goes back and leaves the filter alone. |
 | `:` | Command mode. Type a view name or a filter token. Up and down select a row. Enter applies the highlighted row. Enter on an empty command cycles the view. Another `:` cycles the view name in the field. Esc closes it. |
-| `a` | Cycle the `agent:` filter |
+| `a` | Cycle the selected harness. The search box stays a search. |
 | `p` | Add a `dir:` filter |
 | `o` | Cycle sort: recent, oldest, messages, title, cost |
 | `f` | Bookmark the selected session, or clear that bookmark. A star in the first column marks it. The bookmark stays through a reindex. `6` or `:bookmarks` lists bookmarks. Sessions and bookmarks. |
@@ -266,11 +266,11 @@ Resume runs that agent's own CLI, in the session's directory when that directory
 
 ## Filters
 
-Each free-text word matches when its letters appear in order in the name, title, session id, summary, directory, branch, model, agent, or excerpt. A contiguous match ranks above a match with gaps. With no `sort:` token, the closest matches come first. `sort:recent` keeps the newest sessions first. A leading `~` expands to the home directory. These tokens are filters:
+Each free-text word has to appear as typed in the name, title, session id, directory, branch, model, or harness. Letters with gaps do not match, and the transcript is not searched. With no `sort:` token, a match in the name ranks above a match in the path. `sort:recent` keeps the newest sessions first. A leading `~` expands to the home directory. These tokens are filters:
 
 | Token | Meaning |
 | --- | --- |
-| `agent:claude` | Agent id, or a substring of it, so `agent:clau` matches while you type. Also `a:`. An empty `agent:` is ignored. |
+| `harness:claude` | Harness id, or a substring of the id or the program name, so `harness:clau` matches while you type and `harness:build` matches Grok Build. Also `agent:` and `a:`. An empty `harness:` is ignored. |
 | `dir:repo` | Working directory contains the text. Also `cwd:` and `directory:`. `dir:~/repo` expands `~`. |
 | `branch:main` | Git branch contains the text. |
 | `model:sonnet` | Model name contains the text. |
@@ -284,7 +284,7 @@ Quote a phrase to keep it together: `"auth bug"`. Esc on the session list clears
 
 ## Config
 
-ai9s writes `config.yaml` the first time it starts, when the file is missing. Skins go in `skins/<name>.yaml`. Plugins go in `plugins.yaml` or in `plugins/`. A plugin shortcut that uses `q`, `/`, `:`, `d`, `f`, `y`, `s`, `n`, `u`, `?`, `a`, `p`, `o`, `j`, `k`, `h`, `l`, `g`, `G`, `1`–`6`, Enter, Tab, Esc, or Ctrl-D is ignored. The command is a program name, not a shell. A bare name is looked up on `PATH`, then in the config `plugins/` directory. The selected row provides `$ID`, `$NATIVE_ID`, `$AGENT`, `$CWD`, `$TITLE`, `$BRANCH`, `$MODEL`, `$FILTER`, and `$NAME`.
+ai9s writes `config.yaml` the first time it starts, when the file is missing. Skins go in `skins/<name>.yaml`. Plugins go in `plugins.yaml` or in `plugins/`. A plugin shortcut that uses `q`, `/`, `:`, `d`, `f`, `y`, `s`, `n`, `u`, `?`, `a`, `p`, `o`, `j`, `k`, `h`, `l`, `g`, `G`, `1`–`6`, Enter, Tab, Esc, or Ctrl-D is ignored. The command is a program name, not a shell. A bare name is looked up on `PATH`, then in the config `plugins/` directory. The selected row provides `$ID`, `$NATIVE_ID`, `$AGENT`, `$HARNESS`, `$CWD`, `$TITLE`, `$BRANCH`, `$MODEL`, `$FILTER`, and `$NAME`. `$AGENT` is the harness id. `$HARNESS` is the program name.
 
 `examples/plugins` has four plugins you copy in to turn on. `e` opens the directory in `AI9S_EDITOR`. `c` copies the fields you list to the clipboard. `b` shows git status and recent commits (`AI9S_GIT_LOG`). `t` opens a terminal there (`AI9S_TERMINAL`). Enabled keys are drawn on the menu. See `examples/plugins/README.md`.
 
@@ -296,32 +296,32 @@ AGE is always a relative age: now, minutes, hours, days, weeks, months, or years
 
 Claude records per-turn usage and cost. Codex records token totals and, when present, the context window. Copilot CLI records the latest prompt size, cache, reasoning effort, and premium requests. OpenCode records session token totals, cost, and the latest prompt size. Grok records the latest context and window, token totals, cache, reasoning, cost, and reasoning effort. Hermes records token totals, cost, and the latest prompt size, and does not record a window. Cursor records the latest context and window when composer data has them, and does not record a session token total. Antigravity records the latest context and window and sums per-generation input, output, cache read, and reasoning. OpenClaw records the context window separately from the estimated prompt size, and an estimated cost when the file has one. Goose and Cline record token totals and cost. Gemini, Junie, Jules, Aider, Kiro, and Mistral leave the token lines empty. Kiro's database does not store those numbers. Qwen records the latest prompt size, the context window, and the sum of assistant output tokens. MiniMax records token totals and cost. Kimi records the latest measured token count as context and does not record a session total.
 
-## Agents
+## Harnesses
 
 Paths below are the defaults. Each one can be pointed somewhere else with the environment variable in the last column. ai9s only reads session stores that exist; a missing directory is skipped.
 
-| Agent | What is read | Resume | Delete | Override |
+| Harness | What is read | Resume | Delete | Override |
 | --- | --- | --- | --- | --- |
-| `claude` | `$CLAUDE_CONFIG_DIR/projects/**/*.jsonl` | `claude --resume <id>` | the transcript file | `CLAUDE_CONFIG_DIR` |
-| `codex` | `$CODEX_HOME/sessions/**/rollout-*.jsonl` | `codex resume <id>` | the rollout file | `CODEX_HOME` |
-| `copilot` | `$COPILOT_HOME/session-state/<id>/` | `copilot --resume <id>` | that session directory | `COPILOT_HOME` |
-| `grok` | `$GROK_HOME/sessions/**/summary.json` | `grok --resume <id>` | that session directory, and its active-session and metadata entries | `GROK_HOME` |
-| `antigravity` | `$GEMINI_HOME/antigravity-cli/history.jsonl` | `agy --conversation <id>` | that conversation's lines | `GEMINI_HOME` |
-| `gemini` | `$GEMINI_HOME/tmp/<project>/chats/session-*.json` | `gemini --session-file <path>` | that chat file | `GEMINI_HOME` |
-| `cursor` | `$CURSOR_HOME/projects/**/agent-transcripts/<id>/<id>.jsonl` | `cursor-agent --resume <id>` (or `agent`) | the transcript file | `CURSOR_HOME` |
-| `opencode` | `$XDG_DATA_HOME/opencode/opencode.db` | `opencode --session <id>` | `opencode session delete <id>` | `OPENCODE_DB` |
-| `hermes` | `$HERMES_HOME/state.db` and `profiles/<name>/state.db` | `hermes --resume <id>` (`-p <profile>` for a named profile) | `hermes sessions delete <id> --yes` | `HERMES_HOME` |
-| `openclaw` | `$OPENCLAW_STATE_DIR/agents/<id>/agent/openclaw-agent.sqlite` | `openclaw resume <session-key>` | `openclaw sessions delete <key> --yes` | `OPENCLAW_STATE_DIR`, else `OPENCLAW_HOME` |
-| `junie` | `$JUNIE_HOME/sessions/session-*/transcript.md` | `junie --resume --session-id=<id>` | that session directory | `JUNIE_HOME` |
-| `jules` | `$JULES_HOME/sessions.json` or `sessions.txt` | `jules teleport <id>` | that row, or the cloud session when `JULES_API_KEY` is set | `JULES_HOME` |
-| `goose` | `$GOOSE_HOME/sessions/sessions.db` | `goose session --resume --session-id <id>` | `goose session remove --session-id <id>` | `GOOSE_HOME` |
-| `cline` | `$CLINE_HOME/data/state/taskHistory.json` | `cline task open <id>` | rewrite the history, then remove the task directory | `CLINE_HOME` |
-| `aider` | `.aider.chat.history.md` under the configured roots, and `~/.aider.chat.history.md` when those are unset | `aider --restore-chat-history` | that history file | `AIDER_CHAT_ROOTS`, `AIDER_HOME`, `AIDER_CHAT_HISTORY` |
-| `kiro` | `kiro-cli` `data.sqlite3` (`conversations_v2`) | `kiro-cli chat --resume-id <id>` | that conversation; the shell history table stays | `KIRO_CLI_DB`, else `KIRO_HOME` |
-| `kimi` | `$KIMI_CODE_HOME/sessions/<workDirKey>/<id>/state.json` and `agents/main/wire.jsonl` | `kimi --session <id>` | that session directory and its `session_index.jsonl` line | `KIMI_CODE_HOME` |
-| `minimax` | `$MINIMAX_DATA_DIR/v2/sqlite/runtime-state.sqlite` (`local_runtime_sessions`), and `v2/sessions/.../messages.jsonl` when that database is absent | `mcode --session <id>` | that session row and its history directory | `MINIMAX_DATA_DIR`, else `MAVIS_DATA_DIR` |
-| `qwen` | `$QWEN_RUNTIME_DIR/projects/<sanitized-cwd>/chats/<id>.jsonl` (also `chats/archive`; `$QWEN_HOME` when the runtime dir is unset) | `qwen --resume <id>` | that chat file | `QWEN_RUNTIME_DIR`, else `QWEN_HOME` |
-| `mistral` | `$VIBE_HOME/logs/session/<dir>/` (`meta.json`, `messages.jsonl`) | `vibe --resume <id>` | that session directory | `VIBE_HOME` |
+| Claude Code (`claude`) | `$CLAUDE_CONFIG_DIR/projects/**/*.jsonl` | `claude --resume <id>` | the transcript file | `CLAUDE_CONFIG_DIR` |
+| Codex (`codex`) | `$CODEX_HOME/sessions/**/rollout-*.jsonl` | `codex resume <id>` | the rollout file | `CODEX_HOME` |
+| Copilot CLI (`copilot`) | `$COPILOT_HOME/session-state/<id>/` | `copilot --resume <id>` | that session directory | `COPILOT_HOME` |
+| Grok Build (`grok`) | `$GROK_HOME/sessions/**/summary.json` | `grok --resume <id>` | that session directory, and its active-session and metadata entries | `GROK_HOME` |
+| Antigravity (`antigravity`) | `$GEMINI_HOME/antigravity-cli/history.jsonl` | `agy --conversation <id>` | that conversation's lines | `GEMINI_HOME` |
+| Gemini CLI (`gemini`) | `$GEMINI_HOME/tmp/<project>/chats/session-*.json` | `gemini --session-file <path>` | that chat file | `GEMINI_HOME` |
+| Cursor (`cursor`) | `$CURSOR_HOME/projects/**/agent-transcripts/<id>/<id>.jsonl` | `cursor-agent --resume <id>` (or `agent`) | the transcript file | `CURSOR_HOME` |
+| OpenCode (`opencode`) | `$XDG_DATA_HOME/opencode/opencode.db` | `opencode --session <id>` | `opencode session delete <id>` | `OPENCODE_DB` |
+| Hermes (`hermes`) | `$HERMES_HOME/state.db` and `profiles/<name>/state.db` | `hermes --resume <id>` (`-p <profile>` for a named profile) | `hermes sessions delete <id> --yes` | `HERMES_HOME` |
+| OpenClaw (`openclaw`) | `$OPENCLAW_STATE_DIR/agents/<id>/agent/openclaw-agent.sqlite` | `openclaw resume <session-key>` | `openclaw sessions delete <key> --yes` | `OPENCLAW_STATE_DIR`, else `OPENCLAW_HOME` |
+| Junie (`junie`) | `$JUNIE_HOME/sessions/session-*/transcript.md` | `junie --resume --session-id=<id>` | that session directory | `JUNIE_HOME` |
+| Jules (`jules`) | `$JULES_HOME/sessions.json` or `sessions.txt` | `jules teleport <id>` | that row, or the cloud session when `JULES_API_KEY` is set | `JULES_HOME` |
+| Goose (`goose`) | `$GOOSE_HOME/sessions/sessions.db` | `goose session --resume --session-id <id>` | `goose session remove --session-id <id>` | `GOOSE_HOME` |
+| Cline (`cline`) | `$CLINE_HOME/data/state/taskHistory.json` | `cline task open <id>` | rewrite the history, then remove the task directory | `CLINE_HOME` |
+| Aider (`aider`) | `.aider.chat.history.md` under the configured roots, and `~/.aider.chat.history.md` when those are unset | `aider --restore-chat-history` | that history file | `AIDER_CHAT_ROOTS`, `AIDER_HOME`, `AIDER_CHAT_HISTORY` |
+| Kiro (`kiro`) | `kiro-cli` `data.sqlite3` (`conversations_v2`) | `kiro-cli chat --resume-id <id>` | that conversation; the shell history table stays | `KIRO_CLI_DB`, else `KIRO_HOME` |
+| Kimi (`kimi`) | `$KIMI_CODE_HOME/sessions/<workDirKey>/<id>/state.json` and `agents/main/wire.jsonl` | `kimi --session <id>` | that session directory and its `session_index.jsonl` line | `KIMI_CODE_HOME` |
+| MiniMax (`minimax`) | `$MINIMAX_DATA_DIR/v2/sqlite/runtime-state.sqlite` (`local_runtime_sessions`), and `v2/sessions/.../messages.jsonl` when that database is absent | `mcode --session <id>` | that session row and its history directory | `MINIMAX_DATA_DIR`, else `MAVIS_DATA_DIR` |
+| Qwen (`qwen`) | `$QWEN_RUNTIME_DIR/projects/<sanitized-cwd>/chats/<id>.jsonl` (also `chats/archive`; `$QWEN_HOME` when the runtime dir is unset) | `qwen --resume <id>` | that chat file | `QWEN_RUNTIME_DIR`, else `QWEN_HOME` |
+| Mistral Vibe (`mistral`) | `$VIBE_HOME/logs/session/<dir>/` (`meta.json`, `messages.jsonl`) | `vibe --resume <id>` | that session directory | `VIBE_HOME` |
 
 Yolo maps to a documented flag: Claude and Antigravity `--dangerously-skip-permissions`, Grok `--always-approve`, Copilot `--allow-all-tools`, Cursor `--force`, Hermes `--yolo`, Junie `--brave`, Cline `--yolo`, Kiro `--trust-all-tools`, Qwen `--yolo`, Mistral `--yolo` (`--auto-approve` is the same flag). Codex, Gemini, OpenCode, OpenClaw, Jules, Goose, Aider, Kimi, and MiniMax are resumed without an extra approval flag.
 

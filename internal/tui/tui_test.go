@@ -153,12 +153,12 @@ func TestViewsCommandAndManual(t *testing.T) {
 	}
 
 	send(ui.table, tcell.NewEventKey(tcell.KeyRune, '2', tcell.ModNone))
-	if ui.table.GetTitle() != " agents " {
+	if ui.table.GetTitle() != " harnesses " {
 		t.Fatalf("title %q", ui.table.GetTitle())
 	}
 	send(ui.table, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
-	if ui.view != viewSessions || !strings.Contains(ui.filter.GetText(), "agent:claude") {
-		t.Fatalf("view %s filter %q", ui.view, ui.filter.GetText())
+	if ui.view != viewSessions || ui.filter.GetText() != "" || ui.within.agent != "claude" {
+		t.Fatalf("view %s filter %q within %q", ui.view, ui.filter.GetText(), ui.within.agent)
 	}
 
 	send(ui.table, tcell.NewEventKey(tcell.KeyRune, ':', tcell.ModNone))
@@ -166,7 +166,7 @@ func TestViewsCommandAndManual(t *testing.T) {
 		t.Fatal("colon did not open command mode")
 	}
 	send(ui.command, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
-	if ui.view != viewAgents || ui.table.GetTitle() != " agents " {
+	if ui.view != viewAgents || ui.table.GetTitle() != " harnesses " {
 		t.Fatalf("cycled view %s title %q", ui.view, ui.table.GetTitle())
 	}
 
@@ -277,6 +277,15 @@ func TestEscapeReturnsToDrilledView(t *testing.T) {
 	if err := st.Apply("claude", []model.Session{sess}, []store.Source{{Path: path, Mtime: 1}}); err != nil {
 		t.Fatal(err)
 	}
+	grokPath := filepath.Join(t.TempDir(), "two.jsonl")
+	grok := sess
+	grok.ID = "grok:two"
+	grok.NativeID = "two"
+	grok.Agent = "grok"
+	grok.SourcePath = grokPath
+	if err := st.Apply("grok", []model.Session{grok}, []store.Source{{Path: grokPath, Mtime: 1}}); err != nil {
+		t.Fatal(err)
+	}
 	app := tview.NewApplication()
 	ui := newUI(app, st, config.Defaults())
 	ui.reload()
@@ -284,20 +293,28 @@ func TestEscapeReturnsToDrilledView(t *testing.T) {
 
 	send(ui.table, tcell.NewEventKey(tcell.KeyRune, '2', tcell.ModNone))
 	if ui.view != viewAgents {
-		t.Fatalf("providers %s", ui.view)
+		t.Fatalf("harnesses %s", ui.view)
 	}
 	send(ui.table, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
-	if ui.view != viewSessions || ui.drilled != viewAgents || !strings.Contains(ui.filter.GetText(), "agent:claude") {
-		t.Fatalf("drill view %s from %s filter %q", ui.view, ui.drilled, ui.filter.GetText())
+	if ui.view != viewSessions || ui.drilled != viewAgents || ui.filter.GetText() != "" || ui.within.agent != "claude" || len(ui.rows) != 1 || ui.rows[0].Agent != "claude" {
+		t.Fatalf("drill view %s from %s filter %q within %q rows %d", ui.view, ui.drilled, ui.filter.GetText(), ui.within.agent, len(ui.rows))
 	}
 	send(ui.table, tcell.NewEventKey(tcell.KeyRune, 'd', tcell.ModNone))
 	send(ui.preview, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
-	if ui.view != viewSessions || ui.drilled != viewAgents || !strings.Contains(ui.filter.GetText(), "agent:claude") {
-		t.Fatalf("describe esc view %s from %s filter %q", ui.view, ui.drilled, ui.filter.GetText())
+	if ui.view != viewSessions || ui.drilled != viewAgents || ui.filter.GetText() != "" || ui.within.agent != "claude" {
+		t.Fatalf("describe esc view %s from %s filter %q within %q", ui.view, ui.drilled, ui.filter.GetText(), ui.within.agent)
+	}
+	ui.filter.SetText("ship")
+	if ui.drilled != viewAgents || ui.within.agent != "claude" || len(ui.rows) != 1 || ui.rows[0].Agent != "claude" || strings.Contains(ui.filter.GetText(), ":") {
+		t.Fatalf("search inside harness filter %q rows %d", ui.filter.GetText(), len(ui.rows))
 	}
 	send(ui.table, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
-	if ui.view != viewAgents || ui.drilled != "" || ui.filter.GetText() != "" {
-		t.Fatalf("back view %s from %q filter %q", ui.view, ui.drilled, ui.filter.GetText())
+	if ui.view != viewSessions || ui.drilled != viewAgents || ui.filter.GetText() != "" || ui.within.agent != "claude" || len(ui.rows) != 1 {
+		t.Fatalf("clear search view %s filter %q within %q rows %d", ui.view, ui.filter.GetText(), ui.within.agent, len(ui.rows))
+	}
+	send(ui.table, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
+	if ui.view != viewAgents || ui.drilled != "" || !ui.within.empty() || ui.filter.GetText() != "" {
+		t.Fatalf("back view %s from %q filter %q within %+v", ui.view, ui.drilled, ui.filter.GetText(), ui.within)
 	}
 	ui.filter.SetText("zzz")
 	send(ui.table, tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone))
@@ -922,8 +939,8 @@ func TestBranchesShowWorktrees(t *testing.T) {
 		first = wt
 	}
 	send(ui.table, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
-	if ui.view != viewSessions || !strings.Contains(ui.filter.GetText(), "branch:main") || !strings.Contains(ui.filter.GetText(), first) {
-		t.Fatalf("filter %q view %s", ui.filter.GetText(), ui.view)
+	if ui.view != viewSessions || ui.within.branch != "main" || ui.within.dir != first || ui.filter.GetText() != "" {
+		t.Fatalf("filter %q view %s branch %q dir %q", ui.filter.GetText(), ui.view, ui.within.branch, ui.within.dir)
 	}
 }
 

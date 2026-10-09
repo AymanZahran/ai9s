@@ -111,7 +111,7 @@ func TestDefaultSkinIsTrueBlack(t *testing.T) {
 
 func TestDefaultViewProvidersIsAgents(t *testing.T) {
 	l := &Loaded{Body: Body{DefaultView: "Providers"}}
-	if warns := l.normalize(); len(warns) != 0 || l.Body.DefaultView != "agents" {
+	if warns := l.normalize(); len(warns) != 0 || l.Body.DefaultView != "harnesses" {
 		t.Fatalf("view %q warns %v", l.Body.DefaultView, warns)
 	}
 }
@@ -121,7 +121,7 @@ func TestProviderScopeIsAgents(t *testing.T) {
 	if msg := (&Loaded{}).prepare(&p, map[string]bool{}, map[string]bool{}); msg != "" {
 		t.Fatal(msg)
 	}
-	if len(p.Scopes) != 1 || p.Scopes[0] != "agents" || !p.Allows("agents") || !p.Allows("providers") {
+	if len(p.Scopes) != 1 || p.Scopes[0] != "harnesses" || !p.Allows("agents") || !p.Allows("providers") || !p.Allows("harnesses") {
 		t.Fatalf("scopes %+v allows agents %v providers %v", p.Scopes, p.Allows("agents"), p.Allows("providers"))
 	}
 }
@@ -135,7 +135,7 @@ func TestDefaultViewBookmarks(t *testing.T) {
 
 func TestBookmarksScopeMatchesSessions(t *testing.T) {
 	sessions := Plugin{Scopes: []string{"sessions"}}
-	if !sessions.Allows("bookmarks") || !sessions.Allows("sessions") || sessions.Allows("agents") || sessions.Allows("providers") {
+	if !sessions.Allows("bookmarks") || !sessions.Allows("sessions") || sessions.Allows("agents") || sessions.Allows("providers") || sessions.Allows("harnesses") {
 		t.Fatal("sessions scope")
 	}
 	marks := Plugin{Scopes: []string{"bookmarks"}}

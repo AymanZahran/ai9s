@@ -138,7 +138,7 @@ func TestSessionStatsText(t *testing.T) {
 		ID: "claude:abc", NativeID: "abc", Agent: "claude", Title: "recorded", Name: "Alpha",
 		Model: "sonnet", Messages: 4, Usage: model.Usage{Context: 1500, Output: 20},
 	})
-	for _, want := range []string{"Alpha", "Ca claude", "model      sonnet", "messages   4", "title      recorded", "context    1.5k", "out 20"} {
+	for _, want := range []string{"Alpha", "Ca Claude Code", "model      sonnet", "messages   4", "title      recorded", "context    1.5k", "out 20"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("missing %q in %s", want, text)
 		}

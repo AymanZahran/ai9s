@@ -53,7 +53,7 @@ func TestSearchAndPrune(t *testing.T) {
 	if err := st.Apply("claude", []model.Session{sess}, []Source{{Path: path, Mtime: 10, Fresh: false}}); err != nil {
 		t.Fatal(err)
 	}
-	got, err := st.Search(query.Parse("auth agent:claude dir:demo sort:messages"), 10)
+	got, err := st.Search(query.Parse("feature agent:claude dir:demo sort:messages"), 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -181,12 +181,16 @@ func TestFuzzyRankBookmarkAndCost(t *testing.T) {
 	if err := st.Apply("claude", []model.Session{ship, read, exact}, []Source{{Path: shipPath, Mtime: 1}, {Path: readPath, Mtime: 1}, {Path: exactPath, Mtime: 1}}); err != nil {
 		t.Fatal(err)
 	}
-	fuzzy, err := st.Search(query.Parse("shp"), 10)
-	if err != nil || len(fuzzy) != 1 || fuzzy[0].ID != "claude:ship" {
-		t.Fatalf("fuzzy %+v %v", ids(fuzzy), err)
+	gap, err := st.Search(query.Parse("shp"), 10)
+	if err != nil || len(gap) != 0 {
+		t.Fatalf("gap %+v %v", ids(gap), err)
+	}
+	shipOnly, err := st.Search(query.Parse("ship"), 10)
+	if err != nil || len(shipOnly) != 1 || shipOnly[0].ID != "claude:ship" {
+		t.Fatalf("ship %+v %v", ids(shipOnly), err)
 	}
 	ranked, err := st.Search(query.Parse("rdme"), 10)
-	if err != nil || len(ranked) != 2 || ranked[0].ID != "claude:exact" || ranked[1].ID != "claude:read" {
+	if err != nil || len(ranked) != 1 || ranked[0].ID != "claude:exact" {
 		t.Fatalf("rank %+v %v", ids(ranked), err)
 	}
 	byCost, err := st.Search(query.Parse("sort:cost"), 10)

@@ -42,12 +42,12 @@ func Icon(agent string) string {
 	return icon
 }
 
-// Label is the icon plus the agent id, for lists and prompts.
+// Label is the icon plus the harness name, for lists and prompts.
 func Label(agent string) string {
 	if agent == "" {
 		return ""
 	}
-	return Icon(agent) + " " + agent
+	return Icon(agent) + " " + model.HarnessName(agent)
 }
 
 // sessionName is the name set with n. Otherwise it is the recorded title.
@@ -179,12 +179,28 @@ func quoteTok(s string) string {
 	return s
 }
 
+func tokenFamily(key string) string {
+	switch strings.ToLower(key) {
+	case "harness", "agent", "a", "h":
+		return "harness"
+	case "dir", "directory", "cwd", "d":
+		return "dir"
+	case "branch", "b":
+		return "branch"
+	case "model", "m":
+		return "model"
+	default:
+		return strings.ToLower(key)
+	}
+}
+
 func setToken(raw, key, val string) string {
 	out := make([]string, 0, 8)
 	replaced := false
+	family := tokenFamily(key)
 	for _, tok := range query.Tokens(raw) {
 		k, _, ok := strings.Cut(tok, ":")
-		if ok && strings.EqualFold(k, key) {
+		if ok && tokenFamily(k) == family {
 			if !replaced && val != "" {
 				out = append(out, key+":"+val)
 				replaced = true
@@ -216,7 +232,7 @@ func previewText(s model.Session, tag string, icons bool) string {
 	if !icons {
 		mark = "  "
 	}
-	fmt.Fprintf(&b, "[::b]%s[-]  %s [%s]%s[-]\n", markupLine(s.Title), mark, tag, markupLine(s.Agent))
+	fmt.Fprintf(&b, "[::b]%s[-]  %s [%s]%s[-]\n", markupLine(s.Title), mark, tag, markupLine(model.HarnessName(s.Agent)))
 	fmt.Fprintf(&b, "%s", markupLine(shortPath(s.CWD)))
 	if s.Branch != "" {
 		fmt.Fprintf(&b, "  [green]%s[-]", markupLine(s.Branch))

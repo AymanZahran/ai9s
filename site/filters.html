@@ -12,12 +12,12 @@
 <body>
   <header class="site-header">
     <a class="site-logo" href="index.html">ai9s</a>
-    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <p class="cite">AI session CLI to resume your harnesses in style!</p>
     <nav class="site-nav" aria-label="Documentation">
       <a href="install.html">Install</a>
       <a href="commands.html">Commands</a>
       <a href="keys.html">Keys</a>
-      <a href="agents.html">Agents</a>
+      <a href="agents.html">Harnesses</a>
       <a href="filters.html" aria-current="page">Filters</a>
       <a href="config.html">Config</a>
       <a href="contributing.html">Contributing</a>
@@ -26,15 +26,15 @@
   </header>
   <main>
     <h1><span class="mark" aria-hidden="true">/</span> Filters</h1>
-    <p>Each free-text word matches when its letters appear in order in the name, title, session id, summary, directory, branch, model, agent, or excerpt. A contiguous match ranks above a match with gaps. With no <code>sort:</code> token, the closest matches come first. <code>sort:recent</code> keeps the newest sessions first. Quote a phrase to keep it together: <code>"auth bug"</code>. Tokens and free text combine. A leading <code>~</code> expands to the home directory.</p>
-    <pre><code>ai9s search 'agent:claude dir:my-repo date:&lt;7d "auth bug"'</code></pre>
+    <p>Each free-text word has to appear as typed in the name, title, session id, directory, branch, model, or harness. Letters with gaps do not match, and the transcript is not searched. With no <code>sort:</code> token, a match in the name ranks above a match in the path. <code>sort:recent</code> keeps the newest sessions first. Quote a phrase to keep it together: <code>"auth bug"</code>. Tokens and free text combine. A leading <code>~</code> expands to the home directory.</p>
+    <pre><code>ai9s search 'harness:claude dir:my-repo date:&lt;7d "auth bug"'</code></pre>
     <div class="table-wrap">
       <table>
         <thead>
           <tr><th>Token</th><th>Meaning</th></tr>
         </thead>
         <tbody>
-          <tr><td><code>agent:claude</code></td><td>Agent id, or a substring of it. <code>agent:clau</code> matches while you type. Also <code>a:</code>. An empty <code>agent:</code> is ignored.</td></tr>
+          <tr><td><code>harness:claude</code></td><td>Harness id, or a substring of the id or the program name. <code>harness:clau</code> matches while you type, and <code>harness:build</code> matches Grok Build. Also <code>agent:</code> and <code>a:</code>. An empty <code>harness:</code> is ignored.</td></tr>
           <tr><td><code>dir:repo</code></td><td>Working directory contains the text. Also <code>cwd:</code> and <code>directory:</code>. <code>dir:~/repo</code> expands <code>~</code>.</td></tr>
           <tr><td><code>branch:main</code></td><td>Git branch contains the text.</td></tr>
           <tr><td><code>model:sonnet</code></td><td>Model name contains the text.</td></tr>
@@ -48,8 +48,8 @@
     </div>
 
     <h2>In the UI</h2>
-    <p><code>/</code> edits the filter text directly. The list updates as you type. Up and down move through the matches while the field stays focused. ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Plain left and right stay in the field. Esc from describe returns to the list and leaves the filter. Esc after opening sessions from a group returns to that group and clears the filter. On that group, or on the sessions list itself, Esc clears the text and stays there. Esc in the manual or command mode leaves the filter alone. <code>:</code> opens command mode, where the same tokens are listed. Up and down select one, and Enter writes it into the filter. Setting a token replaces the previous value of that token. A value with a space is quoted.</p>
-    <p>The header shows the token names as a hint: <code>agent: dir: branch: model: date:&lt;7d sort:recent   6 :bookmarks</code>.</p>
+    <p><code>/</code> edits the search. The list updates as you type. Enter on a harness, directory, branch, or model keeps that choice while the search stays inside it. Up and down move through the matches while the field stays focused. ⌘↑ and ⌘↓ move a page of rows. ⌘← and ⌘→ move a page of columns. Plain left and right stay in the field. Esc from describe returns to the list and leaves the search. Esc on sessions inside a group clears the search first and stays there. A second Esc returns to that group. On a group, or on the sessions list itself, Esc clears the text and stays there. Esc in the manual or command mode leaves the filter alone. <code>:</code> opens command mode, where the same tokens are listed. Up and down select one, and Enter writes it into the filter. Setting a token replaces the previous value of that token. A value with a space is quoted.</p>
+    <p>The header shows the token names as a hint: <code>harness: dir: branch: model: date:&lt;7d sort:recent   6 :bookmarks</code>.</p>
     <p>Opening ai9s in a project directory lists sessions whose working directory is that directory or a subdirectory. Opening it in your home directory lists every session. A <code>dir:</code> token narrows the list further. Esc clears the token and leaves the starting directory in place. <code>ai9s search</code> still searches the whole index.</p>
 
     <h2>Metadata</h2>

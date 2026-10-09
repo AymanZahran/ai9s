@@ -66,17 +66,18 @@ func usage() {
 
 Usage:
   ai9s                         open the session list
-  ai9s index                   scan agent session stores
-  ai9s stats [--json]          counts by agent
+  ai9s index                   scan harness session stores
+  ai9s stats [--json]          counts by harness
   ai9s search [query] [--json] [--limit N]
   ai9s show <id> [--json]
   ai9s resume <id> [--yolo] [--print]
   ai9s delete <id> [--yes]
   ai9s info                    config directory, index path, skin, plugins
 
-Queries can mix free text with agent:, dir:, branch:, model:,
+Queries can mix free text with harness:, dir:, branch:, model:,
 date:<7d, date:>30d, date:YYYY-MM-DD, and sort:recent|oldest|messages|title.
-Free text and agent:, dir:, branch:, and model: match substrings. A leading ~ expands.
+Free text matches the visible row as typed. harness:, dir:, branch:, and model: match substrings.
+agent: and a: are the same as harness:. A leading ~ expands.
 
 The index is cached under $AI9S_CACHE_DIR, $XDG_CACHE_HOME/ai9s, or ~/.cache/ai9s.
 Config is $AI9S_CONFIG_DIR, $XDG_CONFIG_HOME/ai9s, or ~/.config/ai9s.
@@ -215,7 +216,7 @@ func cmdStats(args []string) int {
 func printStats(st store.Stats) {
 	fmt.Printf("%d sessions, %d messages\n", st.Sessions, st.Messages)
 	for _, a := range st.Agents {
-		fmt.Printf("  %s %-12s %5d sessions  %7d messages\n", tui.Icon(a.Agent), tui.VisibleLine(a.Agent), a.Sessions, a.Messages)
+		fmt.Printf("  %s %-13s %5d sessions  %7d messages\n", tui.Icon(a.Agent), tui.VisibleLine(model.HarnessName(a.Agent)), a.Sessions, a.Messages)
 	}
 }
 
@@ -251,7 +252,7 @@ func cmdSearch(args []string) int {
 		if branch == "" {
 			branch = "-"
 		}
-		fmt.Printf("%s %-12s %-18s %-10s %5d  %-48s  %s\n", tui.Icon(s.Agent), tui.VisibleLine(s.Agent), clip(tui.VisibleLine(shortHome(s.CWD)), 18), tui.VisibleLine(branch), s.Messages, clip(tui.VisibleLine(s.Title), 48), tui.VisibleLine(s.ID))
+		fmt.Printf("%s %-13s %-18s %-10s %5d  %-48s  %s\n", tui.Icon(s.Agent), tui.VisibleLine(model.HarnessName(s.Agent)), clip(tui.VisibleLine(shortHome(s.CWD)), 18), tui.VisibleLine(branch), s.Messages, clip(tui.VisibleLine(s.Title), 48), tui.VisibleLine(s.ID))
 	}
 	return 0
 }
@@ -281,7 +282,7 @@ func cmdShow(args []string) int {
 	if *asJSON {
 		return printJSON(sess)
 	}
-	fmt.Printf("%s\n%s %s  %s\n", tui.VisibleLine(sess.Title), tui.Icon(sess.Agent), tui.VisibleLine(sess.Agent), tui.VisibleLine(sess.ID))
+	fmt.Printf("%s\n%s %s  %s\n", tui.VisibleLine(sess.Title), tui.Icon(sess.Agent), tui.VisibleLine(model.HarnessName(sess.Agent)), tui.VisibleLine(sess.ID))
 	if name := strings.TrimSpace(sess.Name); name != "" {
 		fmt.Printf("name       %s\n", tui.VisibleLine(name))
 	}

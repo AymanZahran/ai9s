@@ -18,6 +18,9 @@ func TestSetTokenAndAge(t *testing.T) {
 	if !strings.Contains(got, "agent:grok") || !strings.Contains(got, "auth bug") {
 		t.Fatalf("token %q", got)
 	}
+	if setToken(`harness:claude ship`, "agent", "") != "ship" {
+		t.Fatalf("alias %q", setToken(`harness:claude ship`, "agent", ""))
+	}
 	if setToken("sort:oldest ship", "sort", "") != "ship" {
 		t.Fatalf("clear %+v", setToken("sort:oldest ship", "sort", ""))
 	}
@@ -148,7 +151,7 @@ func TestIcons(t *testing.T) {
 			t.Fatalf("%s width rune %d tag %d %q", agent, runewidth.StringWidth(icon), tview.TaggedStringWidth(icon), icon)
 		}
 		seen[icon] = true
-		if !strings.HasPrefix(Label(agent), icon+" ") || !strings.HasSuffix(Label(agent), agent) {
+		if Label(agent) != icon+" "+model.HarnessName(agent) {
 			t.Fatalf("label %q", Label(agent))
 		}
 		for _, r := range icon {
