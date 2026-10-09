@@ -168,6 +168,7 @@ func fillPluginEnv(env map[string]string, s model.Session) {
 	env["ID"] = VisibleLine(s.ID)
 	env["NATIVE_ID"] = VisibleLine(s.NativeID)
 	env["AGENT"] = VisibleLine(s.Agent)
+	env["HARNESS"] = VisibleLine(model.HarnessName(s.Agent))
 	env["CWD"] = VisibleLine(s.CWD)
 	env["TITLE"] = VisibleLine(s.Title)
 	env["BRANCH"] = VisibleLine(s.Branch)

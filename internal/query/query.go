@@ -48,7 +48,7 @@ func Parse(raw string) Filter {
 			continue
 		}
 		switch strings.ToLower(key) {
-		case "agent", "a":
+		case "harness", "agent", "a", "h":
 			f.Agent = strings.ToLower(val)
 		case "dir", "directory", "cwd", "d":
 			f.Dir = expandHome(val)
@@ -81,7 +81,7 @@ func Parse(raw string) Filter {
 
 func knownKey(key string) bool {
 	switch strings.ToLower(key) {
-	case "agent", "a", "dir", "directory", "cwd", "d", "branch", "b", "model", "m", "sort", "date",
+	case "harness", "agent", "a", "h", "dir", "directory", "cwd", "d", "branch", "b", "model", "m", "sort", "date",
 		"mark", "bookmark", "fav", "favorite":
 		return true
 	default:

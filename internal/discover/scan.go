@@ -27,7 +27,7 @@ type Scanner struct {
 	Scan  func(fresh func(path string, mtime int64) bool) Batch
 }
 
-// Scanners returns the built-in agents in display order.
+// Scanners returns the built-in harnesses in display order.
 func Scanners() []Scanner {
 	return []Scanner{
 		{"claude", scanClaude},

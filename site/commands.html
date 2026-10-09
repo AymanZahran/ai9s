@@ -12,12 +12,12 @@
 <body>
   <header class="site-header">
     <a class="site-logo" href="index.html">ai9s</a>
-    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <p class="cite">AI session CLI to resume your harnesses in style!</p>
     <nav class="site-nav" aria-label="Documentation">
       <a href="install.html">Install</a>
       <a href="commands.html" aria-current="page">Commands</a>
       <a href="keys.html">Keys</a>
-      <a href="agents.html">Agents</a>
+      <a href="agents.html">Harnesses</a>
       <a href="filters.html">Filters</a>
       <a href="config.html">Config</a>
       <a href="contributing.html">Contributing</a>
@@ -38,15 +38,15 @@ ai9s version
 ai9s help</code></pre>
 
     <h2>index</h2>
-    <p><code>ai9s index</code> scans every configured agent store and refreshes the local database. Files whose modification time has not changed are skipped. A scan error for one agent is printed as <code>warning:</code> and does not remove the other agents. <code>--json</code> prints session and message counts.</p>
+    <p><code>ai9s index</code> scans every configured harness store and refreshes the local database. Files whose modification time has not changed are skipped. A scan error for one harness is printed as <code>warning:</code> and does not remove the other harnesses. <code>--json</code> prints session and message counts.</p>
     <p>Opening the UI runs the same refresh first, then repeats it on the refresh interval. The default is 30 seconds.</p>
 
     <h2>stats</h2>
-    <p><code>ai9s stats</code> prints counts from the index. It does not scan again. Agents with zero sessions are omitted. <code>--json</code> prints the same counts as objects.</p>
+    <p><code>ai9s stats</code> prints counts from the index. It does not scan again. Harnesses with zero sessions are omitted. <code>--json</code> prints the same counts as objects. The name on each row is the program name.</p>
 
     <h2>search</h2>
-    <p>Each word matches when its letters appear in order in the name, title, session id, summary, directory, branch, model, agent, or excerpt. A contiguous match ranks above a match with gaps. Tokens such as <code>agent:</code>, <code>dir:</code>, and <code>mark:yes</code> narrow the list the same way. In the UI, <code>6</code> and <code>:bookmarks</code> open the bookmarked list. A leading <code>~</code> expands. See <a href="filters.html">Filters</a>.</p>
-    <pre><code>ai9s search 'agent:claude dir:my-repo date:&lt;7d auth'</code></pre>
+    <p>Each word has to appear as typed in the name, title, session id, directory, branch, model, or harness. Letters with gaps do not match, and the transcript is not searched. Tokens such as <code>harness:</code>, <code>dir:</code>, and <code>mark:yes</code> narrow the list the same way. <code>agent:</code> is the same as <code>harness:</code>. In the UI, <code>6</code> and <code>:bookmarks</code> open the bookmarked list. A leading <code>~</code> expands. See <a href="filters.html">Filters</a>.</p>
+    <pre><code>ai9s search 'harness:claude dir:my-repo date:&lt;7d feature'</code></pre>
     <p><code>--json</code> prints sessions without excerpts. <code>--limit</code> caps the rows. The UI caps a search at <code>ui.limit</code> in the config, which defaults to 400.</p>
 
     <h2>info</h2>
@@ -56,12 +56,12 @@ ai9s help</code></pre>
     <p><code>ai9s show claude:&lt;id&gt;</code> prints one session, including the excerpt and any recorded context or token counts. <code>--json</code> includes snippets.</p>
 
     <h2>resume</h2>
-    <p>Resume runs that agent's CLI in the session directory when the directory still exists. <code>--print</code> writes the command and does not run it. In the session list, <code>y</code> does what <code>--yolo</code> does: it appends a documented auto-approve flag, and only for agents that have one. The flags are listed on the <a href="agents.html">agents</a> page.</p>
+    <p>Resume runs that harness's CLI in the session directory when the directory still exists. <code>--print</code> writes the command and does not run it. In the session list, <code>y</code> does what <code>--yolo</code> does: it appends a documented auto-approve flag, and only for harnesses that have one. The flags are listed on the <a href="agents.html">harnesses</a> page.</p>
     <pre><code>ai9s resume claude:&lt;id&gt;
 ai9s resume codex:&lt;id&gt; --print</code></pre>
 
     <h2>delete</h2>
-    <p>Delete asks you to type the native id. <code>--yes</code> skips that prompt. If stdin is not a terminal, delete refuses unless <code>--yes</code> is set. Agents that cannot be deleted safely print the reason and leave the files alone.</p>
+    <p>Delete asks you to type the native id. <code>--yes</code> skips that prompt. If stdin is not a terminal, delete refuses unless <code>--yes</code> is set. Harnesses that cannot be deleted safely print the reason and leave the files alone.</p>
     <pre><code>ai9s delete claude:&lt;id&gt;
 ai9s delete claude:&lt;id&gt; --yes</code></pre>
 

@@ -38,12 +38,12 @@ func TestLongNameStaysOnTheRow(t *testing.T) {
 		ui.app.QueueUpdate(func() { painted = screenText(screen) })
 		return painted
 	}
-	waitUI(t, ui.app, func() bool { return strings.Contains(screenText(screen), "grok") })
+	waitUI(t, ui.app, func() bool { return strings.Contains(screenText(screen), "Grok Build") })
 	if len(ui.lines) < 2 {
 		t.Fatal("no session row")
 	}
 	header := ui.lines[0]
-	agentAt := strings.Index(header, "AGENT")
+	agentAt := strings.Index(header, "HARNESS")
 	nameAt := strings.Index(header, "NAME")
 	if agentAt < 0 || nameAt < agentAt || strings.TrimSpace(header[nameAt+len("NAME"):]) != "" {
 		t.Fatalf("header %q", header)
@@ -55,7 +55,7 @@ func TestLongNameStaysOnTheRow(t *testing.T) {
 		t.Fatalf("row was cut to %d", ui.listWide)
 	}
 	before := snap()
-	if !strings.Contains(before, "grok") || strings.Contains(before, "TAILMARK") {
+	if !strings.Contains(before, "Grok Build") || strings.Contains(before, "TAILMARK") {
 		t.Fatalf("visible list wide %d\n%s", ui.listWide, before)
 	}
 }

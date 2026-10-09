@@ -152,7 +152,7 @@ func (l *Loaded) prepare(p *Plugin, seenName, seenKey map[string]bool) string {
 	for i, scope := range p.Scopes {
 		s := strings.ToLower(strings.TrimSpace(scope))
 		switch s {
-		case "all", "sessions", "agents", "providers", "directories", "branches", "models", "bookmarks":
+		case "all", "sessions", "harnesses", "harness", "agents", "agent", "providers", "provider", "directories", "branches", "models", "bookmarks":
 			p.Scopes[i] = CanonView(s)
 		default:
 			return fmt.Sprintf("plugin %s has unknown scope %s", p.Name, scope)

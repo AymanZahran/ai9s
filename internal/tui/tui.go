@@ -72,6 +72,15 @@ func Run(st *store.Store) (*act.Command, error) {
 	return ui.pending, nil
 }
 
+// listWithin is the group opened with enter. The filter box searches inside it.
+type listWithin struct {
+	agent, dir, branch, model string
+}
+
+func (w listWithin) empty() bool {
+	return w.agent == "" && w.dir == "" && w.branch == "" && w.model == ""
+}
+
 type ui struct {
 	app             *tview.Application
 	store           *store.Store
@@ -86,6 +95,7 @@ type ui struct {
 	agents          []string
 	warnings        []string
 	drilled         string
+	within          listWithin
 	pending         *act.Command
 	busy            bool
 	busyNote        string
@@ -624,11 +634,7 @@ func (ui *ui) reload() {
 		ui.paintHeader()
 		return
 	}
-	f := query.Parse(ui.filter.GetText())
-	f.Roots = ui.roots
-	if ui.view == viewBookmarks {
-		f.Mark = "yes"
-	}
+	f := ui.searchFilter()
 	rows, err := ui.store.Search(f, ui.cfg.Limit())
 	if err != nil {
 		ui.header.SetText("[red]search failed: " + markup(err.Error()) + "[-]")
@@ -703,19 +709,51 @@ func (ui *ui) paintCrumbs() {
 		colorTag(active), label, filter, sessions, messages, extra, ui.counter()))
 }
 
+func (ui *ui) searchFilter() query.Filter {
+	f := query.Parse(ui.filter.GetText())
+	if ui.within.agent != "" {
+		f.Agent = ui.within.agent
+	}
+	if ui.within.dir != "" {
+		f.Dir = ui.within.dir
+	}
+	if ui.within.branch != "" {
+		f.Branch = ui.within.branch
+	}
+	if ui.within.model != "" {
+		f.Model = ui.within.model
+	}
+	f.Roots = ui.roots
+	if ui.view == viewBookmarks {
+		f.Mark = "yes"
+	}
+	return f
+}
+
 func (ui *ui) crumbFilter() string {
-	filter := strings.TrimSpace(ui.filter.GetText())
-	if ui.scope == "" {
-		if filter == "" {
-			return "all"
-		}
-		return filter
+	var parts []string
+	if ui.scope != "" {
+		parts = append(parts, shortPath(ui.scope))
 	}
-	place := shortPath(ui.scope)
-	if filter == "" {
-		return place
+	if ui.within.agent != "" {
+		parts = append(parts, model.HarnessName(ui.within.agent))
 	}
-	return place + "  " + filter
+	if ui.within.dir != "" {
+		parts = append(parts, shortPath(ui.within.dir))
+	}
+	if ui.within.branch != "" {
+		parts = append(parts, ui.within.branch)
+	}
+	if ui.within.model != "" {
+		parts = append(parts, ui.within.model)
+	}
+	if filter := strings.TrimSpace(ui.filter.GetText()); filter != "" {
+		parts = append(parts, filter)
+	}
+	if len(parts) == 0 {
+		return "all"
+	}
+	return strings.Join(parts, "  ")
 }
 
 func (ui *ui) paintInfo() {
@@ -728,30 +766,36 @@ func (ui *ui) paintInfo() {
 		fmt.Fprintf(&b, "[red]%s[-]\n", markup(ui.warnings[0]))
 		lines = 2
 	}
-	b.WriteString("[gray]agent: dir: branch: model: date:<7d sort:recent   6 :bookmarks[-]")
+	b.WriteString("[gray]harness: dir: branch: model: date:<7d sort:recent   6 :bookmarks[-]")
 	ui.info.SetText(b.String())
 	if ui.layout != nil {
 		ui.layout.ResizeItem(ui.info, lines, 0)
 	}
 }
 
-// escapeView returns to the group the current list was opened from.
-// Describe closes first and keeps the filter. A sessions list opened on its
-// own only clears the filter.
+// escapeView closes describe first. On a session list, a search clears before
+// the selected harness, directory, branch, or model. The next Esc returns to
+// that group. A group view only clears the filter.
 func (ui *ui) escapeView() {
 	if ui.describing() {
 		ui.closeDescribe()
 		return
 	}
+	if ui.onSessions() && strings.TrimSpace(ui.filter.GetText()) != "" {
+		ui.filter.SetText("")
+		return
+	}
 	if ui.drilled != "" {
 		back := ui.drilled
 		ui.drilled = ""
+		ui.within = listWithin{}
 		ui.view = back
-		if ui.filter.GetText() == "" {
-			ui.reload()
-			return
-		}
-		ui.filter.SetText("")
+		ui.reload()
+		return
+	}
+	if !ui.within.empty() {
+		ui.within = listWithin{}
+		ui.reload()
 		return
 	}
 	ui.clearFilter()
@@ -951,7 +995,7 @@ func (ui *ui) showStats() {
 	var b strings.Builder
 	fmt.Fprintf(&b, "%d sessions, %d messages\n\n", stats.Sessions, stats.Messages)
 	for _, a := range stats.Agents {
-		fmt.Fprintf(&b, "%s %-10s %5d sessions   %6d messages\n", ui.mark(a.Agent), a.Agent, a.Sessions, a.Messages)
+		fmt.Fprintf(&b, "%s %-13s %5d sessions   %6d messages\n", ui.mark(a.Agent), model.HarnessName(a.Agent), a.Sessions, a.Messages)
 	}
 	if len(ui.warnings) > 0 {
 		b.WriteString("\n")
@@ -981,7 +1025,10 @@ func (ui *ui) showSessionStats() {
 }
 
 func (ui *ui) cycleAgent() {
-	cur := query.Parse(ui.filter.GetText()).Agent
+	cur := ui.within.agent
+	if cur == "" {
+		cur = query.Parse(ui.filter.GetText()).Agent
+	}
 	next := ""
 	if cur == "" {
 		if len(ui.agents) > 0 {
@@ -997,7 +1044,13 @@ func (ui *ui) cycleAgent() {
 			}
 		}
 	}
-	ui.filter.SetText(setToken(ui.filter.GetText(), "agent", next))
+	ui.within.agent = next
+	text := setToken(ui.filter.GetText(), "harness", "")
+	if text == ui.filter.GetText() {
+		ui.reload()
+		return
+	}
+	ui.filter.SetText(text)
 }
 
 func (ui *ui) cycleSort() {
@@ -1017,6 +1070,10 @@ func (ui *ui) cycleSort() {
 }
 
 func (ui *ui) promptDir() {
+	if ui.within.dir != "" {
+		ui.app.SetFocus(ui.filter)
+		return
+	}
 	text := ui.filter.GetText()
 	if !strings.Contains(text, "dir:") && !strings.Contains(text, "cwd:") {
 		if text != "" && !strings.HasSuffix(text, " ") {

@@ -7,8 +7,8 @@ ai9s:
   refreshRate: 30
   # When true, ctrl-d does not delete. d still opens describe.
   readOnly: false
-  # sessions, agents, directories, branches, models, or bookmarks.
-  # providers is the previous name for agents.
+  # sessions, harnesses, directories, branches, models, or bookmarks.
+  # agents and providers are previous names for harnesses.
   defaultView: sessions
   # When true, ctrl-c does not quit.
   noExitOnCtrlC: false
@@ -72,10 +72,11 @@ ai9s:
 const defaultPluginsYAML = `# Plugins run a program on the machine. They do not get a shell.
 # List them here, or put one plugin in each file under plugins/.
 # Reserved keys are ignored: q / : d f y s n u ? a p o j k h l g G 1-6, enter, tab, esc, ctrl-d.
-# A selected session provides $ID $NATIVE_ID $AGENT $CWD $TITLE $BRANCH $MODEL.
+# A selected session provides $ID $NATIVE_ID $AGENT $HARNESS $CWD $TITLE $BRANCH $MODEL.
+# $AGENT is the harness id. $HARNESS is the name shown in the list.
 # $FILTER is the filter line. $NAME is the row name.
-# scopes: sessions, bookmarks, agents, directories, branches, models, or all.
-# providers is the previous name for agents.
+# scopes: sessions, bookmarks, harnesses, directories, branches, models, or all.
+# agents and providers are previous names for harnesses.
 # background: true starts the program without leaving the UI, and discards its output.
 # Examples live in the ai9s repo under examples/plugins. Copy a script and its
 # yaml file into this directory to turn one on. A bare command name is looked

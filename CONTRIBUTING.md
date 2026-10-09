@@ -14,7 +14,7 @@ make build
 gofmt -w .
 ```
 
-GitHub Actions runs the required checks on Ubuntu. One job uses Go 1.25 and one uses current stable Go. Each runs `gofmt`, `go test -count=1 -timeout 180s ./...`, and the Python tests under `scripts/`. A separate job runs `govulncheck` with Go 1.26, another scans tracked files for token-shaped strings and a machine-specific home path, and another runs `golangci-lint`. macOS and Windows run `go test` as well. Those extra jobs are not required status checks, so a rename does not change branch protection. `cmd/integration_test.go` builds the real binary and runs `index`, `search`, `show`, `resume --print`, and `delete` against temporary fixtures. The fixtures override every agent home, so the test does not read your sessions, and Jules is not contacted. That test skips Windows because the command stubs are POSIX shell scripts. The example plugin scripts skip Windows for the same reason.
+GitHub Actions runs the required checks on Ubuntu. One job uses Go 1.25 and one uses current stable Go. Each runs `gofmt`, `go test -count=1 -timeout 180s ./...`, and the Python tests under `scripts/`. A separate job runs `govulncheck` with Go 1.26.9, another scans tracked files for token-shaped strings and a machine-specific home path, and another runs `golangci-lint`. macOS and Windows run `go test` as well. Those extra jobs are not required status checks, so a rename does not change branch protection. `cmd/integration_test.go` builds the real binary and runs `index`, `search`, `show`, `resume --print`, and `delete` against temporary fixtures. The fixtures override every agent home, so the test does not read your sessions, and Jules is not contacted. That test skips Windows because the command stubs are POSIX shell scripts. The example plugin scripts skip Windows for the same reason.
 
 `make install` copies the binary to `~/.local/bin`. Override that with `make install PREFIX=/usr/local`.
 
@@ -32,14 +32,14 @@ GitHub Actions runs the required checks on Ubuntu. One job uses Go 1.25 and one 
 | `site` | Documentation website, published by GitHub Pages |
 | `examples/plugins` | Opt-in plugins. Copy a script and its yaml into the config `plugins/` directory |
 
-## Adding an agent
+## Adding a harness
 
 1. Add a scanner that returns `discover.Batch`, and register it in `Scanners()`.
 2. Point test homes at temporary directories in `internal/discover/scan_test.go`, `internal/index/index_test.go`, and `cmd/integration_test.go`. A missing override must return no sessions and must not scan a developer's real store or call the network.
 3. Teach `act.Plan` the resume command. Add a yolo flag only when that CLI documents one. Do not guess a flag.
 4. Enable delete only when the removal is one transcript file, one directory that stays inside that agent's session root, a careful rewrite of a single history file, or one CLI command. Otherwise set `CanDelete` false and give the reason.
 5. Add a unique two-letter mark in `tui.Icon`. Letters only, two columns wide. An unknown agent stays `??`.
-6. Update the agents table in `README.md` and `site/agents.html`.
+6. Update the harnesses table in `README.md` and `site/agents.html`.
 
 A session's `SourcePath` has to be a path the scanner also returns in its file list. The index drops sessions whose source path was not part of that scan.
 

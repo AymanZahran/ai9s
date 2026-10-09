@@ -186,7 +186,7 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 			item("⌘←/⌘→", "page"),
 			item("wheel", "scroll"),
 			item("esc", "back"),
-			item("a", "agent"),
+			item("a", "harness"),
 			item("p", "directory"),
 			item("o", "sort"),
 			item("f", "bookmark"),

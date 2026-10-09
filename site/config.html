@@ -12,12 +12,12 @@
 <body>
   <header class="site-header">
     <a class="site-logo" href="index.html">ai9s</a>
-    <p class="cite">AI session CLI to resume your agents in style!</p>
+    <p class="cite">AI session CLI to resume your harnesses in style!</p>
     <nav class="site-nav" aria-label="Documentation">
       <a href="install.html">Install</a>
       <a href="commands.html">Commands</a>
       <a href="keys.html">Keys</a>
-      <a href="agents.html">Agents</a>
+      <a href="agents.html">Harnesses</a>
       <a href="filters.html">Filters</a>
       <a href="config.html" aria-current="page">Config</a>
       <a href="contributing.html">Contributing</a>
@@ -49,7 +49,7 @@
         <tbody>
           <tr><td><code>refreshRate</code></td><td>Seconds between reindexes. <code>0</code> uses 30. The minimum is 5. The list always refreshes on that interval.</td></tr>
           <tr><td><code>readOnly</code></td><td>When true, Ctrl-D does not delete. <code>d</code> still opens describe.</td></tr>
-          <tr><td><code>defaultView</code></td><td><code>sessions</code>, <code>agents</code>, <code>directories</code>, <code>branches</code>, <code>models</code>, or <code>bookmarks</code>. <code>providers</code> is the previous name for <code>agents</code>.</td></tr>
+          <tr><td><code>defaultView</code></td><td><code>sessions</code>, <code>harnesses</code>, <code>directories</code>, <code>branches</code>, <code>models</code>, or <code>bookmarks</code>. <code>agents</code> and <code>providers</code> are previous names for <code>harnesses</code>.</td></tr>
           <tr><td><code>noExitOnCtrlC</code></td><td>When true, Ctrl-C does not quit.</td></tr>
           <tr><td><code>ui.enableMouse</code></td><td>The mouse is on unless this is false.</td></tr>
           <tr><td><code>ui.headless</code></td><td>Hide the menu, the crumbs, and the logo.</td></tr>
@@ -62,7 +62,7 @@
     </div>
 
     <h2>Skins</h2>
-    <p>A skin file uses the same shape as the stock skin: body, frame, and table colors. Values are tcell names such as <code>white</code>, or <code>#RRGGBB</code>. The name <code>default</code> keeps the terminal color. <code>agents</code> maps an agent id to a color and overrides the built-in mark.</p>
+    <p>A skin file uses the same shape as the stock skin: body, frame, and table colors. Values are tcell names such as <code>white</code>, or <code>#RRGGBB</code>. The name <code>default</code> keeps the terminal color. <code>agents</code> maps a harness id to a color and overrides the built-in mark.</p>
     <p>With <code>ui.skin</code> empty, the screen is true black (<code>#000000</code>) with the k9s accent colors: blue text, an orange logo, a blue border, fuchsia view keys, and an aqua selection bar. The crumbs line stays black. The named <code>stock</code> skin is the older white-on-black palette. A skin file replaces any field it sets, and the rest stay on the built-in palette. The shortcut bar is a grid: view keys on the first row, actions beneath them, and a further row for each group of plugin keys you have installed.</p>
 
     <h2>Plugins</h2>
@@ -75,7 +75,7 @@
     command: code
     args:
       - $CWD</code></pre>
-    <p>The selected row provides <code>$ID</code>, <code>$NATIVE_ID</code>, <code>$AGENT</code>, <code>$CWD</code>, <code>$TITLE</code>, <code>$BRANCH</code>, <code>$MODEL</code>, <code>$FILTER</code>, and <code>$NAME</code>. Scopes are <code>sessions</code>, <code>bookmarks</code>, <code>agents</code>, <code>directories</code>, <code>branches</code>, <code>models</code>, or <code>all</code>. <code>providers</code> is the previous name for <code>agents</code>. A plugin scoped to <code>sessions</code> also runs on bookmarks. An empty scope list means every view. A command with no slash is looked up on <code>PATH</code>, then in the config <code>plugins/</code> directory, so a script can sit beside its yaml file.</p>
+    <p>The selected row provides <code>$ID</code>, <code>$NATIVE_ID</code>, <code>$AGENT</code>, <code>$HARNESS</code>, <code>$CWD</code>, <code>$TITLE</code>, <code>$BRANCH</code>, <code>$MODEL</code>, <code>$FILTER</code>, and <code>$NAME</code>. <code>$AGENT</code> is the harness id. <code>$HARNESS</code> is the program name. Scopes are <code>sessions</code>, <code>bookmarks</code>, <code>harnesses</code>, <code>directories</code>, <code>branches</code>, <code>models</code>, or <code>all</code>. <code>agents</code> and <code>providers</code> are previous names for <code>harnesses</code>. A plugin scoped to <code>sessions</code> also runs on bookmarks. An empty scope list means every view. A command with no slash is looked up on <code>PATH</code>, then in the config <code>plugins/</code> directory, so a script can sit beside its yaml file.</p>
     <h2>Example plugins</h2>
     <p>The repo ships four plugins under <code>examples/plugins</code>. They stay off until you copy the script and the yaml file into <code>plugins/</code> and restart. The new keys are drawn on the menu. Each environment value is one program name, not a shell line.</p>
     <figure class="shot">

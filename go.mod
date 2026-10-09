@@ -1,6 +1,6 @@
 module github.com/AymanZahran/ai9s
 
-go 1.26.0
+go 1.26.9
 
 require (
 	github.com/gdamore/tcell/v2 v2.13.10

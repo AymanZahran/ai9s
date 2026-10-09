@@ -69,7 +69,7 @@ func TestIdleProvidersWarnToInstallOrLogIn(t *testing.T) {
 	ui.table.Select(row+1, 0)
 	ui.showRow(row + 1)
 	preview := ui.preview.GetText(true)
-	if !strings.Contains(preview, "minimax (mcode) is not on PATH") || !strings.Contains(preview, "log in") {
+	if !strings.Contains(preview, "MiniMax (mcode) is not on PATH") || !strings.Contains(preview, "log in") {
 		t.Fatalf("preview %q", preview)
 	}
 	send(ui.table, tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
@@ -88,7 +88,7 @@ func TestIdleProvidersWarnToInstallOrLogIn(t *testing.T) {
 	}
 	ui.showRow(groupIndex(t, ui.groups, "mistral") + 1)
 	preview = ui.preview.GetText(true)
-	if !strings.Contains(preview, "mistral (vibe) is installed") || !strings.Contains(preview, "Log in") {
+	if !strings.Contains(preview, "Mistral Vibe (vibe) is installed") || !strings.Contains(preview, "Log in") {
 		t.Fatalf("installed preview %q", preview)
 	}
 
@@ -103,6 +103,16 @@ func TestIdleProvidersWarnToInstallOrLogIn(t *testing.T) {
 	ui.reload()
 	if len(ui.groups) != 1 || ui.groups[0].key != "kimi" || ui.groups[0].sessions != 0 {
 		t.Fatalf("agent filter %+v", ui.groups)
+	}
+	ui.filter.SetText("harness:vibe")
+	ui.reload()
+	if len(ui.groups) != 1 || ui.groups[0].key != "mistral" || ui.groups[0].sessions != 0 {
+		t.Fatalf("display name filter %+v", ui.groups)
+	}
+	ui.filter.SetText("harness:build")
+	ui.reload()
+	if len(ui.groups) != 1 || ui.groups[0].key != "grok" || ui.groups[0].sessions != 0 {
+		t.Fatalf("build filter %+v", ui.groups)
 	}
 }
 
@@ -127,11 +137,11 @@ func groupIndex(t *testing.T, groups []groupRow, key string) int {
 
 func TestProvidersCommandOpensAgents(t *testing.T) {
 	spec, ok := viewByName("providers")
-	if !ok || spec.name != viewAgents || spec.title != " agents " {
+	if !ok || spec.name != viewAgents || spec.title != " harnesses " {
 		t.Fatalf("alias %+v %v", spec, ok)
 	}
 	hints := filterHints("prov", nil)
-	if len(hints) != 1 || hints[0].insert != "agents" {
+	if len(hints) != 1 || hints[0].insert != "harnesses" {
 		t.Fatalf("hints %+v", hints)
 	}
 }
