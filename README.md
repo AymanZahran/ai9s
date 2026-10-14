@@ -7,6 +7,8 @@
 <p align="center">
   <a href="https://ai9scli.io/">Website</a>
   ·
+  <a href="https://github.com/AymanZahran/herdr-ai9s">Herdr</a>
+  ·
   <a href="https://github.com/AymanZahran/ai9s/actions/workflows/ci.yml">CI</a>
   ·
   <a href="LICENSE">MIT</a>
@@ -19,6 +21,16 @@ ai9s is a keyboard-first finder for local AI coding sessions. It indexes the ses
 The interface follows the k9s screen: a menu of hotkeys, a crumbs bar (`ai9s › Sessions › all`), and one framed table. Started in a project directory, the list shows sessions whose working directory is that directory or a subdirectory. Started in your home directory, the list shows every session. The HARNESS column is the program name. NAME is the last column. It is the session title, or the session id when the session has no title. `n` renames that name. The new name stays through a reindex. The list has no separate title column. Every column except NAME is cut to a fixed width. A path keeps its ending. `u` shows usage for the selected session. `s` shows counts for every session. `1` through `6` switch the table between sessions, harnesses, directories, branches, models, and bookmarks. `2` and `:harnesses` list harnesses. `:agents` and `:providers` still open that view. Enter on a harness keeps that harness selected while `/` searches inside it. `/` edits the search and `:` opens a command line for those views and for filter tokens. Esc clears the search first. Inside a harness, a second Esc returns to the harness list. `?` opens a scrollable manual. `d` replaces the list with a describe view of the selected row; Esc returns to the list. Ctrl-D deletes. The CTX column, describe, and `ai9s show` include context size and token counts when the agent recorded them. COST is the recorded USD amount, or a dash. `f` bookmarks the selected session. `6` or `:bookmarks` lists those sessions. The list reindexes every 30 seconds.
 
 Colors, the mouse, icons, read-only mode, the starting view, and plugins come from `~/.config/ai9s/config.yaml` (or `$AI9S_CONFIG_DIR`, or `$XDG_CONFIG_HOME/ai9s`). `ai9s info` prints the paths.
+
+## Herdr
+
+[herdr-ai9s](https://github.com/AymanZahran/herdr-ai9s) opens this finder in a [Herdr](https://herdr.dev) sidebar. One prefix key shows it on the right of the current tab. Enter on a session or a harness starts that program in a new tab of the same workspace, and the sidebar stays where it was. The plugin needs ai9s 1.0.8 or newer, because that release adds `AI9S_HERDR_OPEN` and `ai9s resume --json`.
+
+```sh
+herdr plugin install AymanZahran/herdr-ai9s
+```
+
+The plugin does not bind a key. `prefix+i` is the suggested binding in your Herdr config. The plugin README links back to this repository and to [ai9scli.io](https://ai9scli.io/).
 
 ## Interface
 
