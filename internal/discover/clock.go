@@ -2,6 +2,7 @@ package discover
 
 import (
 	"database/sql"
+	"encoding/json"
 	"strconv"
 	"strings"
 	"time"
@@ -55,6 +56,38 @@ func parseTime(s string) time.Time {
 		}
 	}
 	return time.Time{}
+}
+
+func later(a, b time.Time) time.Time {
+	if b.After(a) {
+		return b
+	}
+	return a
+}
+
+func whenOf(v any) time.Time {
+	switch t := v.(type) {
+	case nil:
+		return time.Time{}
+	case string:
+		return parseTime(t)
+	case float64:
+		return unixish(t)
+	case float32:
+		return unixish(float64(t))
+	case int:
+		return unixish(float64(t))
+	case int64:
+		return unixish(float64(t))
+	case json.Number:
+		f, err := t.Float64()
+		if err != nil {
+			return time.Time{}
+		}
+		return unixish(f)
+	default:
+		return time.Time{}
+	}
 }
 
 func num(v any) int {

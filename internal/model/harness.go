@@ -23,6 +23,16 @@ var harnessNames = [][2]string{
 	{"minimax", "MiniMax"},
 	{"qwen", "Qwen"},
 	{"mistral", "Mistral Vibe"},
+	{"pi", "Pi"},
+	{"omp", "OMP"},
+	{"droid", "Droid"},
+	{"devin", "Devin CLI"},
+	{"kilo", "Kilo Code"},
+	{"qodercli", "Qoder CLI"},
+	{"letta", "Letta Code"},
+	{"mastracode", "MastraCode"},
+	{"amp", "Amp"},
+	{"maki", "Maki"},
 }
 
 // HarnessNames returns harness id and the name shown in the list, in roster order.

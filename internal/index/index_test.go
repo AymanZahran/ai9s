@@ -38,6 +38,15 @@ func TestRebuildClaude(t *testing.T) {
 	t.Setenv("VIBE_HOME", filepath.Join(root, "vibe"))
 	t.Setenv("MINIMAX_DATA_DIR", filepath.Join(root, "minimax"))
 	t.Setenv("MAVIS_DATA_DIR", filepath.Join(root, "minimax-mavis"))
+	t.Setenv("PI_CODING_AGENT_SESSION_DIR", filepath.Join(root, "pi-sessions"))
+	t.Setenv("PI_CODING_AGENT_DIR", filepath.Join(root, "pi-agent"))
+	t.Setenv("FACTORY_HOME", filepath.Join(root, "factory"))
+	t.Setenv("DEVIN_SESSIONS_DB", filepath.Join(root, "missing-devin.db"))
+	t.Setenv("KILO_DB", filepath.Join(root, "missing-kilo.db"))
+	t.Setenv("QODER_CONFIG_DIR", filepath.Join(root, "qoder"))
+	t.Setenv("LETTA_HOME", filepath.Join(root, "letta"))
+	t.Setenv("MASTRA_DB_PATH", filepath.Join(root, "missing-mastra.db"))
+	t.Setenv("MAKI_STATE_DIR", filepath.Join(root, "maki"))
 
 	proj := filepath.Join(root, "claude", "projects", "demo")
 	if err := os.MkdirAll(proj, 0o755); err != nil {

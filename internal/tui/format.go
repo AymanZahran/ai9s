@@ -35,6 +35,16 @@ func Icon(agent string) string {
 		"minimax":     "Mm",
 		"qwen":        "Qw",
 		"mistral":     "Mi",
+		"pi":          "Pi",
+		"omp":         "Om",
+		"droid":       "Dr",
+		"devin":       "Dv",
+		"kilo":        "Ko",
+		"qodercli":    "Qc",
+		"letta":       "Lt",
+		"mastracode":  "Mc",
+		"amp":         "Ap",
+		"maki":        "Mk",
 	}[agent]
 	if icon == "" {
 		return "??"

@@ -2,6 +2,7 @@ package discover
 
 import (
 	"testing"
+	"unicode/utf8"
 
 	"github.com/AymanZahran/ai9s/internal/model"
 )
@@ -18,6 +19,9 @@ func TestScannerRosterIsTheHarnessSet(t *testing.T) {
 		}
 		if model.HarnessName(sc.Agent) == sc.Agent {
 			t.Fatalf("missing name %s", sc.Agent)
+		}
+		if n := utf8.RuneCountInString(want[i][1]); n > 12 {
+			t.Fatalf("display name wider than 12: %s (%d)", want[i][1], n)
 		}
 		if sc.Scan == nil {
 			t.Fatalf("nil scan %s", sc.Agent)

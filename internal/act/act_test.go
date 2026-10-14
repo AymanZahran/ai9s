@@ -2,18 +2,30 @@ package act
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/AymanZahran/ai9s/internal/model"
 	"github.com/AymanZahran/ai9s/internal/sqliteuri"
 )
+
+func TestCommandJSON(t *testing.T) {
+	raw, err := json.Marshal(Command{Name: "claude", Dir: "/work/app"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(raw) != `{"name":"claude","args":[],"dir":"/work/app"}` {
+		t.Fatalf("json %s", raw)
+	}
+}
 
 func TestRunEcho(t *testing.T) {
 	bin, err := exec.LookPath("echo")
@@ -102,6 +114,20 @@ func TestPlanMoreAgents(t *testing.T) {
 		{model.Session{Agent: "qwen", NativeID: "0123456789abcdef0123456789abcdef", CWD: dir}, true, []string{"/usr/bin/qwen", "--yolo --resume 0123456789abcdef0123456789abcdef"}, nil},
 		{model.Session{Agent: "mistral", NativeID: "session_20260302_150405_abcd", CWD: dir}, true, []string{"/usr/bin/vibe", "--yolo --resume session_20260302_150405_abcd"}, nil},
 		{model.Session{Agent: "antigravity", NativeID: "c1", CWD: dir}, true, []string{"/usr/bin/agy", "--dangerously-skip-permissions", "--conversation c1"}, []string{"--resume"}},
+		{model.Session{Agent: "pi", NativeID: "pi-1", CWD: dir}, true, []string{"/usr/bin/pi", "--session pi-1"}, []string{"--resume", "--approve", "yolo"}},
+		{model.Session{Agent: "omp", NativeID: "omp-1", CWD: dir}, true, []string{"/usr/bin/omp", "--auto-approve --resume=omp-1"}, nil},
+		{model.Session{Agent: "omp", NativeID: "omp-1", CWD: dir}, false, []string{"--resume=omp-1"}, []string{"--auto-approve"}},
+		{model.Session{Agent: "droid", NativeID: "droid-1", CWD: dir}, true, []string{"/usr/bin/droid", "resume droid-1"}, []string{"--auto"}},
+		{model.Session{Agent: "devin", NativeID: "devin-1", CWD: dir}, true, []string{"/usr/bin/devin", "--permission-mode dangerous --resume devin-1"}, nil},
+		{model.Session{Agent: "devin", NativeID: "devin-1", CWD: dir}, false, []string{"--resume devin-1"}, []string{"dangerous"}},
+		{model.Session{Agent: "kilo", NativeID: "kilo-1", CWD: dir}, true, []string{"/usr/bin/kilo", "--auto --session kilo-1"}, nil},
+		{model.Session{Agent: "kilo", NativeID: "kilo-1", CWD: dir}, false, []string{"--session kilo-1"}, []string{"--auto"}},
+		{model.Session{Agent: "qodercli", NativeID: "q1", CWD: dir}, true, []string{"/usr/bin/qodercli", "--dangerously-skip-permissions --resume q1"}, nil},
+		{model.Session{Agent: "letta", NativeID: "agent-1:room", CWD: dir}, true, []string{"/usr/bin/letta", "--agent agent-1"}, []string{"agent-1:room", "yolo"}},
+		{model.Session{Agent: "mastracode", NativeID: "thread-1", CWD: dir}, true, []string{"/usr/bin/mastracode", "--thread thread-1"}, []string{"--continue", "yolo"}},
+		{model.Session{Agent: "amp", NativeID: "T-1", CWD: dir}, true, []string{"/usr/bin/amp", "threads continue T-1"}, []string{"yolo"}},
+		{model.Session{Agent: "maki", NativeID: "maki-1", CWD: dir}, true, []string{"/usr/bin/maki", "--yolo --resume maki-1"}, nil},
+		{model.Session{Agent: "maki", NativeID: "maki-1", CWD: dir}, false, []string{"--resume maki-1"}, []string{"--yolo"}},
 	}
 	for _, tc := range checks {
 		cmd, err := Plan(tc.sess, tc.yolo)
@@ -729,5 +755,87 @@ func TestTrimOutput(t *testing.T) {
 	got := trimOutput([]byte("  " + strings.Repeat("x", 500) + "\n"))
 	if len([]rune(got)) != 401 || !strings.HasSuffix(got, "…") {
 		t.Fatalf("trimmed %d %q", len([]rune(got)), got[:20])
+	}
+}
+
+func TestDeleteNewTranscripts(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("PI_CODING_AGENT_SESSION_DIR", filepath.Join(root, "pi"))
+	t.Setenv("LETTA_HOME", filepath.Join(root, "letta"))
+	piPath := filepath.Join(root, "pi", "proj", "pi-1.jsonl")
+	lettaPath := filepath.Join(root, "letta", "transcripts", "agent-1", "default", "transcript.jsonl")
+	for _, path := range []string{piPath, lettaPath} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte("{}\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := Delete(model.Session{Agent: "pi", NativeID: "pi-1", CanDelete: true, DeleteMode: "file", SourcePath: piPath}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(piPath); !os.IsNotExist(err) {
+		t.Fatal("pi transcript still exists")
+	}
+	if err := Delete(model.Session{Agent: "letta", NativeID: "agent-1", CanDelete: true, DeleteMode: "file", SourcePath: lettaPath}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(lettaPath); !os.IsNotExist(err) {
+		t.Fatal("letta transcript still exists")
+	}
+	outside := filepath.Join(t.TempDir(), "notes.jsonl")
+	if err := os.WriteFile(outside, []byte("{}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Delete(model.Session{Agent: "pi", NativeID: "pi-1", CanDelete: true, DeleteMode: "file", SourcePath: outside}); err == nil {
+		t.Fatal("deleted a file outside the pi session directory")
+	}
+}
+
+func TestDeleteExecNewAgents(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("posix shell")
+	}
+	dir := t.TempDir()
+	logPath := filepath.Join(dir, "args")
+	bin := filepath.Join(dir, "tool")
+	body := "#!/bin/sh\nprintf '%s\\n' \"$0 $*\" >> " + strconv.Quote(logPath) + "\nexit 0\n"
+	if err := os.WriteFile(bin, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	orig := LookPath
+	t.Cleanup(func() { LookPath = orig })
+	LookPath = func(string) (string, error) { return bin, nil }
+	checks := []struct {
+		agent string
+		want  string
+	}{
+		{"devin", "rm ses-1 --force"},
+		{"kilo", "session delete ses-1"},
+		{"maki", "session delete ses-1 --force"},
+	}
+	for _, check := range checks {
+		if err := os.WriteFile(logPath, nil, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		err := Delete(model.Session{Agent: check.agent, NativeID: "ses-1", CanDelete: true, DeleteMode: "exec"})
+		if err != nil {
+			t.Fatalf("%s: %v", check.agent, err)
+		}
+		got, err := os.ReadFile(logPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(got), check.want) {
+			t.Fatalf("%s log %q", check.agent, got)
+		}
+	}
+	err := Delete(model.Session{
+		Agent: "mastracode", NativeID: "thread-1", CanDelete: false,
+		DeleteReason: "MastraCode does not document a command that deletes one thread",
+	})
+	if err == nil || err.Error() != "MastraCode does not document a command that deletes one thread" {
+		t.Fatalf("mastra %v", err)
 	}
 }
