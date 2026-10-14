@@ -142,12 +142,19 @@ func parseOpenCodeModel(raw string) string {
 		var m struct {
 			ProviderID string `json:"providerID"`
 			ModelID    string `json:"modelID"`
+			ID         string `json:"id"`
 		}
-		if json.Unmarshal([]byte(raw), &m) == nil && m.ModelID != "" {
-			if m.ProviderID != "" {
-				return m.ProviderID + "/" + m.ModelID
+		if json.Unmarshal([]byte(raw), &m) == nil {
+			id := m.ModelID
+			if id == "" {
+				id = m.ID
 			}
-			return m.ModelID
+			if id != "" {
+				if m.ProviderID != "" {
+					return m.ProviderID + "/" + id
+				}
+				return id
+			}
 		}
 	}
 	return raw
@@ -191,6 +198,7 @@ func openCodeSnippets(db *sql.DB, sessionID string) (int, []model.Snippet, strin
 			Model struct {
 				ProviderID string `json:"providerID"`
 				ModelID    string `json:"modelID"`
+				ID         string `json:"id"`
 			} `json:"model"`
 		}
 		_ = json.Unmarshal([]byte(mdata.String), &meta)
@@ -201,7 +209,11 @@ func openCodeSnippets(db *sql.DB, sessionID string) (int, []model.Snippet, strin
 			cur = mid.String
 			curRole = meta.Role
 			if modelName == "" {
-				modelName = joinModel(meta.Model.ProviderID, meta.Model.ModelID)
+				id := meta.Model.ModelID
+				if id == "" {
+					id = meta.Model.ID
+				}
+				modelName = joinModel(meta.Model.ProviderID, id)
 			}
 		}
 		if pdata.Valid {

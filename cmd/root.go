@@ -70,7 +70,7 @@ Usage:
   ai9s stats [--json]          counts by harness
   ai9s search [query] [--json] [--limit N]
   ai9s show <id> [--json]
-  ai9s resume <id> [--yolo] [--print]
+  ai9s resume <id> [--yolo] [--print] [--json]
   ai9s delete <id> [--yes]
   ai9s info                    config directory, index path, skin, plugins
 
@@ -315,6 +315,7 @@ func cmdResume(args []string) int {
 	fs := flag.NewFlagSet("resume", flag.ContinueOnError)
 	yolo := fs.Bool("yolo", false, "pass the agent's auto-approve flag when one exists")
 	printOnly := fs.Bool("print", false, "print the command instead of running it")
+	asJSON := fs.Bool("json", false, "print the command as JSON instead of running it")
 	rest, err := parseArgs(fs, args)
 	if err != nil {
 		return 2
@@ -338,6 +339,15 @@ func cmdResume(args []string) int {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
+	}
+	if *asJSON {
+		raw, err := json.Marshal(cmd)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		fmt.Println(string(raw))
+		return 0
 	}
 	if *printOnly {
 		fmt.Println(cmd.String())

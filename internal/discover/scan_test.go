@@ -37,6 +37,15 @@ func isolate(t *testing.T) string {
 	t.Setenv("VIBE_HOME", filepath.Join(root, "vibe"))
 	t.Setenv("MINIMAX_DATA_DIR", filepath.Join(root, "minimax"))
 	t.Setenv("MAVIS_DATA_DIR", filepath.Join(root, "minimax-mavis"))
+	t.Setenv("PI_CODING_AGENT_SESSION_DIR", filepath.Join(root, "pi-sessions"))
+	t.Setenv("PI_CODING_AGENT_DIR", filepath.Join(root, "pi-agent"))
+	t.Setenv("FACTORY_HOME", filepath.Join(root, "factory"))
+	t.Setenv("DEVIN_SESSIONS_DB", filepath.Join(root, "missing-devin.db"))
+	t.Setenv("KILO_DB", filepath.Join(root, "missing-kilo.db"))
+	t.Setenv("QODER_CONFIG_DIR", filepath.Join(root, "qoder"))
+	t.Setenv("LETTA_HOME", filepath.Join(root, "letta"))
+	t.Setenv("MASTRA_DB_PATH", filepath.Join(root, "missing-mastra.db"))
+	t.Setenv("MAKI_STATE_DIR", filepath.Join(root, "maki"))
 	return root
 }
 
@@ -63,20 +72,24 @@ func TestScanAgyAndGemini(t *testing.T) {
 		t.Fatal(err)
 	}
 	var agyS, gemS int
+	quiet := map[string]bool{
+		"pi": true, "omp": true, "droid": true, "devin": true, "kilo": true,
+		"qodercli": true, "letta": true, "mastracode": true, "amp": true, "maki": true,
+	}
 	for _, b := range Collect(nil) {
+		if b.Err != nil {
+			t.Fatalf("%s: %v", b.Agent, b.Err)
+		}
+		if quiet[b.Agent] && len(b.Sessions) != 0 {
+			t.Fatalf("%s leaked %d sessions", b.Agent, len(b.Sessions))
+		}
 		switch b.Agent {
 		case "antigravity":
-			if b.Err != nil {
-				t.Fatal(b.Err)
-			}
 			agyS = len(b.Sessions)
 			if agyS != 1 || b.Sessions[0].Agent != "antigravity" || b.Sessions[0].ID != "antigravity:c1" || b.Sessions[0].NativeID != "c1" || b.Sessions[0].CWD != "/work/app" || !b.Sessions[0].CanDelete {
 				t.Fatalf("antigravity %+v", b.Sessions)
 			}
 		case "gemini":
-			if b.Err != nil {
-				t.Fatal(b.Err)
-			}
 			gemS = len(b.Sessions)
 			if gemS != 1 || b.Sessions[0].CWD != "/work/demo" || !b.Sessions[0].CanDelete || b.Sessions[0].DeleteMode != "gemini" || b.Sessions[0].Title != "ship it" {
 				t.Fatalf("gemini %+v", b.Sessions)

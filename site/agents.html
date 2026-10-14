@@ -53,6 +53,16 @@
           <tr><td>MiniMax (<code>minimax</code>)</td><td><code>$MINIMAX_DATA_DIR/v2/sqlite/runtime-state.sqlite</code> (<code>local_runtime_sessions</code>), and <code>v2/sessions/.../messages.jsonl</code> when that database is absent</td><td><code>mcode --session &lt;id&gt;</code></td><td>that session row and its history directory</td><td><code>MINIMAX_DATA_DIR</code>, else <code>MAVIS_DATA_DIR</code></td></tr>
           <tr><td>Qwen (<code>qwen</code>)</td><td><code>$QWEN_RUNTIME_DIR/projects/&lt;sanitized-cwd&gt;/chats/&lt;id&gt;.jsonl</code> (also <code>chats/archive</code>; <code>$QWEN_HOME</code> when the runtime dir is unset)</td><td><code>qwen --resume &lt;id&gt;</code></td><td>that chat file</td><td><code>QWEN_RUNTIME_DIR</code>, else <code>QWEN_HOME</code></td></tr>
           <tr><td>Mistral Vibe (<code>mistral</code>)</td><td><code>$VIBE_HOME/logs/session/&lt;dir&gt;/</code> (<code>meta.json</code>, <code>messages.jsonl</code>)</td><td><code>vibe --resume &lt;id&gt;</code></td><td>that session directory</td><td><code>VIBE_HOME</code></td></tr>
+          <tr><td>Pi (<code>pi</code>)</td><td><code>$PI_CODING_AGENT_SESSION_DIR/**/*.jsonl</code>, or <code>~/.pi/agent/sessions</code> when that variable and <code>PI_CODING_AGENT_DIR</code> are unset</td><td><code>pi --session &lt;id&gt;</code></td><td>the transcript file</td><td><code>PI_CODING_AGENT_SESSION_DIR</code>, else <code>PI_CODING_AGENT_DIR</code></td></tr>
+          <tr><td>OMP (<code>omp</code>)</td><td>the same session directory as Pi, or <code>~/.omp/agent/sessions</code> when those variables are unset</td><td><code>omp --resume=&lt;id&gt;</code></td><td>the transcript file</td><td><code>PI_CODING_AGENT_SESSION_DIR</code>, else <code>PI_CODING_AGENT_DIR</code></td></tr>
+          <tr><td>Droid (<code>droid</code>)</td><td><code>$FACTORY_HOME/sessions/**/*.jsonl</code> and the sibling settings file</td><td><code>droid resume &lt;id&gt;</code></td><td>the transcript file</td><td><code>FACTORY_HOME</code></td></tr>
+          <tr><td>Devin CLI (<code>devin</code>)</td><td><code>$XDG_DATA_HOME/devin/cli/sessions.db</code></td><td><code>devin --resume &lt;id&gt;</code></td><td><code>devin rm &lt;id&gt; --force</code></td><td><code>DEVIN_SESSIONS_DB</code></td></tr>
+          <tr><td>Kilo Code (<code>kilo</code>)</td><td><code>$XDG_DATA_HOME/kilo/kilo.db</code></td><td><code>kilo --session &lt;id&gt;</code></td><td><code>kilo session delete &lt;id&gt;</code></td><td><code>KILO_DB</code></td></tr>
+          <tr><td>Qoder CLI (<code>qodercli</code>)</td><td><code>$QODER_CONFIG_DIR/projects/**/*.jsonl</code></td><td><code>qodercli --resume &lt;id&gt;</code></td><td>the transcript file</td><td><code>QODER_CONFIG_DIR</code></td></tr>
+          <tr><td>Letta Code (<code>letta</code>)</td><td><code>$LETTA_HOME/transcripts/&lt;agent&gt;/&lt;conversation&gt;/transcript.jsonl</code></td><td><code>letta --agent &lt;id&gt;</code></td><td>the transcript file</td><td><code>LETTA_HOME</code></td></tr>
+          <tr><td>MastraCode (<code>mastracode</code>)</td><td><code>mastra.db</code> (<code>mastra_threads</code>), at <code>MASTRA_DB_PATH</code> or the platform app-data directory</td><td><code>mastracode --thread &lt;id&gt;</code></td><td>not offered</td><td><code>MASTRA_DB_PATH</code></td></tr>
+          <tr><td>Amp (<code>amp</code>)</td><td>none. Threads stay on ampcode.com and ai9s does not call the network</td><td><code>amp threads continue &lt;id&gt;</code></td><td>not offered</td><td>none</td></tr>
+          <tr><td>Maki (<code>maki</code>)</td><td><code>$MAKI_STATE_DIR/sessions/&lt;id&gt;.jsonl</code>. Archive logs are skipped</td><td><code>maki --resume &lt;id&gt;</code></td><td><code>maki session delete &lt;id&gt; --force</code></td><td><code>MAKI_STATE_DIR</code></td></tr>
         </tbody>
       </table>
     </div>
@@ -70,8 +80,13 @@
       <li>Kiro: <code>--trust-all-tools</code> before the subcommand</li>
       <li>Qwen: <code>--yolo</code></li>
       <li>Mistral: <code>--yolo</code> (<code>--auto-approve</code> is the same flag)</li>
+      <li>OMP: <code>--auto-approve</code></li>
+      <li>Devin: <code>--permission-mode dangerous</code></li>
+      <li>Kilo: <code>--auto</code></li>
+      <li>Qoder: <code>--dangerously-skip-permissions</code></li>
+      <li>Maki: <code>--yolo</code></li>
     </ul>
-    <p>Codex, Gemini, OpenCode, OpenClaw, Jules, Goose, Aider, Kimi, and MiniMax resume without an extra approval flag.</p>
+    <p>Codex, Gemini, OpenCode, OpenClaw, Jules, Goose, Aider, Kimi, MiniMax, Pi, Droid, Letta, MastraCode, and Amp resume without an extra approval flag.</p>
 
     <h2>Read limits</h2>
     <ul>
@@ -84,6 +99,10 @@
       <li>MiniMax is read from <code>MINIMAX_DATA_DIR</code>, or from <code>MAVIS_DATA_DIR</code> when that is unset. The install prefix <code>~/.minimax-code</code> is not the data directory. Resume uses <code>mcode</code>.</li>
       <li>A <code>[session_logging] save_dir</code> in the Vibe <code>config.toml</code> replaces <code>logs/session</code> when that directory is safe. Resume uses <code>vibe</code>.</li>
       <li>Child sessions are skipped.</li>
+      <li>Pi and OMP both follow <code>PI_CODING_AGENT_SESSION_DIR</code>, then <code>PI_CODING_AGENT_DIR</code>. When those are unset, Pi reads <code>~/.pi/agent/sessions</code> and OMP reads <code>~/.omp/agent/sessions</code>.</li>
+      <li><code>FACTORY_HOME</code> (default <code>~/.factory</code>), <code>DEVIN_SESSIONS_DB</code>, <code>LETTA_HOME</code> (default <code>~/.letta</code>), and <code>MAKI_STATE_DIR</code> are ai9s overrides. Maki otherwise uses <code>~/.maki</code> when that directory exists, then <code>$XDG_STATE_HOME/maki</code> or <code>~/.local/state/maki</code>.</li>
+      <li>Amp threads stay on ampcode.com. ai9s does not list them and does not call the network. Resume is <code>amp threads continue</code>. Delete is not offered.</li>
+      <li>MastraCode resume passes <code>--thread</code>. A build that only documents <code>--continue</code> opens the latest thread, so that flag is not used for one row. Delete is not offered.</li>
       <li>OpenClaw's working directory is the workspace recorded on the session. ai9s does not read OpenClaw credentials.</li>
     </ul>
 
@@ -96,10 +115,10 @@
     <p>Mistral delete removes that one session directory under the Vibe save directory, when <code>meta.json</code> and <code>messages.jsonl</code> are regular files and the session id matches.</p>
     <p>MiniMax delete, when the session came from <code>runtime-state.sqlite</code>, removes that session's history directory when the manifest id matches, then deletes that session's rows. The database file stays. A manifest-only session removes that one history directory.</p>
     <p>Jules keeps a local list in <code>sessions.json</code> or <code>sessions.txt</code>. Delete rewrites that file without the chosen id. The <code>jules</code> command has no delete subcommand. A remote session is deleted with the Jules API when <code>JULES_API_KEY</code> is set. Without that key, the cloud session is left in place and delete says so. ai9s does not read the Jules keyring.</p>
-    <p>Antigravity stores every conversation in one <code>history.jsonl</code>. Delete rewrites that file without the chosen id. Cline delete rewrites <code>taskHistory.json</code> first, then removes that task's directory. OpenCode, Hermes, OpenClaw, and Goose delete through each CLI. Other deletes remove a single transcript or Aider history file, or one Copilot <code>session-state</code> or Junie <code>session-*</code> directory, and only when the path is still inside that agent's session root.</p>
+    <p>Antigravity stores every conversation in one <code>history.jsonl</code>. Delete rewrites that file without the chosen id. Cline delete rewrites <code>taskHistory.json</code> first, then removes that task's directory. OpenCode, Hermes, OpenClaw, Goose, Devin, Kilo, and Maki delete through each CLI. Other deletes remove a single transcript or Aider history file, or one Copilot <code>session-state</code> or Junie <code>session-*</code> directory, and only when the path is still inside that agent's session root. MastraCode and Amp do not offer delete.</p>
 
     <h2>Marks</h2>
-    <p>Describe and the all-session stats show a two-letter mark: Ca claude, Cx codex, Cp copilot, Gk grok, Ag antigravity, Ge gemini, Cu cursor, Oc opencode, He hermes, Oa openclaw, Jn junie, Ju jules, Go goose, Cl cline, Ai aider, Ki kiro, Km kimi, Mm minimax, Qw qwen, Mi mistral. An unknown agent is <code>??</code>. The session list does not have that column.</p>
+    <p>Describe and the all-session stats show a two-letter mark: Ca claude, Cx codex, Cp copilot, Gk grok, Ag antigravity, Ge gemini, Cu cursor, Oc opencode, He hermes, Oa openclaw, Jn junie, Ju jules, Go goose, Cl cline, Ai aider, Ki kiro, Km kimi, Mm minimax, Qw qwen, Mi mistral, Pi pi, Om omp, Dr droid, Dv devin, Ko kilo, Qc qodercli, Lt letta, Mc mastracode, Ap amp, Mk maki. An unknown agent is <code>??</code>. The session list does not have that column.</p>
   </main>
   <footer class="site-footer">
     <p><a href="https://github.com/AymanZahran/ai9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/sponsors/AymanZahran">Sponsor</a> · <a href="https://github.com/AymanZahran/ai9s/blob/main/LICENSE">MIT</a></p>

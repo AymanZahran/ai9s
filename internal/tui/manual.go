@@ -161,7 +161,7 @@ A horizontal wheel pans. Shift with the vertical wheel pans the same way. Drag a
 
 [::b]Resume[-]
 Resume runs that agent's own CLI in the session directory when the directory still exists.
-Enter leaves the agent's permission prompts on. y passes the auto-approve flag when that agent documents one. Codex, Gemini, OpenCode, OpenClaw, Jules, Goose, Aider, Kimi, and MiniMax resume with the same command either way.
+Enter leaves the agent's permission prompts on. y passes the auto-approve flag when that agent documents one. Codex, Gemini, OpenCode, OpenClaw, Jules, Goose, Aider, Kimi, MiniMax, Pi, Droid, Letta, MastraCode, and Amp resume with the same command either way.
 Quitting the agent returns to this list. ai9s takes the terminal back, so the shell does not leave it suspended. The index refreshes so the session you just left is current.
   claude --resume
   codex resume
@@ -183,6 +183,16 @@ Quitting the agent returns to this list. ai9s takes the terminal back, so the sh
   mcode --session
   qwen --resume
   vibe --resume
+  pi --session
+  omp --resume=<id>
+  droid resume
+  devin --resume
+  kilo --session
+  qodercli --resume
+  letta --agent
+  mastracode --thread
+  amp threads continue
+  maki --resume
 
 The Kiro IDE command is a different program. Resume uses kiro-cli.
 Kimi resume uses kimi. The archived kimi-cli store is not read.
@@ -209,6 +219,12 @@ Delete removes one session and refuses a path outside that agent's own root.
   minimax                  that session row and its history directory, or the history directory alone
   qwen                     that chat file
   mistral                  that session directory
+  pi, omp, droid, qoder, letta   the transcript file
+  devin                    devin rm ID --force
+  kilo                     kilo session delete ID
+  maki                     maki session delete ID --force
+  mastracode               not offered
+  amp                      not offered. Threads stay on ampcode.com
 The jules CLI has no delete command. A remote session is deleted through the Jules API when JULES_API_KEY is set.
 
 [::b]Where sessions are read[-]
@@ -233,6 +249,18 @@ Each path can be moved with the environment variable after it. A missing directo
   minimax      MINIMAX_DATA_DIR, else MAVIS_DATA_DIR
   qwen         QWEN_RUNTIME_DIR, else QWEN_HOME
   mistral      VIBE_HOME
+  pi           PI_CODING_AGENT_SESSION_DIR, else PI_CODING_AGENT_DIR (default ~/.pi/agent)
+  omp          PI_CODING_AGENT_SESSION_DIR, else PI_CODING_AGENT_DIR (default ~/.omp/agent)
+  droid        FACTORY_HOME (default ~/.factory)
+  devin        DEVIN_SESSIONS_DB, else $XDG_DATA_HOME/devin/cli/sessions.db
+  kilo         KILO_DB, else $XDG_DATA_HOME/kilo/kilo.db
+  qodercli     QODER_CONFIG_DIR (default ~/.qoder)
+  letta        LETTA_HOME (default ~/.letta)
+  mastracode   MASTRA_DB_PATH, else mastra.db in the platform app-data directory
+  amp          no local store
+  maki         MAKI_STATE_DIR, else ~/.maki when that directory exists, else $XDG_STATE_HOME/maki
+
+Pi and OMP share PI_CODING_AGENT_SESSION_DIR and PI_CODING_AGENT_DIR. FACTORY_HOME, DEVIN_SESSIONS_DB, LETTA_HOME, and MAKI_STATE_DIR are ai9s overrides. Amp keeps threads on ampcode.com. ai9s does not call the network to list them. MastraCode resume passes --thread.
 
 The index is $AI9S_CACHE_DIR/index.db, or $XDG_CACHE_HOME/ai9s/index.db, or ~/.cache/ai9s/index.db.
 

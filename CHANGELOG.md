@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Index Pi, OMP, Droid, Devin CLI, Kilo Code, Qoder CLI, Letta Code, MastraCode, and Maki sessions. Amp is listed. Its threads stay on ampcode.com and are not downloaded.
+- Yolo adds OMP `--auto-approve`, Devin `--permission-mode dangerous`, Kilo `--auto`, Qoder `--dangerously-skip-permissions`, and Maki `--yolo`.
+- `AI9S_HERDR_OPEN` runs on Enter instead of resuming in the list. `ai9s resume --json` prints that command.
+
 ## 1.0.7
 
 - Free-text search matches a word as typed in the name, title, session id, directory, branch, model, or harness. Letters with gaps no longer match, and the transcript is not searched.

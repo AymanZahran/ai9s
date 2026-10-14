@@ -863,6 +863,9 @@ func (ui *ui) selected() (model.Session, bool) {
 }
 
 func (ui *ui) resumeSelected(yolo bool) {
+	if ui.launchHerdr(yolo) {
+		return
+	}
 	if !ui.onSessions() {
 		if yolo {
 			ui.alert("Switch to sessions before resuming.")

@@ -75,6 +75,43 @@ func asString(v any) string {
 	return s
 }
 
+func nestedText(obj map[string]any) (role, text string) {
+	if msg, ok := obj["message"].(map[string]any); ok {
+		role = strings.TrimSpace(asString(msg["role"]))
+		text = contentText(msg["content"])
+	}
+	if role == "" {
+		role = strings.TrimSpace(asString(obj["role"]))
+	}
+	if role == "" {
+		role = strings.TrimSpace(asString(obj["kind"]))
+	}
+	if text == "" {
+		text = contentText(obj["content"])
+	}
+	if text == "" {
+		text = strings.TrimSpace(asString(obj["text"]))
+	}
+	return role, text
+}
+
+func nestedUsage(obj map[string]any) map[string]any {
+	if msg, ok := obj["message"].(map[string]any); ok {
+		if u, ok := msg["usage"].(map[string]any); ok {
+			return u
+		}
+	}
+	if u, ok := obj["usage"].(map[string]any); ok {
+		return u
+	}
+	return nil
+}
+
+func sidechain(obj map[string]any) bool {
+	v, ok := obj["isSidechain"].(bool)
+	return ok && v
+}
+
 func asInt(v any) int {
 	switch n := v.(type) {
 	case int:

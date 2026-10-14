@@ -33,6 +33,18 @@ type Command struct {
 	Dir  string
 }
 
+func (c Command) MarshalJSON() ([]byte, error) {
+	args := c.Args
+	if args == nil {
+		args = []string{}
+	}
+	return json.Marshal(struct {
+		Name string   `json:"name"`
+		Args []string `json:"args"`
+		Dir  string   `json:"dir"`
+	}{c.Name, args, c.Dir})
+}
+
 func (c Command) String() string {
 	parts := []string{quote(c.Name)}
 	for _, a := range c.Args {
@@ -73,7 +85,8 @@ func (c Command) Run() error {
 // resumeBinary is the CLI Plan looks up for this agent.
 func resumeBinary(agent string) (string, bool) {
 	switch agent {
-	case "claude", "codex", "grok", "copilot", "gemini", "opencode", "hermes", "openclaw", "junie", "jules", "goose", "cline", "aider", "kimi", "qwen":
+	case "claude", "codex", "grok", "copilot", "gemini", "opencode", "hermes", "openclaw", "junie", "jules", "goose", "cline", "aider", "kimi", "qwen",
+		"pi", "omp", "droid", "devin", "kilo", "qodercli", "letta", "mastracode", "amp", "maki":
 		return agent, true
 	case "antigravity", "agy":
 		return "agy", true
@@ -222,6 +235,45 @@ func Plan(s model.Session, yolo bool) (Command, error) {
 			args = append(args, "--yolo")
 		}
 		args = append(args, "--resume", s.NativeID)
+	case "pi":
+		args = []string{"--session", s.NativeID}
+	case "omp":
+		if yolo {
+			args = append(args, "--auto-approve")
+		}
+		args = append(args, "--resume="+s.NativeID)
+	case "droid":
+		args = []string{"resume", s.NativeID}
+	case "devin":
+		if yolo {
+			args = append(args, "--permission-mode", "dangerous")
+		}
+		args = append(args, "--resume", s.NativeID)
+	case "kilo":
+		if yolo {
+			args = append(args, "--auto")
+		}
+		args = append(args, "--session", s.NativeID)
+	case "qodercli":
+		if yolo {
+			args = append(args, "--dangerously-skip-permissions")
+		}
+		args = append(args, "--resume", s.NativeID)
+	case "letta":
+		agentID, _, _ := strings.Cut(s.NativeID, ":")
+		if err := userArg("agent id", agentID); err != nil {
+			return Command{}, err
+		}
+		args = []string{"--agent", agentID}
+	case "mastracode":
+		args = []string{"--thread", s.NativeID}
+	case "amp":
+		args = []string{"threads", "continue", s.NativeID}
+	case "maki":
+		if yolo {
+			args = append(args, "--yolo")
+		}
+		args = append(args, "--resume", s.NativeID)
 	default:
 		return Command{}, fmt.Errorf("resume is not implemented for %s", s.Agent)
 	}
@@ -331,6 +383,16 @@ func fileRoot(agent string) (string, error) {
 		return discover.CodexSessions(), nil
 	case "cursor":
 		return discover.CursorProjects(), nil
+	case "pi":
+		return discover.PiSessions(), nil
+	case "omp":
+		return discover.OmpSessions(), nil
+	case "droid":
+		return discover.DroidSessions(), nil
+	case "qodercli":
+		return discover.QoderProjects(), nil
+	case "letta":
+		return discover.LettaTranscripts(), nil
 	default:
 		return "", fmt.Errorf("file delete is not enabled for %s", agent)
 	}
@@ -507,6 +569,15 @@ func deleteExec(s model.Session) error {
 	case "goose":
 		name = "goose"
 		args = []string{"session", "remove", "--session-id", s.NativeID}
+	case "devin":
+		name = "devin"
+		args = []string{"rm", s.NativeID, "--force"}
+	case "kilo":
+		name = "kilo"
+		args = []string{"session", "delete", s.NativeID}
+	case "maki":
+		name = "maki"
+		args = []string{"session", "delete", s.NativeID, "--force"}
 	default:
 		return fmt.Errorf("exec delete is not enabled for %s", s.Agent)
 	}

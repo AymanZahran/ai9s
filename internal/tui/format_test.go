@@ -141,6 +141,16 @@ func TestIcons(t *testing.T) {
 		"minimax":     "Mm",
 		"qwen":        "Qw",
 		"mistral":     "Mi",
+		"pi":          "Pi",
+		"omp":         "Om",
+		"droid":       "Dr",
+		"devin":       "Dv",
+		"kilo":        "Ko",
+		"qodercli":    "Qc",
+		"letta":       "Lt",
+		"mastracode":  "Mc",
+		"amp":         "Ap",
+		"maki":        "Mk",
 	}
 	seen := map[string]bool{}
 	for agent, icon := range want {

@@ -58,3 +58,13 @@ func MinimaxData() string { return minimaxData() }
 func MinimaxDB() string { return minimaxDB() }
 
 func MinimaxSessions() string { return minimaxSessions() }
+
+func PiSessions() string { return piSessions() }
+
+func OmpSessions() string { return ompSessions() }
+
+func DroidSessions() string { return droidSessions() }
+
+func QoderProjects() string { return qoderProjects() }
+
+func LettaTranscripts() string { return lettaTranscripts() }

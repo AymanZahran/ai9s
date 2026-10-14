@@ -50,6 +50,16 @@ func Scanners() []Scanner {
 		{"minimax", scanMinimax},
 		{"qwen", scanQwen},
 		{"mistral", scanMistral},
+		{"pi", scanPi},
+		{"omp", scanOmp},
+		{"droid", scanDroid},
+		{"devin", scanDevin},
+		{"kilo", scanKilo},
+		{"qodercli", scanQoder},
+		{"letta", scanLetta},
+		{"mastracode", scanMastra},
+		{"amp", scanAmp},
+		{"maki", scanMaki},
 	}
 }
 
