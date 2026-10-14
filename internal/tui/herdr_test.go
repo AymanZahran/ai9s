@@ -3,6 +3,7 @@ package tui
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -15,6 +16,9 @@ import (
 )
 
 func TestHerdrOpenLeavesTheList(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the hook test runs a POSIX shell script")
+	}
 	dir := t.TempDir()
 	stamp := filepath.Join(dir, "stamp")
 	script := filepath.Join(dir, "open")
@@ -60,6 +64,9 @@ func TestHerdrOpenLeavesTheList(t *testing.T) {
 }
 
 func TestHerdrOpenHarness(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the hook test runs a POSIX shell script")
+	}
 	dir := t.TempDir()
 	stamp := filepath.Join(dir, "stamp")
 	script := filepath.Join(dir, "open")
