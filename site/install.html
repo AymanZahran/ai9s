@@ -21,6 +21,7 @@
       <a href="filters.html">Filters</a>
       <a href="config.html">Config</a>
       <a href="contributing.html">Contributing</a>
+      <a href="https://github.com/AymanZahran/herdr-ai9s">Herdr</a>
       <a href="https://github.com/AymanZahran/ai9s">GitHub</a>
     </nav>
   </header>
@@ -150,6 +151,11 @@ ai9s</code></pre>
     <pre><code>export TERM=xterm-256color</code></pre>
     <p>The list fills the window. <code>d</code> describes the selected row in that same window, and Esc returns to the list. The mouse wheel scrolls the view on screen. Resume needs the agent CLI on <code>PATH</code>. ai9s does not embed those CLIs.</p>
 
+    <h2>Herdr</h2>
+    <p><a href="https://github.com/AymanZahran/herdr-ai9s">herdr-ai9s</a> is a separate plugin. It opens ai9s in a <a href="https://herdr.dev">Herdr</a> sidebar. Enter on a session or a harness starts that program in a new tab of the current workspace. Install ai9s 1.0.8 or newer first, then:</p>
+    <pre><code>herdr plugin install AymanZahran/herdr-ai9s</code></pre>
+    <p>The plugin does not choose the key. <code>prefix+i</code> is the suggested binding in your Herdr config. The plugin README links back to this site and to the <a href="https://github.com/AymanZahran/ai9s">ai9s repository</a>.</p>
+
     <h2>Where the index lives</h2>
     <p>The cache database is the first of these that applies:</p>
     <ol>
@@ -160,7 +166,7 @@ ai9s</code></pre>
     <p>It stores titles, metadata, and short excerpts, not a second full copy of every log. Delete that directory any time. The next run rebuilds it from the agent files.</p>
   </main>
   <footer class="site-footer">
-    <p><a href="https://github.com/AymanZahran/ai9s">GitHub</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/sponsors/AymanZahran">Sponsor</a> · <a href="https://github.com/AymanZahran/ai9s/blob/main/LICENSE">MIT</a></p>
+    <p><a href="https://github.com/AymanZahran/ai9s">GitHub</a> · <a href="https://github.com/AymanZahran/herdr-ai9s">Herdr</a> · <a href="contributing.html">Contributing</a> · <a href="https://github.com/sponsors/AymanZahran">Sponsor</a> · <a href="https://github.com/AymanZahran/ai9s/blob/main/LICENSE">MIT</a></p>
     <p>© 2026 The ai9s authors.</p>
   </footer>
 </body>
