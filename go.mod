@@ -4,7 +4,7 @@ go 1.26.9
 
 require (
 	github.com/gdamore/tcell/v2 v2.13.10
-	github.com/mattn/go-runewidth v0.0.30
+	github.com/mattn/go-runewidth v0.0.31
 	github.com/rivo/tview v0.42.0
 	golang.org/x/sys v0.49.0
 	gopkg.in/yaml.v3 v3.0.1
