@@ -1,12 +1,12 @@
 $ErrorActionPreference = 'Stop'
-$version = '1.0.7'
+$version = '1.0.8'
 $base = "https://github.com/AymanZahran/ai9s/releases/download/v$version"
 if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') {
   $url = "$base/ai9s_Windows_arm64.zip"
-  $checksum = 'd1649de221004e07e87549c154a7be92596cb09cca2d6150ae24326781fd3ea9'
+  $checksum = '8f1f48cda346a9c5561e79705e4ed065652b206448ddd30465fd51d6b6ee0e51'
 } else {
   $url = "$base/ai9s_Windows_amd64.zip"
-  $checksum = 'bebf0c86048464a4349b8b5dbcd9fdd7b6367ddfb651e9566210842d97e0f5b3'
+  $checksum = '0824a7c7bc0559bee3653e969c02bf1a6d58027cfbe91412af059e0e552f16bc'
 }
 $toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 Install-ChocolateyZipPackage `
