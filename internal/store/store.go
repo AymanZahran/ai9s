@@ -357,6 +357,9 @@ func deletePath(tx *sql.Tx, fts bool, path string) error {
 		ids = append(ids, id)
 	}
 	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
 	for _, id := range ids {
 		if err := deleteID(tx, fts, id); err != nil {
 			return err

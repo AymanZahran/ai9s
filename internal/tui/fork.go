@@ -80,6 +80,7 @@ func (ui *ui) startFork(s model.Session, name string, worktree bool) {
 			if nerr := ui.store.SetName(childID, name); nerr != nil {
 				err = nerr
 			} else if ferr := ui.store.SetFork(childID, s.ID); ferr != nil {
+				_ = ui.store.SetName(childID, "")
 				err = ferr
 			}
 		}

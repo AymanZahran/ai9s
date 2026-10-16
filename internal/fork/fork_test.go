@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -426,7 +427,7 @@ func TestForkWorktreeUsesANewCheckout(t *testing.T) {
 	git("init")
 	git("commit", "--allow-empty", "-m", "init")
 	id := "abc"
-	body := `{"type":"user","cwd":"` + sub + `","gitBranch":"main","sessionId":"` + id + `","message":{"role":"user","content":"keep ` + id + ` in prose"}}` + "\n"
+	body := `{"type":"user","cwd":` + strconv.Quote(sub) + `,"gitBranch":"main","sessionId":"` + id + `","message":{"role":"user","content":"keep ` + id + ` in prose"}}` + "\n"
 	path := filepath.Join(root, "projects", "demo", id+".jsonl")
 	writeFixture(t, path, body)
 	native, err := Copy(model.Session{
@@ -446,7 +447,7 @@ func TestForkWorktreeUsesANewCheckout(t *testing.T) {
 		t.Fatalf("child cwd %q branch %q", child.CWD, child.Branch)
 	}
 	text := readFile(t, child.SourcePath)
-	if !strings.Contains(text, "keep "+id+" in prose") || !strings.Contains(text, `"cwd":"`+wantDir+`"`) {
+	if !strings.Contains(text, "keep "+id+" in prose") || !strings.Contains(text, `"cwd":`+strconv.Quote(wantDir)) {
 		t.Fatalf("%s", text)
 	}
 	if readFile(t, path) != body {
