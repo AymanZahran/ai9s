@@ -22,7 +22,7 @@ import (
 // MaxSessionName is the longest custom session name, counted in runes.
 const MaxSessionName = 200
 
-const cols = `s.id, s.native_id, s.agent, s.title, s.summary, s.cwd, s.branch, s.model, s.updated, s.messages, s.source_path, s.source_mtime, s.can_delete, s.delete_mode, s.delete_reason, s.usage, COALESCE((SELECT name FROM names WHERE id = s.id), ''), COALESCE((SELECT 1 FROM bookmarks WHERE id = s.id), 0)`
+const cols = `s.id, s.native_id, s.agent, s.title, s.summary, s.cwd, s.branch, s.model, s.updated, s.messages, s.source_path, s.source_mtime, s.can_delete, s.delete_mode, s.delete_reason, s.usage, COALESCE((SELECT name FROM names WHERE id = s.id), ''), COALESCE((SELECT 1 FROM bookmarks WHERE id = s.id), 0), COALESCE((SELECT COALESCE(NULLIF(pn.name, ''), NULLIF(ps.title, ''), f.parent_id) FROM forks f LEFT JOIN sessions ps ON ps.id = f.parent_id LEFT JOIN names pn ON pn.id = f.parent_id WHERE f.id = s.id), ''), (SELECT COUNT(*) FROM forks cf WHERE cf.parent_id = s.id)`
 
 // Source is one on-disk file or directory the indexer visited.
 type Source struct {
@@ -137,6 +137,11 @@ CREATE TABLE IF NOT EXISTS names (
 CREATE TABLE IF NOT EXISTS bookmarks (
   id TEXT PRIMARY KEY
 );
+CREATE TABLE IF NOT EXISTS forks (
+  id TEXT PRIMARY KEY,
+  parent_id TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS forks_parent ON forks(parent_id);
 `)
 	if err != nil {
 		return err
@@ -279,6 +284,9 @@ func (s *Store) Apply(agent string, sessions []model.Session, files []Source) er
 		if err := deleteName(tx, id); err != nil {
 			return err
 		}
+		if err := deleteFork(tx, id); err != nil {
+			return err
+		}
 	}
 	if _, err := tx.Exec(`DELETE FROM files WHERE agent = ? AND path NOT IN (SELECT path FROM ai9s_seen)`, agent); err != nil {
 		return err
@@ -315,6 +323,9 @@ func dropAgent(tx *sql.Tx, fts bool, agent string) error {
 			return err
 		}
 		if err := deleteName(tx, id); err != nil {
+			return err
+		}
+		if err := deleteFork(tx, id); err != nil {
 			return err
 		}
 	}
@@ -448,6 +459,9 @@ func (s *Store) Forget(id string) error {
 	if err := deleteBookmark(tx, id); err != nil {
 		return err
 	}
+	if err := deleteFork(tx, id); err != nil {
+		return err
+	}
 	if path != "" {
 		if _, err := tx.Exec(`UPDATE files SET mtime = 0 WHERE path = ?`, path); err != nil {
 			return err
@@ -514,6 +528,32 @@ func (s *Store) SetBookmark(id string, on bool) error {
 
 func deleteBookmark(tx *sql.Tx, id string) error {
 	_, err := tx.Exec(`DELETE FROM bookmarks WHERE id = ?`, id)
+	return err
+}
+
+// SetFork records that id was forked from parent.
+// The row lives outside the session, so the next scan keeps it.
+// Deleting the parent leaves the child in the list.
+func (s *Store) SetFork(id, parent string) error {
+	if id == "" || parent == "" || id == parent {
+		return fmt.Errorf("fork needs a parent session")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var n int
+	if err := s.db.QueryRow(`SELECT COUNT(*) FROM sessions WHERE id = ?`, id).Scan(&n); err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("session %s not found", id)
+	}
+	_, err := s.db.Exec(`INSERT INTO forks(id, parent_id) VALUES (?, ?)
+		ON CONFLICT(id) DO UPDATE SET parent_id = excluded.parent_id`, id, parent)
+	return err
+}
+
+func deleteFork(tx *sql.Tx, id string) error {
+	_, err := tx.Exec(`DELETE FROM forks WHERE id = ?`, id)
 	return err
 }
 
@@ -739,7 +779,7 @@ func scanSession(sc scanner) (model.Session, error) {
 	var can int
 	var usage string
 	var mark int
-	err := sc.Scan(&sess.ID, &sess.NativeID, &sess.Agent, &sess.Title, &sess.Summary, &sess.CWD, &sess.Branch, &sess.Model, &updated, &sess.Messages, &sess.SourcePath, &sess.SourceMtime, &can, &sess.DeleteMode, &sess.DeleteReason, &usage, &sess.Name, &mark)
+	err := sc.Scan(&sess.ID, &sess.NativeID, &sess.Agent, &sess.Title, &sess.Summary, &sess.CWD, &sess.Branch, &sess.Model, &updated, &sess.Messages, &sess.SourcePath, &sess.SourceMtime, &can, &sess.DeleteMode, &sess.DeleteReason, &usage, &sess.Name, &mark, &sess.Parent, &sess.Forks)
 	if err != nil {
 		return model.Session{}, err
 	}

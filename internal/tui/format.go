@@ -254,6 +254,12 @@ func previewText(s model.Session, tag string, icons bool) string {
 	if s.Bookmarked {
 		b.WriteString("bookmark   yes\n")
 	}
+	if s.Parent != "" {
+		fmt.Fprintf(&b, "fork of    %s\n", markupLine(s.Parent))
+	}
+	if s.Forks > 0 {
+		fmt.Fprintf(&b, "forks      %d\n", s.Forks)
+	}
 	for _, line := range UsageLines(s.Usage) {
 		fmt.Fprintf(&b, "%s\n", markupLine(line))
 	}

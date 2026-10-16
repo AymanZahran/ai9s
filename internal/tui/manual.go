@@ -103,7 +103,7 @@ const manualText = `[::b]ai9s manual[-]
   [yellow]<3>[-] directories   group by working directory
   [yellow]<4>[-] branches      group by git branch and worktree. The worktree is the checkout that holds the session directory. Enter filters by that branch and that checkout.
   [yellow]<5>[-] models        group by model
-  [yellow]<6>[-] bookmarks     bookmarked sessions. Enter and y resume. f, n, u, and ctrl-d work here the same way they do on sessions.
+  [yellow]<6>[-] bookmarks     bookmarked sessions. Enter and y resume. f, n, F, u, and ctrl-d work here the same way they do on sessions.
 
 Enter on a group keeps that value selected and returns to sessions. / then searches inside it. Enter on a harness with no sessions warns you to install that CLI or to log in and start a session. A group labeled (none) has an empty value, so enter leaves the selection alone, unless that branches row still has a worktree.
 
@@ -136,6 +136,7 @@ Esc in describe returns to the list and leaves the search. Esc on sessions insid
   o           cycle sort
   f           bookmark the selected session, or clear that bookmark. A star in the first column marks it. The bookmark stays through a reindex. Sessions and bookmarks. 6 or :bookmarks lists them
   n           rename the selected session. Enter on Save stores it. Esc cancels. An empty name restores the default. The name stays through a reindex. Sessions and bookmarks
+  F           fork the selected session. A dialog asks for the new name and whether the fork gets its own git worktree. Enter on Save stores it. Esc cancels. The original stays in the list, and the fork is a second session. The name stays through a reindex. Describe shows which session it came from. Sessions and bookmarks. The Herdr sidebar is this same screen, so F there opens the same dialog
   u           usage for the selected session: messages, context, tokens, and the other recorded numbers. Sessions and bookmarks
   s           stats for every indexed session
   ?           this manual. It uses the same black screen as the list. j/k scroll a line. The wheel, page keys, and ⌘↑/⌘↓ scroll a page. g/G jump. q, ?, or esc closes it

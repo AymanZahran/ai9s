@@ -99,6 +99,7 @@ type ui struct {
 	pending         *act.Command
 	busy            bool
 	busyNote        string
+	keepID          string
 	focused         string
 	menuMeasured    int
 	view            string
@@ -504,6 +505,8 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 		ui.showSessionStats()
 	case 'n':
 		ui.promptRename()
+	case 'F':
+		ui.promptFork()
 	case '?':
 		ui.showManual()
 	case 'j':
@@ -607,6 +610,9 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 			return nil
 		case 'n':
 			ui.promptRename()
+			return nil
+		case 'F':
+			ui.promptFork()
 			return nil
 		case 'f':
 			ui.toggleBookmark()
