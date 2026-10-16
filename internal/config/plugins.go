@@ -201,10 +201,10 @@ func CanonShortcut(s string) (string, bool) {
 // Blocked reports shortcuts the UI already uses.
 func Blocked(canon string) bool {
 	switch canon {
-	case "q", "/", ":", "d", "f", "y", "s", "n", "u", "?", "a", "p", "o", "j", "k", "h", "l", "g", "G",
+	case "q", "/", ":", "d", "f", "F", "y", "s", "n", "u", "?", "a", "p", "o", "j", "k", "h", "l", "g", "G",
 		"1", "2", "3", "4", "5", "6",
 		"enter", "return", "tab", "backtab", "esc", "escape",
-		"ctrl-c", "ctrl-d", "shift-g":
+		"ctrl-c", "ctrl-d", "shift-g", "shift-f":
 		return true
 	default:
 		return false

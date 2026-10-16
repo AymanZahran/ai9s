@@ -115,11 +115,22 @@ func TestHerdrOpenHarness(t *testing.T) {
 func waitForFile(t *testing.T, path string) {
 	t.Helper()
 	deadline := time.Now().Add(2 * time.Second)
+	var last int64
+	stable := 0
 	for time.Now().Before(deadline) {
-		if info, err := os.Stat(path); err == nil && info.Size() > 0 {
-			return
+		info, err := os.Stat(path)
+		if err == nil && info.Size() > 0 {
+			if info.Size() == last {
+				stable++
+				if stable >= 3 {
+					return
+				}
+			} else {
+				last = info.Size()
+				stable = 1
+			}
 		}
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(15 * time.Millisecond)
 	}
 	t.Fatalf("timed out waiting for %s", path)
 }

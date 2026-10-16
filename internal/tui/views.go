@@ -324,7 +324,10 @@ func (ui *ui) emptyList() string {
 
 func (ui *ui) paintSessions() {
 	prev := ""
-	if row, _ := ui.table.GetSelection(); row > 0 && row-1 < len(ui.rows) && ui.onSessions() {
+	if ui.keepID != "" {
+		prev = ui.keepID
+		ui.keepID = ""
+	} else if row, _ := ui.table.GetSelection(); row > 0 && row-1 < len(ui.rows) && ui.onSessions() {
 		prev = ui.rows[row-1].ID
 	}
 	ui.groups = nil
