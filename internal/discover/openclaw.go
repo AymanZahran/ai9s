@@ -58,7 +58,11 @@ func readOpenClaw(path string, mt int64) ([]model.Session, error) {
 		return nil, err
 	}
 	defer db.Close()
-	rows, err := db.Query(`
+	hasParent, err := hasColumn(db, "session_nodes", "parent_session_key")
+	if err != nil {
+		return nil, err
+	}
+	q := `
 		SELECT session_key, coalesce(display_name,''), coalesce(label,''),
 			updated_at, last_activity_at, archived_at,
 			json_extract(entry_json, '$.sessionId'),
@@ -72,8 +76,12 @@ func readOpenClaw(path string, mt int64) ([]model.Session, error) {
 			json_extract(entry_json, '$.cacheWrite'),
 			json_extract(entry_json, '$.estimatedCostUsd'),
 			json_extract(entry_json, '$.contextTokens'),
-			json_extract(entry_json, '$.contextBudgetStatus.estimatedPromptTokens')
-		FROM session_nodes`)
+			json_extract(entry_json, '$.contextBudgetStatus.estimatedPromptTokens')`
+	if hasParent {
+		q += `, coalesce(parent_session_key,'')`
+	}
+	q += ` FROM session_nodes`
+	rows, err := db.Query(q)
 	if err != nil {
 		return nil, err
 	}
@@ -87,9 +95,14 @@ func readOpenClaw(path string, mt int64) ([]model.Session, error) {
 		var sessionID, entryName, modelName, provider, cwd sql.NullString
 		var inTok, outTok, cacheR, cacheW sql.NullFloat64
 		var cost, window, context sql.NullFloat64
-		if err := rows.Scan(&key, &display, &label, &updated, &activity, &archived,
+		var parent string
+		dest := []any{&key, &display, &label, &updated, &activity, &archived,
 			&sessionID, &entryName, &modelName, &provider, &cwd,
-			&inTok, &outTok, &cacheR, &cacheW, &cost, &window, &context); err != nil {
+			&inTok, &outTok, &cacheR, &cacheW, &cost, &window, &context}
+		if hasParent {
+			dest = append(dest, &parent)
+		}
+		if err := rows.Scan(dest...); err != nil {
 			return nil, err
 		}
 		key = strings.TrimSpace(key)
@@ -119,6 +132,7 @@ func readOpenClaw(path string, mt int64) ([]model.Session, error) {
 			Title: title, CWD: cwd.String, Model: modelLine, Updated: when,
 			SourcePath: path, SourceMtime: mt,
 			CanDelete: true, DeleteMode: "exec",
+			ParentID: openClawParent(key, parent),
 			Usage: model.Usage{
 				Input: int(inTok.Float64), Output: int(outTok.Float64),
 				CacheRead: int(cacheR.Float64), CacheWrite: int(cacheW.Float64),
@@ -140,6 +154,15 @@ func readOpenClaw(path string, mt int64) ([]model.Session, error) {
 	}
 	_ = fillOpenClawSnippets(db, out, ids)
 	return out, nil
+}
+
+func openClawParent(key, parent string) string {
+	parent = strings.TrimSpace(parent)
+	key = strings.TrimSpace(key)
+	if parent == "" || parent == key {
+		return ""
+	}
+	return model.ID("openclaw", parent)
 }
 
 func fillOpenClawSnippets(db *sql.DB, sessions []model.Session, ids map[string]string) error {

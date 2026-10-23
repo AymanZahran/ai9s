@@ -145,8 +145,11 @@ func TestBookmarksScopeMatchesSessions(t *testing.T) {
 }
 
 func TestBlockedShortcuts(t *testing.T) {
-	if !Blocked("ctrl-d") || !Blocked("G") || !Blocked("shift-g") || !Blocked("h") || !Blocked("l") || !Blocked("n") || !Blocked("u") || !Blocked("f") || !Blocked("F") || !Blocked("shift-f") || !Blocked("y") || !Blocked("6") || Blocked("r") || Blocked("b") || Blocked("e") || Blocked("ctrl-e") || Blocked("E") {
+	if !Blocked("ctrl-d") || !Blocked("G") || !Blocked("shift-g") || !Blocked("h") || !Blocked("l") || !Blocked("n") || !Blocked("u") || !Blocked("f") || !Blocked("F") || !Blocked("shift-f") || !Blocked("y") || !Blocked("6") || !Blocked("space") || Blocked("r") || Blocked("b") || Blocked("e") || Blocked("ctrl-e") || Blocked("E") {
 		t.Fatal("shortcut reservation")
+	}
+	if c, ok := CanonShortcut("space"); !ok || c != "space" {
+		t.Fatalf("space canon %q %v", c, ok)
 	}
 	if c, ok := CanonShortcut("Shift-E"); !ok || c != "shift-e" {
 		t.Fatalf("canon %q %v", c, ok)

@@ -3,6 +3,7 @@ package discover
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -33,7 +34,75 @@ func scanCodex(fresh func(string, int64) bool) Batch {
 		}
 		return nil
 	})
+	if b.Err != nil {
+		return b
+	}
+	// thread_spawn_edges lives beside the rollouts. Read it on every scan
+	// so a fresh rollout still keeps its parent. A missing database means
+	// there are no edges. An unreadable one leaves the stored links alone.
+	if parents, ok := codexParents(); ok {
+		b.Parents = parents
+	}
 	return b
+}
+
+func codexStatePath() string {
+	home := envOr("CODEX_HOME", homeJoin(".codex"))
+	if home == "" {
+		return ""
+	}
+	entries, err := os.ReadDir(home)
+	if err != nil {
+		return ""
+	}
+	best := ""
+	bestN := -1
+	for _, entry := range entries {
+		name := entry.Name()
+		if !strings.HasPrefix(name, "state_") || !strings.HasSuffix(name, ".sqlite") {
+			continue
+		}
+		mid := strings.TrimSuffix(strings.TrimPrefix(name, "state_"), ".sqlite")
+		n, err := strconv.Atoi(mid)
+		if err != nil || n < bestN {
+			continue
+		}
+		bestN = n
+		best = filepath.Join(home, name)
+	}
+	return best
+}
+
+func codexParents() (map[string]string, bool) {
+	path := codexStatePath()
+	if path == "" {
+		return map[string]string{}, true
+	}
+	db, err := openDB(path)
+	if err != nil {
+		return nil, false
+	}
+	defer db.Close()
+	rows, err := db.Query(`SELECT parent_thread_id, child_thread_id FROM thread_spawn_edges`)
+	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "no such table") {
+			return map[string]string{}, true
+		}
+		return nil, false
+	}
+	defer rows.Close()
+	parents := map[string]string{}
+	for rows.Next() {
+		var parent, child string
+		if err := rows.Scan(&parent, &child); err != nil {
+			return nil, false
+		}
+		noteParent(parents, "codex", child, parent)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, false
+	}
+	return parents, true
 }
 
 func readCodex(path string) (model.Session, bool) {

@@ -44,6 +44,11 @@ func (ui *ui) onSessions() bool {
 	return ui.view == "" || ui.view == viewSessions || ui.view == viewBookmarks
 }
 
+// sessionsTree is the sessions list. Bookmarks and the group views stay flat.
+func (ui *ui) sessionsTree() bool {
+	return ui.view == "" || ui.view == viewSessions
+}
+
 type groupRow struct {
 	key      string
 	worktree string
@@ -380,7 +385,7 @@ func (ui *ui) paintSessions() {
 			{text: tokenLabel(s.Usage), right: true, max: colTokens},
 			{text: costLabel(s.Usage), right: true, max: colCost},
 			{text: fmt.Sprintf("%d", s.Messages), right: true, max: colMsgs},
-			{text: sessionName(s)},
+			{text: ui.rowName(i, s)},
 		})
 	}
 	ui.useRows(rows)
@@ -389,6 +394,33 @@ func (ui *ui) paintSessions() {
 	}
 	ui.table.Select(sel, 0)
 	ui.showRow(sel)
+}
+
+func (ui *ui) rowName(i int, s model.Session) string {
+	name := sessionName(s)
+	if !ui.sessionsTree() || i >= len(ui.treeDepth) || i >= len(ui.treeKids) || i >= len(ui.treeOpen) {
+		return name
+	}
+	return treeLabel(name, ui.treeDepth[i], ui.treeKids[i], ui.treeOpen[i])
+}
+
+func treeLabel(name string, depth, kids int, open bool) string {
+	var b strings.Builder
+	for i := 0; i < depth; i++ {
+		b.WriteString("  ")
+	}
+	if depth > 0 {
+		b.WriteString("└ ")
+	}
+	if kids > 0 {
+		if open {
+			b.WriteString("▼ ")
+		} else {
+			fmt.Fprintf(&b, "▶ %d ", kids)
+		}
+	}
+	b.WriteString(name)
+	return b.String()
 }
 
 func groupSessions(rows []sessionSnap, kind string) []groupRow {

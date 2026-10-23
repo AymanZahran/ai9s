@@ -40,11 +40,11 @@ func readKilo(path string, mt int64) ([]model.Session, error) {
 	}
 	defer rows.Close()
 	type kiloHead struct {
-		id, directory, title, modelRaw string
-		updated, created               int64
-		cost                           float64
-		inTok, outTok, reasonTok       int64
-		cacheRead, cacheWrite          int64
+		id, directory, title, modelRaw, parent string
+		updated, created                       int64
+		cost                                   float64
+		inTok, outTok, reasonTok               int64
+		cacheRead, cacheWrite                  int64
 	}
 	var heads []kiloHead
 	for rows.Next() {
@@ -70,11 +70,12 @@ func readKilo(path string, mt int64) ([]model.Session, error) {
 			return nil, err
 		}
 		native := strings.TrimSpace(id.String)
-		if native == "" || strings.TrimSpace(parent.String) != "" {
+		if native == "" {
 			continue
 		}
 		heads = append(heads, kiloHead{
 			id: native, directory: directory.String, title: strings.TrimSpace(title.String),
+			parent: strings.TrimSpace(parent.String),
 			modelRaw: modelRaw.String, updated: updated.Int64, created: created.Int64,
 			cost: cost.Float64, inTok: inTok.Int64, outTok: outTok.Int64, reasonTok: reasonTok.Int64,
 			cacheRead: cacheRead.Int64, cacheWrite: cacheWrite.Int64,
@@ -107,10 +108,15 @@ func readKilo(path string, mt int64) ([]model.Session, error) {
 		if modelLabel == "" {
 			modelLabel = modelName
 		}
+		parent := ""
+		if head.parent != "" && head.parent != head.id {
+			parent = model.ID("kilo", head.parent)
+		}
 		out = append(out, model.Session{
 			ID: model.ID("kilo", head.id), NativeID: head.id, Agent: "kilo",
 			Title: name, CWD: head.directory, Model: modelLabel,
 			Updated: updatedAt, Messages: n, Snippets: snippets,
+			ParentID: parent,
 			Usage: model.Usage{
 				Input:      int(head.inTok),
 				Output:     int(head.outTok),

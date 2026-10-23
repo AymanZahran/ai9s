@@ -22,7 +22,7 @@ import (
 // MaxSessionName is the longest custom session name, counted in runes.
 const MaxSessionName = 200
 
-const cols = `s.id, s.native_id, s.agent, s.title, s.summary, s.cwd, s.branch, s.model, s.updated, s.messages, s.source_path, s.source_mtime, s.can_delete, s.delete_mode, s.delete_reason, s.usage, COALESCE((SELECT name FROM names WHERE id = s.id), ''), COALESCE((SELECT 1 FROM bookmarks WHERE id = s.id), 0), COALESCE((SELECT COALESCE(NULLIF(pn.name, ''), NULLIF(ps.title, ''), f.parent_id) FROM forks f LEFT JOIN sessions ps ON ps.id = f.parent_id LEFT JOIN names pn ON pn.id = f.parent_id WHERE f.id = s.id), ''), (SELECT COUNT(*) FROM forks cf WHERE cf.parent_id = s.id)`
+const cols = `s.id, s.native_id, s.agent, s.title, s.summary, s.cwd, s.branch, s.model, s.updated, s.messages, s.source_path, s.source_mtime, s.can_delete, s.delete_mode, s.delete_reason, s.usage, COALESCE((SELECT name FROM names WHERE id = s.id), ''), COALESCE((SELECT 1 FROM bookmarks WHERE id = s.id), 0), COALESCE((SELECT COALESCE(NULLIF(pn.name, ''), NULLIF(ps.title, ''), f.parent_id) FROM forks f LEFT JOIN sessions ps ON ps.id = f.parent_id LEFT JOIN names pn ON pn.id = f.parent_id WHERE f.id = s.id), ''), (SELECT COUNT(*) FROM forks cf WHERE cf.parent_id = s.id), COALESCE(s.parent_id, ''), COALESCE((SELECT COALESCE(NULLIF(pn.name, ''), NULLIF(ps.title, ''), s.parent_id) FROM sessions ps LEFT JOIN names pn ON pn.id = ps.id WHERE ps.id = s.parent_id), COALESCE(s.parent_id, ''))`
 
 // Source is one on-disk file or directory the indexer visited.
 type Source struct {
@@ -113,7 +113,8 @@ CREATE TABLE IF NOT EXISTS sessions (
   can_delete INTEGER NOT NULL DEFAULT 0,
   delete_mode TEXT NOT NULL DEFAULT '',
   delete_reason TEXT NOT NULL DEFAULT '',
-  usage TEXT NOT NULL DEFAULT ''
+  usage TEXT NOT NULL DEFAULT '',
+  parent_id TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS snippets (
   session_id TEXT NOT NULL,
@@ -156,10 +157,16 @@ CREATE INDEX IF NOT EXISTS forks_parent ON forks(parent_id);
 			return err
 		}
 	}
+	if _, err := ensureColumn(s.db, "sessions", "parent_id", `TEXT NOT NULL DEFAULT ''`); err != nil {
+		return err
+	}
+	if _, err := s.db.Exec(`CREATE INDEX IF NOT EXISTS sessions_parent ON sessions(parent_id)`); err != nil {
+		return err
+	}
 	// indexRevision bumps when a parser learns a field the previous index
 	// would have stored as a dash. Zeroing mtime once makes the next scan
 	// re-read those files. A later open leaves recorded mtimes alone.
-	const indexRevision = "2"
+	const indexRevision = "3"
 	if _, err := s.db.Exec(`CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)`); err != nil {
 		return err
 	}
@@ -414,11 +421,11 @@ func insertSession(tx *sql.Tx, fts bool, sess model.Session) error {
 	}
 	_, err := tx.Exec(`INSERT INTO sessions(
 		id, native_id, agent, title, summary, cwd, branch, model, updated, messages,
-		source_path, source_mtime, can_delete, delete_mode, delete_reason, usage)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		source_path, source_mtime, can_delete, delete_mode, delete_reason, usage, parent_id)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		sess.ID, sess.NativeID, sess.Agent, sess.Title, sess.Summary, sess.CWD, sess.Branch, sess.Model,
 		updated, sess.Messages, sess.SourcePath, sess.SourceMtime, can, sess.DeleteMode, sess.DeleteReason,
-		encodeUsage(sess.Usage))
+		encodeUsage(sess.Usage), sess.ParentID)
 	if err != nil {
 		return err
 	}
@@ -560,19 +567,77 @@ func deleteFork(tx *sql.Tx, id string) error {
 	return err
 }
 
-// Search lists sessions that match f. Snippets are not loaded.
-func (s *Store) Search(f query.Filter, limit int) ([]model.Session, error) {
-	if limit <= 0 {
-		limit = 100
-	}
-	if limit > 2000 {
-		limit = 2000
+// ApplyParents replaces harness subagent links for one agent.
+// parents maps a child session id to its parent session id.
+// A nil map leaves existing links alone. An empty map clears them.
+// Links are applied even when the child file was not re-read.
+func (s *Store) ApplyParents(agent string, parents map[string]string) error {
+	if parents == nil {
+		return nil
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`UPDATE sessions SET parent_id = '' WHERE agent = ? AND parent_id != ''`, agent); err != nil {
+		return err
+	}
+	for child, parent := range parents {
+		if child == "" || parent == "" || child == parent {
+			continue
+		}
+		if _, err := tx.Exec(`UPDATE sessions SET parent_id = ? WHERE id = ? AND agent = ?`, parent, child, agent); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// Search lists sessions that match f. Snippets are not loaded.
+// Subagents are included. The sessions list nests them after this query.
+func (s *Store) Search(f query.Filter, limit int) ([]model.Session, error) {
+	limit = clampLimit(limit)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.searchLocked(f, limit)
+}
+
+func (s *Store) searchLocked(f query.Filter, limit int) ([]model.Session, error) {
+	q, args := sessionSQL(f, `SELECT `+cols+` FROM sessions s WHERE 1=1`, limit)
+	rows, err := s.db.Query(q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []model.Session{}
+	for rows.Next() {
+		sess, err := scanSession(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, sess)
+	}
+	return out, rows.Err()
+}
+
+func clampLimit(limit int) int {
+	if limit <= 0 {
+		return 100
+	}
+	if limit > 2000 {
+		return 2000
+	}
+	return limit
+}
+
+// sessionSQL builds a filtered session query. limit below zero omits LIMIT.
+func sessionSQL(f query.Filter, head string, limit int) (string, []any) {
 	var b strings.Builder
 	args := []any{}
-	b.WriteString(`SELECT ` + cols + ` FROM sessions s WHERE 1=1`)
+	b.WriteString(head)
 	var rankParts []string
 	var rankArgs []any
 	for _, w := range query.Tokens(f.Text) {
@@ -639,22 +704,11 @@ func (s *Store) Search(f query.Filter, limit int) ([]model.Session, error) {
 			b.WriteString(` ORDER BY s.updated DESC`)
 		}
 	}
-	b.WriteString(` LIMIT ?`)
-	args = append(args, limit)
-	rows, err := s.db.Query(b.String(), args...)
-	if err != nil {
-		return nil, err
+	if limit >= 0 {
+		b.WriteString(` LIMIT ?`)
+		args = append(args, limit)
 	}
-	defer rows.Close()
-	out := []model.Session{}
-	for rows.Next() {
-		sess, err := scanSession(rows)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, sess)
-	}
-	return out, rows.Err()
+	return b.String(), args
 }
 
 // Get loads one session, including preview snippets.
@@ -782,7 +836,7 @@ func scanSession(sc scanner) (model.Session, error) {
 	var can int
 	var usage string
 	var mark int
-	err := sc.Scan(&sess.ID, &sess.NativeID, &sess.Agent, &sess.Title, &sess.Summary, &sess.CWD, &sess.Branch, &sess.Model, &updated, &sess.Messages, &sess.SourcePath, &sess.SourceMtime, &can, &sess.DeleteMode, &sess.DeleteReason, &usage, &sess.Name, &mark, &sess.Parent, &sess.Forks)
+	err := sc.Scan(&sess.ID, &sess.NativeID, &sess.Agent, &sess.Title, &sess.Summary, &sess.CWD, &sess.Branch, &sess.Model, &updated, &sess.Messages, &sess.SourcePath, &sess.SourceMtime, &can, &sess.DeleteMode, &sess.DeleteReason, &usage, &sess.Name, &mark, &sess.Parent, &sess.Forks, &sess.ParentID, &sess.ParentName)
 	if err != nil {
 		return model.Session{}, err
 	}

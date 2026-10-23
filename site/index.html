@@ -86,7 +86,7 @@ brew install ai9s</code></pre>
       </li>
       <li>A local index
         <ul>
-          <li>SQLite under your cache directory. The list reindexes every 30 seconds, and files are skipped when their modification time has not changed. One agent failing does not drop the others. <code>f</code> bookmarks a session. <code>6</code> or <code>:bookmarks</code> lists those sessions. <code>F</code> forks a session into a second row. The dialog can give that row its own git worktree.</li>
+          <li>SQLite under your cache directory. The list reindexes every 30 seconds, and files are skipped when their modification time has not changed. One agent failing does not drop the others. <code>f</code> bookmarks a session. <code>6</code> or <code>:bookmarks</code> lists those sessions. <code>F</code> forks a session into a second row. The dialog can give that row its own git worktree. The sessions list nests a subagent under the session that launched it. Space expands that row.</li>
         </ul>
       </li>
       <li>Metadata when the agent recorded it

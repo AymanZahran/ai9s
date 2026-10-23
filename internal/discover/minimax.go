@@ -110,7 +110,8 @@ func readMinimaxDB(path string, mt int64) ([]model.Session, error) {
 			return nil, err
 		}
 		id = strings.TrimSpace(id)
-		if id == "" || strings.TrimSpace(parent) != "" {
+		parent = strings.TrimSpace(parent)
+		if id == "" {
 			continue
 		}
 		if visibility == "hidden" || kind == "peek" || kind == "channel" || kind == "cron" {
@@ -149,10 +150,15 @@ func readMinimaxDB(path string, mt int64) ([]model.Session, error) {
 		if when.IsZero() {
 			when = unixish(float64(mt))
 		}
+		launchedBy := ""
+		if parent != "" && parent != id {
+			launchedBy = model.ID("minimax", parent)
+		}
 		out = append(out, model.Session{
 			ID: model.ID("minimax", id), NativeID: id, Agent: "minimax",
 			Title: title, CWD: cwd, Branch: branch, Model: modelName,
 			Updated: when, Messages: buf.n, Snippets: buf.snippets(), Usage: u,
+			ParentID: launchedBy,
 			SourcePath: path, SourceMtime: mt,
 			CanDelete: true, DeleteMode: "minimax",
 		})

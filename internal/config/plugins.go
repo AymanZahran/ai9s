@@ -173,7 +173,7 @@ func CanonShortcut(s string) (string, bool) {
 	}
 	low := strings.ToLower(s)
 	switch low {
-	case "enter", "return", "tab", "backtab", "esc", "escape":
+	case "enter", "return", "tab", "backtab", "esc", "escape", "space":
 		return low, true
 	}
 	rs := []rune(low)
@@ -203,7 +203,7 @@ func Blocked(canon string) bool {
 	switch canon {
 	case "q", "/", ":", "d", "f", "F", "y", "s", "n", "u", "?", "a", "p", "o", "j", "k", "h", "l", "g", "G",
 		"1", "2", "3", "4", "5", "6",
-		"enter", "return", "tab", "backtab", "esc", "escape",
+		"enter", "return", "tab", "backtab", "esc", "escape", "space",
 		"ctrl-c", "ctrl-d", "shift-g", "shift-f":
 		return true
 	default:

@@ -174,7 +174,7 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 		if !ui.onSessions() {
 			enter = "filter"
 		}
-		return withYolo([]menuHint{
+		items := []menuHint{
 			item("/", "filter"),
 			item(":", "command"),
 			item("d", "describe"),
@@ -197,7 +197,18 @@ func (ui *ui) actionHints(keyColor, fg string) []menuHint {
 			item("s", "stats"),
 			item("?", "manual"),
 			item("q", "quit"),
-		}, item, ui.onSessions())
+		}
+		if ui.sessionsTree() {
+			withSpace := make([]menuHint, 0, len(items)+1)
+			for _, h := range items {
+				withSpace = append(withSpace, h)
+				if h.key == "enter" {
+					withSpace = append(withSpace, item("space", "expand"))
+				}
+			}
+			items = withSpace
+		}
+		return withYolo(items, item, ui.onSessions())
 	}
 }
 

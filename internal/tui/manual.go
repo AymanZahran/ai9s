@@ -97,7 +97,7 @@ func (ui *ui) scrollManual(delta int) {
 const manualText = `[::b]ai9s manual[-]
 
 [::b]Views[-]
-  [yellow]<1>[-] sessions      the conversation list. AGE is relative. DATE is the local time. Enter resumes. y resumes with the auto-approve flag. d describes. ctrl-d deletes.
+  [yellow]<1>[-] sessions      the conversation list. AGE is relative. DATE is the local time. Enter resumes. y resumes with the auto-approve flag. d describes. ctrl-d deletes. Space expands a session that launched subagents.
                      Started outside your home directory, the list is that directory and its subdirectories. Home lists every session. Esc clears the filter and keeps that directory.
   [yellow]<2>[-] harnesses    group the current filter by harness. A harness with no sessions stays listed. Enter on that row says to install its CLI or to log in.
   [yellow]<3>[-] directories   group by working directory
@@ -137,6 +137,9 @@ Esc in describe returns to the list and leaves the search. Esc on sessions insid
   f           bookmark the selected session, or clear that bookmark. A star in the first column marks it. The bookmark stays through a reindex. Sessions and bookmarks. 6 or :bookmarks lists them
   n           rename the selected session. Enter on Save stores it. Esc cancels. An empty name restores the default. The name stays through a reindex. Sessions and bookmarks
   F           fork the selected session. A dialog asks for the new name and whether the fork gets its own git worktree. Enter on Save stores it. Esc cancels. The original stays in the list, and the fork is a second session. The name stays through a reindex. Describe shows which session it came from. Sessions and bookmarks. The Herdr sidebar is this same screen, so F there opens the same dialog
+  space       expand or collapse the subagents under the selected session. The row starts collapsed and shows a count. Sessions list
+
+The sessions list nests a subagent under the session that launched it. The row starts collapsed and shows a count. Space expands and collapses it. A search that matches a subagent keeps that parent on screen. Claude Code, Cursor, Grok Build, Codex, OpenCode, Hermes, OpenClaw, Kilo Code, MiniMax, Mistral Vibe, and MastraCode record that parent. Enter on a Claude Code or Cursor subagent resumes the parent session. Describe says so. Bookmarks stay a flat list. The Herdr sidebar is this same list, so the tree is there after you quit and reopen it. ai9s search still prints one row per session.
   u           usage for the selected session: messages, context, tokens, and the other recorded numbers. Sessions and bookmarks
   s           stats for every indexed session
   ?           this manual. It uses the same black screen as the list. j/k scroll a line. The wheel, page keys, and ⌘↑/⌘↓ scroll a page. g/G jump. q, ?, or esc closes it

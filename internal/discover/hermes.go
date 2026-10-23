@@ -71,6 +71,10 @@ func readHermes(path, profile string, mt int64) ([]model.Session, error) {
 	if err != nil {
 		return nil, err
 	}
+	hasParent, err := hasColumn(db, "sessions", "parent_session_id")
+	if err != nil {
+		return nil, err
+	}
 	q := `
 		SELECT id, coalesce(source,''), coalesce(model,''), coalesce(title,''),
 			coalesce(cwd,''), coalesce(git_branch,''), coalesce(message_count,0),
@@ -80,6 +84,9 @@ func readHermes(path, profile string, mt int64) ([]model.Session, error) {
 			started_at, last_activity_at, ended_at`
 	if hasConfig {
 		q += `, coalesce(model_config,'')`
+	}
+	if hasParent {
+		q += `, coalesce(parent_session_id,'')`
 	}
 	q += `
 		FROM sessions
@@ -92,7 +99,7 @@ func readHermes(path, profile string, mt int64) ([]model.Session, error) {
 	var out []model.Session
 	byID := map[string]*model.Session{}
 	for rows.Next() {
-		var id, source, modelName, title, cwd, branch, modelConfig string
+		var id, source, modelName, title, cwd, branch, modelConfig, parent string
 		var messages, inTok, outTok, cacheR, cacheW, reason int
 		var actual, estimated sql.NullFloat64
 		var started, last, ended sql.NullFloat64
@@ -101,6 +108,9 @@ func readHermes(path, profile string, mt int64) ([]model.Session, error) {
 		if hasConfig {
 			dest = append(dest, &modelConfig)
 		}
+		if hasParent {
+			dest = append(dest, &parent)
+		}
 		if err := rows.Scan(dest...); err != nil {
 			return nil, err
 		}
@@ -108,9 +118,10 @@ func readHermes(path, profile string, mt int64) ([]model.Session, error) {
 		if id == "" {
 			continue
 		}
-		native := id
-		if profile != "" && profile != "default" {
-			native = "p:" + profile + ":" + id
+		native := hermesNative(profile, id)
+		parentID := ""
+		if p := strings.TrimSpace(parent); p != "" && p != id {
+			parentID = model.ID("hermes", hermesNative(profile, p))
 		}
 		when := unixish(last.Float64)
 		if when.IsZero() {
@@ -129,6 +140,7 @@ func readHermes(path, profile string, mt int64) ([]model.Session, error) {
 			Model: modelName, Updated: when, Messages: messages,
 			SourcePath: path, SourceMtime: mt,
 			CanDelete: true, DeleteMode: "exec",
+			ParentID: parentID,
 			Usage: model.Usage{
 				Input: inTok, Output: outTok, CacheRead: cacheR, CacheWrite: cacheW,
 				Reasoning: reason, CostUSD: cost,
@@ -193,6 +205,14 @@ func hasColumn(db *sql.DB, table, column string) (bool, error) {
 		}
 	}
 	return false, rows.Err()
+}
+
+func hermesNative(profile, id string) string {
+	id = strings.TrimSpace(id)
+	if profile != "" && profile != "default" && id != "" {
+		return "p:" + profile + ":" + id
+	}
+	return id
 }
 
 func fillHermesSnippets(db *sql.DB, byID map[string]*model.Session) error {

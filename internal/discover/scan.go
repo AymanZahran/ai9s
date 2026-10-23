@@ -19,6 +19,11 @@ type Batch struct {
 	Sessions []model.Session
 	Files    []File
 	Err      error
+	// Parents maps a child session id to the harness session that launched it.
+	// Nil means this scanner does not own subagent links, and the index leaves
+	// them alone. A non-nil map, including an empty one, replaces the links
+	// for this agent. The id is agent + ":" + native id.
+	Parents map[string]string
 }
 
 // Scanner walks one agent's local session store.

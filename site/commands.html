@@ -46,7 +46,7 @@ ai9s help</code></pre>
     <p><code>ai9s stats</code> prints counts from the index. It does not scan again. Harnesses with zero sessions are omitted. <code>--json</code> prints the same counts as objects. The name on each row is the program name.</p>
 
     <h2>search</h2>
-    <p>Each word has to appear as typed in the name, title, session id, directory, branch, model, or harness. Letters with gaps do not match, and the transcript is not searched. Tokens such as <code>harness:</code>, <code>dir:</code>, and <code>mark:yes</code> narrow the list the same way. <code>agent:</code> is the same as <code>harness:</code>. In the UI, <code>6</code> and <code>:bookmarks</code> open the bookmarked list. A leading <code>~</code> expands. See <a href="filters.html">Filters</a>.</p>
+    <p><code>ai9s search</code> prints one row per matching session, including a subagent. The sessions list nests that subagent under its parent. Each word has to appear as typed in the name, title, session id, directory, branch, model, or harness. Letters with gaps do not match, and the transcript is not searched. Tokens such as <code>harness:</code>, <code>dir:</code>, and <code>mark:yes</code> narrow the list the same way. <code>agent:</code> is the same as <code>harness:</code>. In the UI, <code>6</code> and <code>:bookmarks</code> open the bookmarked list. A leading <code>~</code> expands. See <a href="filters.html">Filters</a>.</p>
     <pre><code>ai9s search 'harness:claude dir:my-repo date:&lt;7d feature'</code></pre>
     <p><code>--json</code> prints sessions without excerpts. <code>--limit</code> caps the rows. The UI caps a search at <code>ui.limit</code> in the config, which defaults to 400.</p>
 
