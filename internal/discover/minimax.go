@@ -158,7 +158,7 @@ func readMinimaxDB(path string, mt int64) ([]model.Session, error) {
 			ID: model.ID("minimax", id), NativeID: id, Agent: "minimax",
 			Title: title, CWD: cwd, Branch: branch, Model: modelName,
 			Updated: when, Messages: buf.n, Snippets: buf.snippets(), Usage: u,
-			ParentID: launchedBy,
+			ParentID:   launchedBy,
 			SourcePath: path, SourceMtime: mt,
 			CanDelete: true, DeleteMode: "minimax",
 		})

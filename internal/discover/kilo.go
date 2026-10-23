@@ -75,7 +75,7 @@ func readKilo(path string, mt int64) ([]model.Session, error) {
 		}
 		heads = append(heads, kiloHead{
 			id: native, directory: directory.String, title: strings.TrimSpace(title.String),
-			parent: strings.TrimSpace(parent.String),
+			parent:   strings.TrimSpace(parent.String),
 			modelRaw: modelRaw.String, updated: updated.Int64, created: created.Int64,
 			cost: cost.Float64, inTok: inTok.Int64, outTok: outTok.Int64, reasonTok: reasonTok.Int64,
 			cacheRead: cacheRead.Int64, cacheWrite: cacheWrite.Int64,
