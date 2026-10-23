@@ -18,8 +18,8 @@ end
 class Ai9s < Formula
   desc "Keyboard-first finder for local AI coding sessions"
   homepage "https://ai9scli.io"
-  url "https://github.com/AymanZahran/ai9s/archive/refs/tags/v1.0.9.tar.gz", using: Ai9sDownloadStrategy
-  sha256 "7aa275944eb31eb6bc09a0c44d534fdfeaf912172dcaf1f786034f541132dde2"
+  url "https://github.com/AymanZahran/ai9s/archive/refs/tags/v1.0.10.tar.gz", using: Ai9sDownloadStrategy
+  sha256 "1dec1d7026cfe96826900b965cb13b9120e2f0ff3b0b653e68c84a23cbe73682"
   license "MIT"
   head "https://github.com/AymanZahran/ai9s.git", branch: "main"
 
