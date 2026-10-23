@@ -1,5 +1,5 @@
 pkgname=ai9s
-pkgver=1.0.9
+pkgver=1.0.10
 pkgrel=1
 pkgdesc='Keyboard-first finder for local AI coding sessions'
 arch=('x86_64' 'aarch64')
@@ -7,8 +7,8 @@ url='https://ai9scli.io'
 license=('MIT')
 source_x86_64=("https://github.com/AymanZahran/ai9s/releases/download/v${pkgver}/ai9s_Linux_amd64.tar.gz")
 source_aarch64=("https://github.com/AymanZahran/ai9s/releases/download/v${pkgver}/ai9s_Linux_arm64.tar.gz")
-sha256sums_x86_64=('aa77806d94f4e0b7e4ed0bc77dc58781695927b36cbafce92bc257e1dc52fe01')
-sha256sums_aarch64=('dc638a29dbc7eee612076db16a9adf5a645ba6856c74292db2b160abe08acd4e')
+sha256sums_x86_64=('a3bdd9e3e672c89e71187ee0c88f2e20b2c49e66ed0e609093c1a15f97b82bfd')
+sha256sums_aarch64=('1dce54290608396d47e892a9b6209108e160ae9772e35c0fad7462b06b24dc2e')
 
 package() {
   install -Dm755 ai9s "${pkgdir}/usr/bin/ai9s"
