@@ -123,10 +123,35 @@ func Installed(agent string) (bin string, ok bool) {
 	return bin, err == nil
 }
 
+// subagentResumeID is the parent session Claude Code and Cursor resume.
+// Their subagent files are not sessions those CLIs can resume on their own.
+// Every other harness resumes the row's own id.
+func subagentResumeID(s model.Session) string {
+	if s.Agent != "claude" && s.Agent != "cursor" {
+		return ""
+	}
+	prefix := s.Agent + ":"
+	if !strings.HasPrefix(s.ParentID, prefix) {
+		return ""
+	}
+	id := strings.TrimSpace(s.ParentID[len(prefix):])
+	if id == "" || id == s.NativeID {
+		return ""
+	}
+	return id
+}
+
 // Plan builds the agent's own resume command.
 func Plan(s model.Session, yolo bool) (Command, error) {
 	if err := userArg("session id", s.NativeID); err != nil {
 		return Command{}, err
+	}
+	resumeID := s.NativeID
+	if parent := subagentResumeID(s); parent != "" {
+		if err := userArg("session id", parent); err != nil {
+			return Command{}, err
+		}
+		resumeID = parent
 	}
 	name, ok := resumeBinary(s.Agent)
 	if !ok {
@@ -138,7 +163,7 @@ func Plan(s model.Session, yolo bool) (Command, error) {
 		if yolo {
 			args = append(args, "--dangerously-skip-permissions")
 		}
-		args = append(args, "--resume", s.NativeID)
+		args = append(args, "--resume", resumeID)
 	case "codex":
 		args = []string{"resume", s.NativeID}
 	case "grok":
@@ -173,7 +198,7 @@ func Plan(s model.Session, yolo bool) (Command, error) {
 		if yolo {
 			args = append(args, "--force")
 		}
-		args = append(args, "--resume", s.NativeID)
+		args = append(args, "--resume", resumeID)
 	case "opencode":
 		args = []string{"--session", s.NativeID}
 	case "hermes":

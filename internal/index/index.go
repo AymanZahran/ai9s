@@ -22,6 +22,12 @@ func Rebuild(st *store.Store) (store.Stats, []string, error) {
 		}
 		if err := st.Apply(batch.Agent, batch.Sessions, files); err != nil {
 			warnings = append(warnings, fmt.Sprintf("%s: %v", batch.Agent, err))
+			continue
+		}
+		if batch.Parents != nil {
+			if err := st.ApplyParents(batch.Agent, batch.Parents); err != nil {
+				warnings = append(warnings, fmt.Sprintf("%s: %v", batch.Agent, err))
+			}
 		}
 	}
 	stats, err := st.Stats()

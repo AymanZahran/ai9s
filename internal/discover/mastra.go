@@ -73,7 +73,7 @@ func readMastra(path string, mt int64) ([]model.Session, error) {
 			return nil, err
 		}
 		native := strings.TrimSpace(id.String)
-		if native == "" || mastraChild(meta.String) {
+		if native == "" {
 			continue
 		}
 		heads = append(heads, mastraHead{
@@ -106,12 +106,17 @@ func readMastra(path string, mt int64) ([]model.Session, error) {
 		if name == "" {
 			name = head.id
 		}
+		parent := mastraParent(head.meta)
+		if parent == head.id {
+			parent = ""
+		}
 		out = append(out, model.Session{
 			ID: model.ID("mastracode", head.id), NativeID: head.id, Agent: "mastracode",
 			Title: name, CWD: mastraCWD(head.meta),
 			Updated: when, Messages: n, Snippets: snippets,
 			SourcePath: path, SourceMtime: mt,
 			CanDelete: false, DeleteReason: mastraDeleteReason,
+			ParentID: parentOf("mastracode", parent),
 		})
 	}
 	return out, nil
@@ -140,17 +145,17 @@ func mastraMessages(db *sql.DB, threadID string) (int, []model.Snippet, error) {
 	return buf.n, buf.snippets(), nil
 }
 
-func mastraChild(meta string) bool {
+func mastraParent(meta string) string {
 	m := mastraMeta(meta)
 	if m == nil {
-		return false
+		return ""
 	}
 	for _, k := range []string{"parentThreadId", "parentId", "forkOf"} {
-		if strings.TrimSpace(asString(m[k])) != "" {
-			return true
+		if s := strings.TrimSpace(asString(m[k])); s != "" {
+			return s
 		}
 	}
-	return false
+	return ""
 }
 
 func mastraCWD(meta string) string {

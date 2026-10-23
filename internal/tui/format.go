@@ -260,6 +260,16 @@ func previewText(s model.Session, tag string, icons bool) string {
 	if s.Forks > 0 {
 		fmt.Fprintf(&b, "forks      %d\n", s.Forks)
 	}
+	if s.ParentID != "" {
+		name := strings.TrimSpace(s.ParentName)
+		if name == "" {
+			name = s.ParentID
+		}
+		fmt.Fprintf(&b, "subagent of %s\n", markupLine(name))
+		if s.Agent == "claude" || s.Agent == "cursor" {
+			b.WriteString("enter resumes the parent\n")
+		}
+	}
 	for _, line := range UsageLines(s.Usage) {
 		fmt.Fprintf(&b, "%s\n", markupLine(line))
 	}

@@ -62,12 +62,20 @@ func readOpenCode(path string, mt int64) ([]model.Session, error) {
 		return nil, err
 	}
 	defer db.Close()
-	rows, err := db.Query(`SELECT id, directory, title, model, time_updated, time_created,
+	hasParent, err := hasColumn(db, "session", "parent_id")
+	if err != nil {
+		return nil, err
+	}
+	parentCol := ""
+	if hasParent {
+		parentCol = `, coalesce(parent_id, '')`
+	}
+	rows, err := db.Query(`SELECT id, directory, title, model, time_updated, time_created` + parentCol + `,
 		cost, tokens_input, tokens_output, tokens_reasoning, tokens_cache_read, tokens_cache_write FROM session`)
 	withUsage := true
 	if err != nil {
 		withUsage = false
-		rows, err = db.Query(`SELECT id, directory, title, model, time_updated, time_created FROM session`)
+		rows, err = db.Query(`SELECT id, directory, title, model, time_updated, time_created` + parentCol + ` FROM session`)
 	}
 	if err != nil {
 		return nil, err
@@ -76,13 +84,20 @@ func readOpenCode(path string, mt int64) ([]model.Session, error) {
 	var out []model.Session
 	for rows.Next() {
 		var id, directory, title, modelRaw sql.NullString
+		var parent sql.NullString
 		var updated, created sql.NullInt64
 		var cost sql.NullFloat64
 		var inTok, outTok, reasonTok, cacheRead, cacheWrite sql.NullInt64
-		if withUsage {
+		switch {
+		case withUsage && hasParent:
+			err = rows.Scan(&id, &directory, &title, &modelRaw, &updated, &created, &parent,
+				&cost, &inTok, &outTok, &reasonTok, &cacheRead, &cacheWrite)
+		case withUsage:
 			err = rows.Scan(&id, &directory, &title, &modelRaw, &updated, &created,
 				&cost, &inTok, &outTok, &reasonTok, &cacheRead, &cacheWrite)
-		} else {
+		case hasParent:
+			err = rows.Scan(&id, &directory, &title, &modelRaw, &updated, &created, &parent)
+		default:
 			err = rows.Scan(&id, &directory, &title, &modelRaw, &updated, &created)
 		}
 		if err != nil {
@@ -97,6 +112,10 @@ func readOpenCode(path string, mt int64) ([]model.Session, error) {
 			Model:      parseOpenCodeModel(modelRaw.String),
 			SourcePath: path, SourceMtime: mt,
 			CanDelete: true, DeleteMode: "exec",
+			ParentID: parentOf("opencode", parent.String),
+		}
+		if s.ParentID == s.ID {
+			s.ParentID = ""
 		}
 		when := updated.Int64
 		if when == 0 {

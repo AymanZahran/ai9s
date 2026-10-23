@@ -24,12 +24,9 @@ func scanClaude(fresh func(string, int64) bool) Batch {
 			return nil
 		}
 		if d.IsDir() {
-			if d.Name() == "subagents" {
-				return filepath.SkipDir
-			}
 			return nil
 		}
-		if !strings.HasSuffix(d.Name(), ".jsonl") || strings.Contains(path, string(filepath.Separator)+"subagents"+string(filepath.Separator)) {
+		if !strings.HasSuffix(d.Name(), ".jsonl") {
 			return nil
 		}
 		mt, isFresh := stamp(path, fresh)
@@ -46,14 +43,16 @@ func scanClaude(fresh func(string, int64) bool) Batch {
 }
 
 func readClaude(path string) (model.Session, bool) {
-	native := strings.TrimSuffix(filepath.Base(path), ".jsonl")
 	var buf snippetBuf
-	var cwd, branch, modelName string
+	var cwd, branch, modelName, sessionID string
 	var updated time.Time
 	var usage model.Usage
 	err := walkJSONL(path, func(obj map[string]any) error {
 		if ts := parseTime(asString(obj["timestamp"])); ts.After(updated) {
 			updated = ts
+		}
+		if sessionID == "" {
+			sessionID = asString(obj["sessionId"])
 		}
 		if cwd == "" {
 			cwd = asString(obj["cwd"])
@@ -81,8 +80,9 @@ func readClaude(path string) (model.Session, bool) {
 	if err != nil || buf.n == 0 && buf.title == "" {
 		return model.Session{}, false
 	}
+	native, parent := claudeIDs(path, sessionID)
 	if cwd == "" {
-		cwd = decodeDashedPath(filepath.Base(filepath.Dir(path)))
+		cwd = decodeDashedPath(claudeProject(path))
 	}
 	if updated.IsZero() {
 		updated = time.Unix(fileMtime(path), 0)
@@ -96,5 +96,31 @@ func readClaude(path string) (model.Session, bool) {
 		Title: title, CWD: cwd, Branch: branch, Model: modelName,
 		Updated: updated, Messages: buf.n, SourcePath: path, SourceMtime: fileMtime(path),
 		CanDelete: true, DeleteMode: "file", Usage: usage, Snippets: buf.snippets(),
+		ParentID: parentOf("claude", parent),
 	}, true
+}
+
+// claudeIDs returns the session id and, for a file under subagents/, the parent session id.
+// The parent is the sessionId on the transcript, or the directory above subagents/.
+func claudeIDs(path, sessionID string) (native, parent string) {
+	native = strings.TrimSuffix(filepath.Base(path), ".jsonl")
+	if filepath.Base(filepath.Dir(path)) != "subagents" {
+		return native, ""
+	}
+	parent = strings.TrimSpace(sessionID)
+	if parent == "" {
+		parent = filepath.Base(filepath.Dir(filepath.Dir(path)))
+	}
+	if parent == native {
+		parent = ""
+	}
+	return native, parent
+}
+
+func claudeProject(path string) string {
+	dir := filepath.Dir(path)
+	if filepath.Base(dir) == "subagents" {
+		dir = filepath.Dir(filepath.Dir(dir))
+	}
+	return filepath.Base(dir)
 }

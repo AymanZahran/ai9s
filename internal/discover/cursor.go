@@ -32,15 +32,9 @@ func scanCursor(fresh func(string, int64) bool) Batch {
 			return nil
 		}
 		if d.IsDir() {
-			if d.Name() == "subagents" {
-				return filepath.SkipDir
-			}
 			return nil
 		}
 		if !strings.HasSuffix(d.Name(), ".jsonl") || !strings.Contains(path, string(filepath.Separator)+"agent-transcripts"+string(filepath.Separator)) {
-			return nil
-		}
-		if strings.Contains(path, string(filepath.Separator)+"subagents"+string(filepath.Separator)) {
 			return nil
 		}
 		mt, isFresh := stamp(path, fresh, dbPath)
@@ -66,11 +60,7 @@ func scanCursor(fresh func(string, int64) bool) Batch {
 }
 
 func readCursor(path string) (model.Session, bool) {
-	native := strings.TrimSuffix(filepath.Base(path), ".jsonl")
-	parent := filepath.Base(filepath.Dir(path))
-	if parent != "" && parent != "." && parent != "agent-transcripts" {
-		native = parent
-	}
+	native, parent := cursorIDs(path)
 	var buf snippetBuf
 	err := walkJSONL(path, func(obj map[string]any) error {
 		role := asString(obj["role"])
@@ -93,7 +83,27 @@ func readCursor(path string) (model.Session, bool) {
 		Updated: time.Unix(fileMtime(path), 0), Messages: buf.n,
 		SourcePath: path, SourceMtime: fileMtime(path),
 		CanDelete: true, DeleteMode: "file", Snippets: buf.snippets(),
+		ParentID: parentOf("cursor", parent),
 	}, true
+}
+
+// cursorIDs returns the session id. A file directly under agent-transcripts/<id>/
+// uses that directory name. A file under subagents/ keeps its own file name and
+// records the directory above subagents/ as its parent.
+func cursorIDs(path string) (native, parent string) {
+	native = strings.TrimSuffix(filepath.Base(path), ".jsonl")
+	dir := filepath.Base(filepath.Dir(path))
+	if dir == "subagents" {
+		parent = filepath.Base(filepath.Dir(filepath.Dir(path)))
+		if parent == native || parent == "agent-transcripts" || parent == "." {
+			parent = ""
+		}
+		return native, parent
+	}
+	if dir != "" && dir != "." && dir != "agent-transcripts" {
+		native = dir
+	}
+	return native, ""
 }
 
 func cursorProjectName(path string) string {

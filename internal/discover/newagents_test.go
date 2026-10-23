@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/AymanZahran/ai9s/internal/model"
 )
 
 func TestScanKimi(t *testing.T) {
@@ -106,12 +108,23 @@ func TestScanMistral(t *testing.T) {
 	writeBytes(t, filepath.Join(child, "messages.jsonl"), []byte(`{"role":"user","content":"child session"}`+"\n"))
 
 	b := scanMistral(nil)
-	if b.Err != nil || len(b.Sessions) != 1 {
+	if b.Err != nil || len(b.Sessions) != 2 {
 		t.Fatalf("mistral %+v %v", b.Sessions, b.Err)
 	}
-	s := b.Sessions[0]
-	if s.NativeID != "session_20260302_150405_abcd" || s.Title != "review the diff" || s.CWD != "/work/vibe" || s.Branch != "main" || s.Model != "mistral-large" || s.DeleteMode != "mistral" || !s.CanDelete || s.Messages != 2 || !s.Usage.Empty() {
+	var s, childSession model.Session
+	for _, row := range b.Sessions {
+		switch row.NativeID {
+		case "session_20260302_150405_abcd":
+			s = row
+		case "child-1":
+			childSession = row
+		}
+	}
+	if s.NativeID != "session_20260302_150405_abcd" || s.Title != "review the diff" || s.CWD != "/work/vibe" || s.Branch != "main" || s.Model != "mistral-large" || s.DeleteMode != "mistral" || !s.CanDelete || s.Messages != 2 || !s.Usage.Empty() || s.ParentID != "" {
 		t.Fatalf("session %+v", s)
+	}
+	if childSession.ParentID != "mistral:session_20260302_150405_abcd" || childSession.Title != "child session" {
+		t.Fatalf("child %+v", childSession)
 	}
 	if filepath.Base(s.SourcePath) != "messages.jsonl" {
 		t.Fatalf("source %s", s.SourcePath)
@@ -175,12 +188,25 @@ func TestScanMinimaxDB(t *testing.T) {
 	writeBytes(t, filepath.Join(root, "minimax-mavis", "v2", "sessions", "aa", "bb", "cc", "mav1", "messages.jsonl"), []byte(`{"message":{"role":"user","content":"mavis"}}`+"\n"))
 
 	b := scanMinimax(nil)
-	if b.Err != nil || len(b.Sessions) != 1 {
+	if b.Err != nil || len(b.Sessions) != 2 {
 		t.Fatalf("minimax %+v %v", b.Sessions, b.Err)
 	}
-	s := b.Sessions[0]
-	if s.NativeID != "mm-1" || s.Title != "ship the minimax" || s.CWD != "/work/minimax" || s.Branch != "feat" || s.Model != "MiniMax-M2" || s.DeleteMode != "minimax" || !s.CanDelete || s.SourcePath != dbPath {
+	var s, childSession model.Session
+	for _, row := range b.Sessions {
+		switch row.NativeID {
+		case "mm-1":
+			s = row
+		case "child":
+			childSession = row
+		default:
+			t.Fatalf("unexpected session %s", row.NativeID)
+		}
+	}
+	if s.NativeID != "mm-1" || s.Title != "ship the minimax" || s.CWD != "/work/minimax" || s.Branch != "feat" || s.Model != "MiniMax-M2" || s.DeleteMode != "minimax" || !s.CanDelete || s.SourcePath != dbPath || s.ParentID != "" {
 		t.Fatalf("session %+v", s)
+	}
+	if childSession.ParentID != "minimax:mm-1" || childSession.Title != "child one" || childSession.Messages != 0 {
+		t.Fatalf("child %+v", childSession)
 	}
 	if s.Usage.Input != 18 || s.Usage.Output != 4 || s.Usage.CostUSD != 0.5 || s.Usage.Context != 7 || s.Usage.Window != 128000 || s.Usage.Reasoning != 2 || s.Usage.CacheRead != 1 || s.Usage.CacheWrite != 1 || s.Usage.Effort != "" || s.Messages != 2 {
 		t.Fatalf("usage %+v messages %d", s.Usage, s.Messages)

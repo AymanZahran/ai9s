@@ -18,11 +18,20 @@ func scanGrok(fresh func(string, int64) bool) Batch {
 		b.Err = err
 		return b
 	}
+	// Spawn edges live on the parent's updates.jsonl, so collect them even
+	// when summary.json itself has not changed. The summary parent is
+	// applied after every spawn, so it wins when both name a parent.
+	b.Parents = map[string]string{}
+	spawned := map[string]string{}
+	fromSummary := map[string]string{}
 	b.Err = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil || d.IsDir() || d.Name() != "summary.json" {
 			return nil
 		}
 		dir := filepath.Dir(path)
+		grokSpawnParents(filepath.Join(dir, "updates.jsonl"), spawned)
+		childNative, parentNative := grokSummaryParent(path)
+		noteParent(fromSummary, "grok", childNative, parentNative)
 		hist := filepath.Join(dir, "chat_history.jsonl")
 		mt, isFresh := stamp(path, fresh, hist, filepath.Join(dir, "usage.json"), filepath.Join(dir, "signals.json"))
 		b.Files = append(b.Files, File{Path: path, Mtime: mt, Fresh: isFresh})
@@ -35,6 +44,12 @@ func scanGrok(fresh func(string, int64) bool) Batch {
 		}
 		return nil
 	})
+	for child, parent := range spawned {
+		b.Parents[child] = parent
+	}
+	for child, parent := range fromSummary {
+		b.Parents[child] = parent
+	}
 	return b
 }
 
@@ -50,6 +65,10 @@ func readGrok(summaryPath string) (model.Session, bool) {
 	}
 	if native == "" {
 		return model.Session{}, false
+	}
+	parent := asString(doc["parent_session_id"])
+	if parent == native {
+		parent = ""
 	}
 	cwd := asString(info["cwd"])
 	title := asString(doc["session_summary"])
@@ -97,7 +116,37 @@ func readGrok(summaryPath string) (model.Session, bool) {
 		SourcePath: summaryPath, SourceMtime: fileMtime(summaryPath),
 		CanDelete: true, DeleteMode: "grok",
 		Snippets: buf.snippets(),
+		ParentID: parentOf("grok", parent),
 	}, true
+}
+
+func grokSummaryParent(path string) (child, parent string) {
+	var doc map[string]any
+	if readJSON(path, &doc) != nil {
+		return "", ""
+	}
+	info, _ := doc["info"].(map[string]any)
+	child = asString(info["id"])
+	if child == "" {
+		child = asString(doc["agent_id"])
+	}
+	parent = asString(doc["parent_session_id"])
+	return child, parent
+}
+
+func grokSpawnParents(path string, parents map[string]string) {
+	if !regularFile(path) {
+		return
+	}
+	_ = walkJSONL(path, func(obj map[string]any) error {
+		params, _ := obj["params"].(map[string]any)
+		update, _ := params["update"].(map[string]any)
+		if asString(update["sessionUpdate"]) != "subagent_spawned" {
+			return nil
+		}
+		noteParent(parents, "grok", asString(update["child_session_id"]), asString(update["parent_session_id"]))
+		return nil
+	})
 }
 
 // grokUsage reads the siblings next to summary.json.

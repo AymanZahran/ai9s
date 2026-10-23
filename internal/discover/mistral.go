@@ -63,10 +63,11 @@ func readMistral(metaPath, msgsPath string, mt int64) (model.Session, bool) {
 	if err := readJSON(metaPath, &meta); err != nil {
 		return model.Session{}, false
 	}
-	if strings.TrimSpace(asString(meta["parent_session_id"])) != "" {
-		return model.Session{}, false
-	}
+	parent := strings.TrimSpace(asString(meta["parent_session_id"]))
 	id := strings.TrimSpace(asString(meta["session_id"]))
+	if parent == id {
+		parent = ""
+	}
 	if id == "" {
 		return model.Session{}, false
 	}
@@ -114,6 +115,7 @@ func readMistral(metaPath, msgsPath string, mt int64) (model.Session, bool) {
 		Updated: updated, Messages: buf.n, Snippets: buf.snippets(),
 		SourcePath: msgsPath, SourceMtime: mt,
 		CanDelete: true, DeleteMode: "mistral",
+		ParentID: parentOf("mistral", parent),
 	}, true
 }
 

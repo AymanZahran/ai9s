@@ -92,6 +92,12 @@ type ui struct {
 	preview         *tview.TextView
 	manual          *tview.TextView
 	rows            []model.Session
+	expand          map[string]bool
+	treeDepth       []int
+	treeKids        []int
+	treeOpen        []bool
+	matched         int
+	matchedMsgs     int
 	agents          []string
 	warnings        []string
 	drilled         string
@@ -131,7 +137,7 @@ type ui struct {
 }
 
 func newUI(app *tview.Application, st *store.Store, cfg config.Loaded) *ui {
-	ui := &ui{app: app, store: st, cfg: cfg, warnings: append([]string(nil), cfg.Warnings...)}
+	ui := &ui{app: app, store: st, cfg: cfg, expand: map[string]bool{}, warnings: append([]string(nil), cfg.Warnings...)}
 	ui.header = tview.NewTextView().SetDynamicColors(true).SetWrap(false)
 	ui.logo = tview.NewTextView().SetDynamicColors(true).SetWrap(false)
 	ui.crumbs = tview.NewTextView().SetDynamicColors(true).SetWrap(false)
@@ -507,6 +513,8 @@ func (ui *ui) tableKeys(ev *tcell.EventKey) *tcell.EventKey {
 		ui.promptRename()
 	case 'F':
 		ui.promptFork()
+	case ' ':
+		ui.toggleExpand()
 	case '?':
 		ui.showManual()
 	case 'j':
@@ -634,6 +642,27 @@ func (ui *ui) previewKeys(ev *tcell.EventKey) *tcell.EventKey {
 	return ev
 }
 
+func (ui *ui) toggleExpand() {
+	if !ui.sessionsTree() {
+		return
+	}
+	row, _ := ui.table.GetSelection()
+	i := row - 1
+	if i < 0 || i >= len(ui.rows) || i >= len(ui.treeKids) || ui.treeKids[i] == 0 {
+		return
+	}
+	open := false
+	if i < len(ui.treeOpen) {
+		open = ui.treeOpen[i]
+	}
+	if ui.expand == nil {
+		ui.expand = map[string]bool{}
+	}
+	ui.expand[ui.rows[i].ID] = !open
+	ui.keepID = ui.rows[i].ID
+	ui.reload()
+}
+
 func (ui *ui) reload() {
 	if ui.commandOpen {
 		ui.paintSuggestions(ui.command.GetText())
@@ -641,21 +670,50 @@ func (ui *ui) reload() {
 		return
 	}
 	f := ui.searchFilter()
-	rows, err := ui.store.Search(f, ui.cfg.Limit())
-	if err != nil {
-		ui.header.SetText("[red]search failed: " + markup(err.Error()) + "[-]")
-		return
+	if ui.sessionsTree() {
+		tree, sessions, messages, err := ui.store.SessionTree(f, ui.cfg.Limit(), ui.expand)
+		if err != nil {
+			ui.header.SetText("[red]search failed: " + markup(err.Error()) + "[-]")
+			return
+		}
+		ui.rows = ui.rows[:0]
+		ui.treeDepth = ui.treeDepth[:0]
+		ui.treeKids = ui.treeKids[:0]
+		ui.treeOpen = ui.treeOpen[:0]
+		for _, row := range tree {
+			ui.rows = append(ui.rows, row.Session)
+			ui.treeDepth = append(ui.treeDepth, row.Depth)
+			ui.treeKids = append(ui.treeKids, row.Children)
+			ui.treeOpen = append(ui.treeOpen, row.Open)
+		}
+		ui.matched = sessions
+		ui.matchedMsgs = messages
+		ui.paintSessions()
+	} else {
+		rows, err := ui.store.Search(f, ui.cfg.Limit())
+		if err != nil {
+			ui.header.SetText("[red]search failed: " + markup(err.Error()) + "[-]")
+			return
+		}
+		ui.rows = rows
+		ui.treeDepth = nil
+		ui.treeKids = nil
+		ui.treeOpen = nil
+		ui.matched = len(rows)
+		ui.matchedMsgs = 0
+		for _, s := range rows {
+			ui.matchedMsgs += s.Messages
+		}
+		if !ui.onSessions() {
+			ui.paintGroups()
+		} else {
+			ui.paintSessions()
+		}
 	}
-	ui.rows = rows
 	stats, _ := ui.store.Stats()
 	ui.agents = ui.agents[:0]
 	for _, a := range stats.Agents {
 		ui.agents = append(ui.agents, a.Agent)
-	}
-	if !ui.onSessions() {
-		ui.paintGroups()
-	} else {
-		ui.paintSessions()
 	}
 	ui.paintHeader()
 }
@@ -696,11 +754,8 @@ func (ui *ui) paintCrumbs() {
 	stats, _ := ui.store.Stats()
 	sessions, messages := stats.Sessions, stats.Messages
 	if len(ui.roots) > 0 {
-		sessions = len(ui.rows)
-		messages = 0
-		for _, s := range ui.rows {
-			messages += s.Messages
-		}
+		sessions = ui.matched
+		messages = ui.matchedMsgs
 	}
 	active := ui.cfg.Skin.Frame.Crumbs.Active
 	var extra string

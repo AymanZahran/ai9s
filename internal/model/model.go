@@ -11,8 +11,10 @@ type Session struct {
 	Title        string    `json:"title"`
 	Name         string    `json:"name,omitempty"` // display name set in ai9s; Title stays the agent's own title
 	Bookmarked   bool      `json:"bookmarked,omitempty"`
-	Parent       string    `json:"parent,omitempty"` // display name of the session this one was forked from
-	Forks        int       `json:"forks,omitempty"`  // how many sessions were forked from this one
+	Parent       string    `json:"parent,omitempty"`      // display name of the session this one was forked from
+	Forks        int       `json:"forks,omitempty"`       // how many sessions were forked from this one
+	ParentID     string    `json:"parent_id,omitempty"`   // harness session that launched this subagent
+	ParentName   string    `json:"parent_name,omitempty"` // display name of that harness parent; not stored
 	Summary      string    `json:"summary,omitempty"`
 	CWD          string    `json:"cwd,omitempty"`
 	Branch       string    `json:"branch,omitempty"`

@@ -56,6 +56,30 @@ func TestPlan(t *testing.T) {
 	if strings.Contains(cmd.String(), "danger") || !strings.Contains(cmd.String(), "resume u") {
 		t.Fatalf("codex plan %s", cmd)
 	}
+	cmd, err = Plan(model.Session{Agent: "claude", NativeID: "agent-abc", ParentID: "claude:parent-1", CWD: dir}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(cmd.String(), "--resume parent-1") || strings.Contains(cmd.String(), "agent-abc") {
+		t.Fatalf("claude subagent %s", cmd)
+	}
+	cmd, err = Plan(model.Session{Agent: "cursor", NativeID: "child-file", ParentID: "cursor:conv-1", CWD: dir}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(cmd.String(), "--resume conv-1") || strings.Contains(cmd.String(), "child-file") {
+		t.Fatalf("cursor subagent %s", cmd)
+	}
+	cmd, err = Plan(model.Session{Agent: "grok", NativeID: "child-1", ParentID: "grok:parent-1", CWD: dir}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(cmd.String(), "--resume child-1") || strings.Contains(cmd.String(), "parent-1") {
+		t.Fatalf("grok subagent %s", cmd)
+	}
+	if _, err = Plan(model.Session{Agent: "claude", NativeID: "ok", ParentID: "claude:--bad", CWD: dir}, false); err == nil {
+		t.Fatal("accepted a parent id that starts with a dash")
+	}
 }
 
 func TestInstalled(t *testing.T) {

@@ -201,12 +201,19 @@ func TestScanKilo(t *testing.T) {
 		`INSERT INTO part VALUES ('p2','m2','kilo-1',1700000001000,'{"type":"text","text":"done"}')`,
 	)
 	b := scanKilo(nil)
-	if b.Err != nil || len(b.Sessions) != 1 {
+	if b.Err != nil || len(b.Sessions) != 2 {
 		t.Fatalf("kilo %+v %v", b.Sessions, b.Err)
 	}
-	s := b.Sessions[0]
-	if s.NativeID != "kilo-1" || s.Title != "ship the kilo" || s.CWD != "/work/kilo" || s.Model != "prov/kilo-model" || s.DeleteMode != "exec" || s.Messages != 2 {
+	gotKilo := map[string]model.Session{}
+	for _, s := range b.Sessions {
+		gotKilo[s.NativeID] = s
+	}
+	s := gotKilo["kilo-1"]
+	if s.NativeID != "kilo-1" || s.Title != "ship the kilo" || s.CWD != "/work/kilo" || s.Model != "prov/kilo-model" || s.DeleteMode != "exec" || s.Messages != 2 || s.ParentID != "" {
 		t.Fatalf("session %+v", s)
+	}
+	if child := gotKilo["kilo-child"]; child.ParentID != "kilo:kilo-1" || child.Title != "child" {
+		t.Fatalf("child %+v", child)
 	}
 	if s.Usage.Input != 11 || s.Usage.Output != 4 || s.Usage.Reasoning != 1 || s.Usage.CacheRead != 2 || s.Usage.CacheWrite != 3 || s.Usage.CostUSD != 0.5 || s.Usage.Context != 9 {
 		t.Fatalf("usage %+v", s.Usage)
@@ -288,15 +295,22 @@ func TestScanMastra(t *testing.T) {
 		`INSERT INTO mastra_messages VALUES ('b','thread-child','child text stays out','user','text','2026-01-02T03:04:05Z')`,
 	)
 	b := scanMastra(nil)
-	if b.Err != nil || len(b.Sessions) != 1 {
+	if b.Err != nil || len(b.Sessions) != 2 {
 		t.Fatalf("mastra %+v %v", b.Sessions, b.Err)
 	}
-	s := b.Sessions[0]
-	if s.NativeID != "thread-1" || s.Title != "ship the mastra" || s.CWD != "/work/mastra" || s.CanDelete || s.DeleteReason != mastraDeleteReason || s.Messages != 1 {
+	gotMastra := map[string]model.Session{}
+	for _, s := range b.Sessions {
+		gotMastra[s.NativeID] = s
+	}
+	s := gotMastra["thread-1"]
+	if s.NativeID != "thread-1" || s.Title != "ship the mastra" || s.CWD != "/work/mastra" || s.CanDelete || s.DeleteReason != mastraDeleteReason || s.Messages != 1 || s.ParentID != "" {
 		t.Fatalf("session %+v", s)
 	}
 	if strings.Contains(joined(s), "child text") {
-		t.Fatal("indexed a child thread")
+		t.Fatal("parent thread contains the child message")
+	}
+	if child := gotMastra["thread-child"]; child.ParentID != "mastracode:thread-1" || child.Title != "child" || !strings.Contains(joined(child), "child text") {
+		t.Fatalf("child %+v", child)
 	}
 	home := t.TempDir()
 	t.Setenv("HOME", home)
