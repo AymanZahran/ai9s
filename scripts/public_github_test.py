@@ -30,7 +30,7 @@ class PublicGitHubTests(unittest.TestCase):
         contexts = body["required_status_checks"]["contexts"]
         self.assertEqual(
             contexts,
-            ["audit", "go 1.25", "go stable", "govulncheck", "formula"],
+            ["audit", "go 1.26.11", "go stable", "govulncheck", "formula"],
         )
         self.assertNotIn("checks", body["required_status_checks"])
         self.assertTrue(body["required_status_checks"]["strict"])
@@ -40,7 +40,7 @@ class PublicGitHubTests(unittest.TestCase):
 
     def test_ci_job_names_match_the_protected_contexts(self):
         workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text()
-        self.assertIn('go: ["1.25", "stable"]', workflow)
+        self.assertIn('go: ["1.26.11", "stable"]', workflow)
         self.assertIn("name: go ${{ matrix.go }}", workflow)
         self.assertIn("name: govulncheck", workflow)
         self.assertIn("name: audit", workflow)

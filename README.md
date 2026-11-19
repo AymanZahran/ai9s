@@ -216,7 +216,7 @@ Expand-Archive "$dest\ai9s.zip" -DestinationPath $dest -Force
 
 ### From source
 
-Requires Go 1.25 or newer.
+Requires Go 1.26.11 or newer.
 
 ```sh
 git clone https://github.com/AymanZahran/ai9s.git
@@ -386,7 +386,7 @@ go test ./...
 make build
 ```
 
-GitHub Actions runs that test suite on Ubuntu for Go 1.25 and for the current stable Go, and on macOS and Windows. `cmd/integration_test.go` builds the binary and runs `index`, `search`, `show`, `resume --print`, and `delete` against temporary fixtures. The fixtures override every agent home, so the test does not read a developer's real sessions, and Jules is not contacted. A missing `gofmt` diff fails the same workflow. `golangci-lint` runs as its own job.
+GitHub Actions runs that test suite on Ubuntu for Go 1.26.11 and for the current stable Go, and on macOS and Windows. `cmd/integration_test.go` builds the binary and runs `index`, `search`, `show`, `resume --print`, and `delete` against temporary fixtures. The fixtures override every agent home, so the test does not read a developer's real sessions, and Jules is not contacted. A missing `gofmt` diff fails the same workflow. `golangci-lint` runs as its own job.
 
 The documentation site lives in [`site/`](site/) and is published with GitHub Pages from [`.github/workflows/pages.yml`](.github/workflows/pages.yml). The site is aimed at [ai9scli.io](https://ai9scli.io/). See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request, and [SECURITY.md](SECURITY.md) for private vulnerability reports.
 

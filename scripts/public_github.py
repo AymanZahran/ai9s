@@ -21,7 +21,7 @@ AI9S = "AymanZahran/ai9s"
 HOMEPAGE = "https://ai9scli.io/"
 
 CHECKS = {
-    AI9S: ["audit", "go 1.25", "go stable", "govulncheck", "formula"],
+    AI9S: ["audit", "go 1.26.11", "go stable", "govulncheck", "formula"],
 }
 
 
