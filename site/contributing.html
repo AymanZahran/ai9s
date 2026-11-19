@@ -34,7 +34,7 @@
     <pre><code>go test ./...
 make build
 gofmt -w .</code></pre>
-    <p>The required checks run on Ubuntu: <code>gofmt</code> and <code>go test -count=1 ./...</code> for Go 1.25 and for the current stable Go, plus <code>govulncheck</code> and a scan of tracked files. <code>golangci-lint</code> also runs on Ubuntu, and macOS and Windows run <code>go test</code>. Those extra jobs are not required status checks. <code>cmd/integration_test.go</code> builds the binary and runs it against temporary fixtures. Those fixtures override every agent home, so the test does not read your sessions, and Jules is not contacted.</p>
+    <p>The required checks run on Ubuntu: <code>gofmt</code> and <code>go test -count=1 ./...</code> for Go 1.26.11 and for the current stable Go, plus <code>govulncheck</code> and a scan of tracked files. <code>golangci-lint</code> also runs on Ubuntu, and macOS and Windows run <code>go test</code>. Those extra jobs are not required status checks. <code>cmd/integration_test.go</code> builds the binary and runs it against temporary fixtures. Those fixtures override every agent home, so the test does not read your sessions, and Jules is not contacted.</p>
 
     <h2>Layout</h2>
     <ul>
